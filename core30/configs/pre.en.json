@@ -1,0 +1,1120 @@
+{
+ "id": "pre",
+ "lang": "en",
+ "version": "pre@0.72",
+ "edition": {
+  "kind": "pre",
+  "basedOn": "blank@0.72",
+  "full": "blank",
+  "note": "the at-home first stage of the full Core, same item ids"
+ },
+ "flow": "pre",
+ "title": "The Core · prep",
+ "client": {
+  "name": "your brand",
+  "contact": ""
+ },
+ "access": {
+  "token": "X649ZJ70fOtS",
+  "email": "optional"
+ },
+ "submit": {
+  "endpoint": "/api/core30",
+  "email": "hi@cromaticstudios.com"
+ },
+ "intro": {
+  "hello": "Hi.",
+  "lead": "This is the first step of The Core: the prep. You fill it in at home, on your own, at your pace. Everything you write here goes straight into The Core, so in the studio we skip the basics and get to the decisions that matter.",
+  "promise": [
+   "About 51 minutes, an hour at most. Each module tells you how long it takes.",
+   "We save as you go, on this device and on our side. Close it any time and pick up where you left off, from the same link.",
+   "There are no wrong answers. If something stops you, skip it: we'll work on it together in the studio."
+  ],
+  "minutes": "~51 minutes, an hour at most"
+ },
+ "modules": [
+  {
+   "id": "m02",
+   "title": [
+    "You, in the",
+    "story"
+   ],
+   "short": "The founder",
+   "minutes": 6,
+   "why": "Small brands start with someone. We want the story, not the CV.",
+   "items": [
+    {
+     "id": "m02.why",
+     "kind": "text",
+     "multiline": true,
+     "label": "Why now?",
+     "help": "What changed that made you start this brand?",
+     "placeholder": "Write it the way you'd say it over coffee.",
+     "suggestions": [
+      "We saw a problem nobody was solving",
+      "Our clients asked for it",
+      "It was time to do things properly",
+      "We grew and the old brand no longer fits"
+     ]
+    },
+    {
+     "id": "m02.story",
+     "kind": "text",
+     "multiline": true,
+     "label": "A real story where your brand mattered to someone.",
+     "help": "It could become the brand story, so keep the small details.",
+     "placeholder": "There was this one day when…",
+     "suggestions": [
+      "It was an ordinary day until",
+      "A client wrote to us after",
+      "The nicest compliment we ever got",
+      "The first time we felt we'd made a difference"
+     ]
+    },
+    {
+     "id": "m02.visible",
+     "kind": "scale",
+     "label": "How visible do you want to be in the brand?",
+     "pairs": [
+      {
+       "id": "v",
+       "left": "Founder brand, my face",
+       "right": "Company brand, me in the background"
+      }
+     ]
+    },
+    {
+     "id": "m02.super",
+     "kind": "text",
+     "optional": true,
+     "label": "What do people do better after they've met you?",
+     "placeholder": "One thing, as concrete as you can.",
+     "suggestions": [
+      "They choose more easily",
+      "They have more time",
+      "They feel more confident",
+      "They understand what they're buying"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m03",
+   "title": [
+    "Your",
+    "people"
+   ],
+   "short": "Your people",
+   "minutes": 8,
+   "why": "Your first clients decide what the brand looks like to everyone else. Let's see their faces.",
+   "items": [
+    {
+     "id": "m03.profiles",
+     "kind": "profiles",
+     "noun": "profile",
+     "min": 2,
+     "max": 3,
+     "label": "Who are your first clients? Sketch 2 or 3 profiles.",
+     "help": "Think of real people. Just change their names.",
+     "fields": [
+      {
+       "id": "nume",
+       "label": "Who they are",
+       "placeholder": "Anna, 34, architect"
+      },
+      {
+       "id": "etapa",
+       "label": "Life stage",
+       "placeholder": "Just moved to the city"
+      },
+      {
+       "id": "cauta",
+       "label": "What they're looking for",
+       "multiline": true,
+       "placeholder": "The problem they want solved"
+      },
+      {
+       "id": "frustreaza",
+       "label": "What frustrates them today",
+       "multiline": true,
+       "placeholder": "What doesn't work with the options they have now"
+      }
+     ]
+    },
+    {
+     "id": "m03.refuse",
+     "kind": "choice",
+     "multi": true,
+     "max": 3,
+     "other": true,
+     "why": true,
+     "label": "Who do you turn away?",
+     "help": "Up to 3. A clear brand also knows who it isn't for.",
+     "options": [
+      {
+       "id": "pret",
+       "label": "People after the lowest price, no matter what"
+      },
+      {
+       "id": "graba",
+       "label": "People who want it all in 48 hours"
+      },
+      {
+       "id": "generic",
+       "label": "People who want the standard version everyone else has"
+      },
+      {
+       "id": "control",
+       "label": "People who want to control every detail"
+      }
+     ]
+    },
+    {
+     "id": "m03.journey",
+     "kind": "rank",
+     "label": "Drag the steps into the order they matter to your typical client.",
+     "help": "The top is what matters most.",
+     "options": [
+      {
+       "id": "afla",
+       "label": "Hears about you",
+       "desc": "Referral, social, search"
+      },
+      {
+       "id": "intelege",
+       "label": "Gets what you offer",
+       "desc": "Website, a conversation, a sample"
+      },
+      {
+       "id": "aleg",
+       "label": "Chooses",
+       "desc": "Price, trust, fit"
+      },
+      {
+       "id": "foloseste",
+       "label": "Uses it",
+       "desc": "The experience itself"
+      },
+      {
+       "id": "revine",
+       "label": "Comes back",
+       "desc": "The relationship after"
+      },
+      {
+       "id": "recomanda",
+       "label": "Recommends you",
+       "desc": "Tells other people"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m04",
+   "title": [
+    "Your place",
+    "on the map"
+   ],
+   "short": "Positioning",
+   "minutes": 7,
+   "why": "Positioning is the place you hold in someone's mind. If you don't pick it, the market picks it for you.",
+   "items": [
+    {
+     "id": "m04.category",
+     "kind": "choice",
+     "other": true,
+     "label": "How do you explain your brand to someone over coffee, in 10 seconds?",
+     "options": [
+      {
+       "id": "a",
+       "label": "The version that says what it does."
+      },
+      {
+       "id": "b",
+       "label": "The version that says who it's for."
+      },
+      {
+       "id": "c",
+       "label": "The version that says why it's different."
+      }
+     ]
+    },
+    {
+     "id": "m04.alts",
+     "kind": "matrix",
+     "label": "What do people use today instead of you?",
+     "help": "For each one: what it does well and where it falls short.",
+     "rows": [
+      {
+       "id": "mare",
+       "label": "The big player in the category"
+      },
+      {
+       "id": "mic",
+       "label": "A small competitor, like you"
+      },
+      {
+       "id": "diy",
+       "label": "They do it themselves"
+      },
+      {
+       "id": "nimic",
+       "label": "Nothing",
+       "desc": "They put it off"
+      }
+     ],
+     "cols": [
+      {
+       "id": "bine",
+       "label": "What they do well",
+       "placeholder": "Price, speed…"
+      },
+      {
+       "id": "pierd",
+       "label": "Where they fall short",
+       "placeholder": "They know nothing about you…"
+      }
+     ]
+    },
+    {
+     "id": "m04.xfactor",
+     "kind": "text",
+     "label": "X factor: what can you promise that nobody else can?",
+     "help": "Just one thing. If a competitor can say it too, it's not the one.",
+     "placeholder": "We…",
+     "suggestions": [
+      "We're the only ones who",
+      "We always pick up the phone",
+      "We make everything by hand",
+      "Results guaranteed or your money back"
+     ]
+    },
+    {
+     "id": "m04.sliders",
+     "kind": "scale",
+     "label": "Drag each slider to where you stand today.",
+     "pairs": [
+      {
+       "id": "pret",
+       "left": "Affordable",
+       "right": "Premium"
+      },
+      {
+       "id": "oferta",
+       "left": "Curated, a few chosen things",
+       "right": "Wide range"
+      },
+      {
+       "id": "geo",
+       "left": "Local",
+       "right": "National or beyond"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m05",
+   "title": [
+    "If it were",
+    "a person"
+   ],
+   "short": "Personality",
+   "minutes": 5,
+   "why": "If the brand were a person, how would you spot them from across the room? There's no right answer, only an honest one.",
+   "items": [
+    {
+     "id": "m05.sliders",
+     "kind": "scale",
+     "label": "Drag each slider toward the word that fits better.",
+     "pairs": [
+      {
+       "id": "calm",
+       "left": "Calm",
+       "right": "Energetic"
+      },
+      {
+       "id": "cald",
+       "left": "Warm",
+       "right": "Refined"
+      },
+      {
+       "id": "jucaus",
+       "left": "Playful",
+       "right": "Serious"
+      },
+      {
+       "id": "discret",
+       "left": "Understated",
+       "right": "Expressive"
+      },
+      {
+       "id": "comunitar",
+       "left": "Inclusive",
+       "right": "Exclusive"
+      },
+      {
+       "id": "traditional",
+       "left": "Traditional",
+       "right": "Contemporary"
+      },
+      {
+       "id": "intuitiv",
+       "left": "Intuitive",
+       "right": "Rigorous"
+      },
+      {
+       "id": "local",
+       "left": "Local",
+       "right": "Cosmopolitan"
+      }
+     ]
+    },
+    {
+     "id": "m05.table",
+     "kind": "text",
+     "multiline": true,
+     "label": "If the brand walked into a room full of people, how would it act?",
+     "placeholder": "It would be the one who…",
+     "suggestions": [
+      "It would introduce itself to everyone",
+      "It would listen more than it talks",
+      "It would crack the joke that breaks the ice",
+      "It would know the answer to any question"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m07",
+   "title": [
+    "Values"
+   ],
+   "short": "Values",
+   "minutes": 6,
+   "why": "Values are promises you keep even when they cost you. We pick them by elimination, so only the true ones are left.",
+   "items": [
+    {
+     "id": "m07.values",
+     "kind": "values",
+     "label": "Eight, then five, then three.",
+     "help": "Drag the values into the basket. You can add one of your own.",
+     "pool": [
+      "closeness",
+      "trust",
+      "generosity",
+      "authenticity",
+      "curiosity",
+      "belonging",
+      "discretion",
+      "simplicity",
+      "care",
+      "freedom",
+      "courage",
+      "quality",
+      "transparency",
+      "respect",
+      "joy",
+      "balance",
+      "patience",
+      "openness",
+      "community",
+      "empathy",
+      "responsibility",
+      "honesty",
+      "roots",
+      "beauty",
+      "hospitality",
+      "intimacy",
+      "initiative",
+      "clarity",
+      "consistency",
+      "sustainability",
+      "play",
+      "gratitude"
+     ],
+     "steps": [
+      8,
+      5,
+      3
+     ],
+     "always": "In practice, we always…",
+     "never": "…and we never…"
+    }
+   ]
+  },
+  {
+   "id": "m08",
+   "title": [
+    "What you give,",
+    "what they feel"
+   ],
+   "short": "Attributes",
+   "minutes": 4,
+   "why": "Rational attributes say what people get. Emotional ones say what they're left with. We need both.",
+   "items": [
+    {
+     "id": "m08.rational",
+     "kind": "sort",
+     "custom": true,
+     "label": "Three rational attributes. What does the brand offer?",
+     "buckets": [
+      {
+       "id": "top",
+       "label": "Top 3 rational",
+       "max": 3,
+       "color": "#119BFE"
+      }
+     ],
+     "pool": [
+      "quality",
+      "fair price",
+      "speed",
+      "expertise",
+      "personal touch",
+      "durability",
+      "simplicity",
+      "support",
+      "innovation",
+      "transparency",
+      "access",
+      "community"
+     ],
+     "icons": {
+      "quality": "🏅",
+      "fair price": "🏷️",
+      "speed": "⚡",
+      "expertise": "🎓",
+      "personal touch": "🧩",
+      "durability": "🌱",
+      "simplicity": "✨",
+      "support": "🤝",
+      "innovation": "💡",
+      "transparency": "🔍",
+      "access": "🔑",
+      "community": "👥"
+     }
+    },
+    {
+     "id": "m08.emotional",
+     "kind": "sort",
+     "custom": true,
+     "label": "Three emotional attributes. How do people feel?",
+     "buckets": [
+      {
+       "id": "top",
+       "label": "Top 3 emotional",
+       "max": 3,
+       "color": "#F65342"
+      }
+     ],
+     "pool": [
+      "calm",
+      "seen",
+      "at home",
+      "connected",
+      "safe",
+      "inspired",
+      "curious",
+      "chosen",
+      "free",
+      "relieved",
+      "excited",
+      "part of something"
+     ],
+     "icons": {
+      "calm": "😌",
+      "seen": "👀",
+      "at home": "🏠",
+      "connected": "🔗",
+      "safe": "🛡️",
+      "inspired": "✨",
+      "curious": "🤔",
+      "chosen": "💛",
+      "free": "🕊️",
+      "relieved": "😮‍💨",
+      "excited": "🤩",
+      "part of something": "🫶"
+     }
+    },
+    {
+     "id": "m08.after",
+     "kind": "text",
+     "label": "What do you want someone to say about the brand after the first meeting?",
+     "placeholder": "“I've never met anyone who…”",
+     "suggestions": [
+      "I've never met anyone who",
+      "They really care",
+      "Simple, no hassle",
+      "They know exactly what they're doing"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m09",
+   "title": [
+    "Voice"
+   ],
+   "short": "Voice",
+   "minutes": 5,
+   "why": "Voice is how you sound when you're not in the room. Go with your gut. Don't overthink it.",
+   "items": [
+    {
+     "id": "m09.offer",
+     "kind": "ab",
+     "label": "An offer. Which one sounds like your brand?",
+     "a": {
+      "id": "a",
+      "label": "Complete package, 5-day delivery, 2-year warranty. Order now."
+     },
+     "b": {
+      "id": "b",
+      "label": "It arrives on Friday, ready to use. If something isn't right, we come and fix it."
+     }
+    },
+    {
+     "id": "m09.welcome",
+     "kind": "ab",
+     "label": "A welcome message.",
+     "a": {
+      "id": "a",
+      "label": "Welcome! Thank you for signing up. You will receive updates soon."
+     },
+     "b": {
+      "id": "b",
+      "label": "Hi, Anna. Glad you're here. On Thursday we're hosting an evening for new clients, 12 seats. Shall we save you one?"
+     }
+    },
+    {
+     "id": "m09.price",
+     "kind": "ab",
+     "label": "Someone asks “how much is it?”",
+     "a": {
+      "id": "a",
+      "label": "Rates start from 200 lei, as per our price list."
+     },
+     "b": {
+      "id": "b",
+      "label": "Straight answer: 200 lei. And the first coffee's on us."
+     }
+    },
+    {
+     "id": "m09.words",
+     "kind": "sort",
+     "custom": true,
+     "label": "Us, not us. Drag each word into its basket.",
+     "help": "Three words the brand uses and three it would never use.",
+     "buckets": [
+      {
+       "id": "da",
+       "label": "Us",
+       "max": 3,
+       "color": "#28C840"
+      },
+      {
+       "id": "nu",
+       "label": "Not us",
+       "max": 3,
+       "color": "#F65342"
+      }
+     ],
+     "pool": [
+      "home",
+      "close",
+      "people",
+      "simple",
+      "made with care",
+      "together",
+      "luxury",
+      "exclusive",
+      "opportunity",
+      "solution",
+      "premium",
+      "innovative",
+      "revolutionary",
+      "deal",
+      "one-time offer"
+     ]
+    },
+    {
+     "id": "m09.tu",
+     "kind": "choice",
+     "label": "How formal is the brand?",
+     "options": [
+      {
+       "id": "tu",
+       "label": "First names, always",
+       "desc": "In contracts and on Instagram alike."
+      },
+      {
+       "id": "tu-exceptii",
+       "label": "First names, with exceptions",
+       "desc": "Formal in paperwork and with people who prefer it."
+      },
+      {
+       "id": "dvs",
+       "label": "Formal, always",
+       "desc": "A respectful distance, everywhere."
+      },
+      {
+       "id": "canal",
+       "label": "Depends on the channel",
+       "desc": "Casual on social, formal on the website and in email."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m10",
+   "title": [
+    "How it",
+    "looks"
+   ],
+   "short": "Visual direction",
+   "minutes": 6,
+   "why": "No stock photos. Just colors, type, textures and rhythm, so you pick the feeling, not the cliché.",
+   "items": [
+    {
+     "id": "m10.pairs",
+     "kind": "visual",
+     "label": "In each pair, which one feels closer?",
+     "pairs": [
+      {
+       "id": "pal1",
+       "label": "Palette",
+       "a": {
+        "id": "a",
+        "label": "Warm earth",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#C4693F",
+          "#E2B868",
+          "#F3E9D6",
+          "#6E7B4E"
+         ]
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Cool calm",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#9DB2A6",
+          "#5D7186",
+          "#E7ECEB",
+          "#22303B"
+         ]
+        }
+       }
+      },
+      {
+       "id": "pal2",
+       "label": "Intensity",
+       "a": {
+        "id": "a",
+        "label": "Bright, saturated",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#FF6A3D",
+          "#FFC43D",
+          "#1FB5A6",
+          "#2747A5"
+         ]
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Quiet, muted",
+        "swatch": {
+         "type": "palette",
+         "colors": [
+          "#B9A99A",
+          "#D8CFC4",
+          "#8A9690",
+          "#4A4744"
+         ]
+        }
+       }
+      },
+      {
+       "id": "type1",
+       "label": "Type",
+       "a": {
+        "id": "a",
+        "label": "Editorial serif",
+        "swatch": {
+         "type": "type",
+         "font": "serif",
+         "sample": "Your brand."
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Geometric sans",
+        "swatch": {
+         "type": "type",
+         "font": "geo",
+         "sample": "Your brand.",
+         "weight": 800
+        }
+       }
+      },
+      {
+       "id": "type2",
+       "label": "Character",
+       "a": {
+        "id": "a",
+        "label": "Classic, engraved",
+        "swatch": {
+         "type": "type",
+         "font": "classic",
+         "sample": "Brand",
+         "weight": 600
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Contemporary, light",
+        "swatch": {
+         "type": "type",
+         "font": "grotesk",
+         "sample": "brand",
+         "weight": 500
+        }
+       }
+      },
+      {
+       "id": "tex",
+       "label": "Texture",
+       "a": {
+        "id": "a",
+        "label": "Paper, linen, grain",
+        "swatch": {
+         "type": "texture",
+         "texture": "linen"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Smooth, flat, digital",
+        "swatch": {
+         "type": "texture",
+         "texture": "flat"
+        }
+       }
+      },
+      {
+       "id": "dens",
+       "label": "Density",
+       "a": {
+        "id": "a",
+        "label": "Airy",
+        "swatch": {
+         "type": "density",
+         "level": "airy"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Rich",
+        "swatch": {
+         "type": "density",
+         "level": "rich"
+        }
+       }
+      },
+      {
+       "id": "shape",
+       "label": "Shapes",
+       "a": {
+        "id": "a",
+        "label": "Organic",
+        "swatch": {
+         "type": "shape",
+         "shape": "organic"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Geometric",
+        "swatch": {
+         "type": "shape",
+         "shape": "geometric"
+        }
+       }
+      },
+      {
+       "id": "ritm",
+       "label": "Rhythm",
+       "a": {
+        "id": "a",
+        "label": "Calm, aligned",
+        "swatch": {
+         "type": "rhythm",
+         "level": "calm"
+        }
+       },
+       "b": {
+        "id": "b",
+        "label": "Playful, offset",
+        "swatch": {
+         "type": "rhythm",
+         "level": "playful"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": "m10.refs",
+     "kind": "refs",
+     "max": 6,
+     "optional": true,
+     "label": "Got references of your own? Up to six.",
+     "help": "Images or links, from any field. Tell us what you like about each one."
+    },
+    {
+     "id": "m10.not",
+     "kind": "choice",
+     "multi": true,
+     "other": true,
+     "label": "What should it NOT look like?",
+     "options": [
+      {
+       "id": "stock",
+       "label": "Stock photos of smiling people"
+      },
+      {
+       "id": "corporate",
+       "label": "Corporate blue"
+      },
+      {
+       "id": "lux",
+       "label": "Gold on black, catalog luxury"
+      },
+      {
+       "id": "trend",
+       "label": "Whatever's trendy this year"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "m12",
+   "title": [
+    "The website",
+    "and the rest"
+   ],
+   "short": "Website & logistics",
+   "minutes": 4,
+   "why": "Your first website doesn't have to do everything. It has to do three things well in its first three months.",
+   "items": [
+    {
+     "id": "m12.site",
+     "kind": "rank",
+     "label": "What does the website need to do in its first 3 months? Put it in order.",
+     "options": [
+      {
+       "id": "vinde",
+       "label": "Sell or present the offer"
+      },
+      {
+       "id": "leads",
+       "label": "Capture leads"
+      },
+      {
+       "id": "viziune",
+       "label": "Explain the vision"
+      },
+      {
+       "id": "poveste",
+       "label": "Tell the founder's story"
+      },
+      {
+       "id": "comunitate",
+       "label": "Bring a community together"
+      }
+     ]
+    },
+    {
+     "id": "m12.handles",
+     "kind": "text",
+     "label": "Domain and social accounts you already own",
+     "placeholder": "brand.com, @brand…"
+    },
+    {
+     "id": "m12.deadline",
+     "kind": "text",
+     "label": "Deadlines: when does it need to be ready?",
+     "placeholder": "Launch in…",
+     "suggestions": [
+      "Launch in 3 months",
+      "Before the autumn season",
+      "No rush, we want it right",
+      "We have an event on"
+     ]
+    },
+    {
+     "id": "m12.kpi",
+     "kind": "list",
+     "count": 3,
+     "label": "What does success look like in 6 months? Three numbers to watch.",
+     "placeholder": "E.g. 50 new clients"
+    }
+   ]
+  }
+ ],
+ "workshop": {
+  "minutes": 90,
+  "agenda": [
+   {
+    "id": "w0",
+    "title": "Coffee and ground rules",
+    "minutes": 5,
+    "modules": [],
+    "goal": "What we do today and what we leave with: The Core, the archetype mix and the profiles."
+   },
+   {
+    "id": "w1",
+    "title": "The foundation",
+    "minutes": 15,
+    "modules": [
+     "m01",
+     "m02"
+    ],
+    "goal": "What we keep from what you've already said. How much of the brand is you."
+   },
+   {
+    "id": "w2",
+    "title": "People and positioning",
+    "minutes": 15,
+    "modules": [
+     "m03",
+     "m04"
+    ],
+    "goal": "First clients, who we turn away, the positioning sentence and the X factor."
+   },
+   {
+    "id": "w3",
+    "title": "Personality and archetype",
+    "minutes": 15,
+    "modules": [
+     "m05",
+     "m06"
+    ],
+    "goal": "Two archetypes and a percentage. The referee for design decisions."
+   },
+   {
+    "id": "w4",
+    "title": "Values and attributes",
+    "minutes": 12,
+    "modules": [
+     "m07",
+     "m08"
+    ],
+    "goal": "We vote. Three values with “always / never”, attributes 3 + 3."
+   },
+   {
+    "id": "w5",
+    "title": "Voice and visuals",
+    "minutes": 10,
+    "modules": [
+     "m09",
+     "m10"
+    ],
+    "goal": "How it sounds and how it feels. What we avoid at all costs."
+   },
+   {
+    "id": "w6",
+    "title": "Architecture and website",
+    "minutes": 10,
+    "modules": [
+     "m11",
+     "m12"
+    ],
+    "goal": "The order of priorities, the sub-brand calls, what the site does in 3 months."
+   },
+   {
+    "id": "w7",
+    "title": "Writing The Core",
+    "minutes": 8,
+    "modules": [],
+    "goal": "One sentence. What you offer, to whom, in what culture, in what voice, what it gives them, how they feel."
+   }
+  ],
+  "core": [
+   {
+    "id": "ofera",
+    "label": "What you offer",
+    "hint": "the category, said simply",
+    "from": [
+     "m04.category",
+     "m04.builder"
+    ]
+   },
+   {
+    "id": "cui",
+    "label": "To whom",
+    "hint": "your first clients, not everyone",
+    "from": [
+     "m03.profiles",
+     "m04.builder"
+    ]
+   },
+   {
+    "id": "cultura",
+    "label": "In what culture",
+    "hint": "the place, the pace, the values",
+    "from": [
+     "m07.values",
+     "m01.lang"
+    ]
+   },
+   {
+    "id": "voce",
+    "label": "In what voice",
+    "hint": "three words for how you sound",
+    "from": [
+     "m09.words",
+     "m05.sliders"
+    ]
+   },
+   {
+    "id": "impact",
+    "label": "What it gives them",
+    "hint": "the concrete benefit",
+    "from": [
+     "m04.builder",
+     "m08.rational"
+    ]
+   },
+   {
+    "id": "simt",
+    "label": "How they feel",
+    "hint": "the feeling they leave with",
+    "from": [
+     "m08.emotional",
+     "m08.after"
+    ]
+   },
+   {
+    "id": "x",
+    "label": "X factor",
+    "hint": "what you promise and others can't",
+    "from": [
+     "m04.xfactor"
+    ]
+   }
+  ]
+ },
+ "done": {
+  "title": "Prep done. See you in the studio.",
+  "body": "We have everything. We'll read it before we meet, and when we start working you'll find your answers already in The Core, right where they belong. The rest we do together, over a coffee, at Olari 9."
+ }
+}

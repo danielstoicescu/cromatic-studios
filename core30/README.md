@@ -21,3 +21,11 @@ Client reports (r294; generated in Ops, uploaded by the dashboard cron with the 
 - `GET /thecore30/<id>/raport?t=<client token>` and `/raport.pdf?t=` (403 without the token). The page can link its PDF as `raport.pdf` or `{{PDF_URL}}`; the token is added when it is served.
 - `POST /api/core30/admin/report-mail` `{id, note?}` → the branded mail to the session email (or whoever started a repo edition), RO/EN, bcc and reply-to hi@; returns `{ok, to (masked), sentAt}`.
 - `status.report = {available, version, uploadedAt, sentAt}`; the step log gets `report-uploaded` and `report-sent`.
+
+Two stages, the prep at home then the full Core (r313; details in `~/cromatic-core/schema.md` §7):
+
+- `POST /api/core30/admin/sessions` `{email, name, contact, edition: "pre", lang?}` (or `{edition: "blank", stage: "pre"}`) → a session in the pre stage: `configs/pre.json` (The Core · pregătire, 9 modules, ~51 min), the prep onboarding mail ("cam 45–60 de minute, acasă").
+- The client's **Trimite pregătirea** → `submits/pre-submit-<iso>.json`, `<data>/<id>/pre.json`, log `pre-submit`, mail to hi@, confirmation to the client.
+- `POST /api/core30/admin/sessions/upgrade` `{id, edition?, mail?}` → the same link opens the full Core, the answers from home prefilled and marked "completat de tine acasă"; `409` if already full.
+- `GET /api/core30/<id>/prefill?t=` (client token) feeds a device that has none of the pre answers.
+- `status.stage = "pre" | "full"`, `status.pre = {done, total, minutes, submitted, submittedAt, submits, items, upgradedAt}`; sessions list has `stage`, `upgradedAt`.
