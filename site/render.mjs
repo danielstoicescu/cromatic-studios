@@ -327,7 +327,7 @@ ${header(true)}
     <div class="wrap stats-in">
       ${/* TASK-139: four numbers, centred; each counts up as it comes into view (site.js, data-n), the infinity draws itself */ ""}<p class="st" style="--sc:var(--y)"><b data-n="${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}">${new Set(PROJECTS.filter((x) => x.page).map((x) => x.page)).size + 2}</b><span>Case studies, every one on the map</span></p>
       <p class="st" style="--sc:var(--g)"><b data-n="${Object.keys(STREETS).length}">${Object.keys(STREETS).length}</b><span>Streets, one for every industry</span></p>
-      <p class="st" style="--sc:#6cc4ff"><b data-n="4">4</b><span>Chapters: The Dream, The Voice, The World, The Crowd</span></p>
+      <p class="st" style="--sc:#6cc4ff"><b data-n="4">4</b><span>Steps, from strategy to growth</span></p>
       <p class="st st-inf" style="--sc:#ff8a78"><b>&infin;</b><span>Coffees. There is always a coffee.</span></p>
     </div>
   </section>
