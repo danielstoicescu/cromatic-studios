@@ -307,3 +307,6 @@
 .ofr-cp-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ofr-pk-r .ofr-price { width: 86px; }
 @media (max-width: 760px) { .ofr-ren-r { grid-template-columns: auto minmax(0, 1fr); } .ofr-pk-r { grid-template-columns: minmax(0, 1fr) auto; } .ofr-pk-r .ofr-step { grid-column: 1; justify-self: start; } }
+.ofr-streets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -6px 0 0; padding: 10px 14px; border: 1px dashed var(--g2); border-radius: 0 0 16px 16px; }
+.ofr-streets[hidden] { display: none; }
+.ofr-streets .mono { flex-basis: 100%; font-size: 10px; color: var(--muted); }

@@ -203,10 +203,20 @@
 
     // "Atașează prezentarea de proces": the offer opens with the whole Cromatic process deck, then the financial offer
     const pr = h("label", "ofr-proc"), prc = h("input"); prc.type = "checkbox"; prc.checked = !!cfg.includeProcess;
-    prc.onchange = () => { cfg.includeProcess = prc.checked; pr.classList.toggle("on", prc.checked); live(); };
+    prc.onchange = () => { cfg.includeProcess = prc.checked; pr.classList.toggle("on", prc.checked); stBox.hidden = !prc.checked; live(); };
     pr.classList.toggle("on", !!cfg.includeProcess);
     pr.append(prc, h("b", "", "Atașează prezentarea de proces"), h("small", "muted", "Oferta începe cu prezentarea procesului Cromatic (aceeași pentru toți), apoi oferta financiară. Clientul are buton „Vezi oferta financiară” sus și jos."));
-    form.append(pr);
+    // which portfolio streets the attached deck shows (Daniel, 28 Oct): all three by default
+    const STREETS = [["coffee", "Coffee Street"], ["fintech", "Fintech Boulevard"], ["medical", "Medical Avenue"]];
+    if (!Array.isArray(cfg.processStreets)) cfg.processStreets = STREETS.map(([k]) => k);
+    const stBox = h("div", "ofr-streets"); stBox.hidden = !cfg.includeProcess;
+    stBox.append(h("span", "mono", "Portofoliul din prezentare"));
+    for (const [k, t] of STREETS) {
+      const lb = h("label", "ofr-chip"), cb = h("input"); cb.type = "checkbox"; cb.checked = cfg.processStreets.includes(k);
+      cb.onchange = () => { const s0 = new Set(cfg.processStreets); if (cb.checked) s0.add(k); else s0.delete(k); cfg.processStreets = STREETS.map(([x]) => x).filter((x) => s0.has(x)); if (!cfg.processStreets.length) { cb.checked = true; cfg.processStreets = [k]; toast("Măcar o categorie rămâne în prezentare."); } live(); };
+      lb.append(cb, h("span", "", t)); stBox.append(lb);
+    }
+    form.append(pr, stBox);
     // 01 client
     const s1 = sec("01", "Clientul");
     const g1 = h("div", "ofr-g2");
@@ -516,7 +526,7 @@
     T.items.forEach((i, k) => { const r = h("div", "ofr-lv-i"); r.style.setProperty("--b", PH_COLORS[k % PH_COLORS.length]); const name = nm(cfg, i.key) + (i.key === "canvas" ? " ×" + i.q + " · " + money(i.price) + " " + PER_PIECE : ""); r.append(h("span", "", name)); const p = h("b", ""); if (i.line < i.baseLine) p.append(h("s", "", money(i.baseLine)), " "); p.append(money(i.line)); r.append(p); items.append(r); });
     T.specials.forEach((s) => { const r = h("div", "ofr-lv-i sp"); r.append(h("span", "", "★ " + s.title), h("b", "", money(s.price))); items.append(r); });
     const tot = h("div", "ofr-lv-tot"); tot.append(h("span", "mono", T.discount ? "Total · după reducere " + money(T.discount) : "Total proces"), h("b", "", money(T.total)));
-    if (cfg.includeProcess) box.append(h("div", "ofr-lv-proc", "▶ Prezentarea procesului Cromatic · apoi oferta financiară"));
+    if (cfg.includeProcess) box.append(h("div", "ofr-lv-proc", "▶ Prezentarea procesului Cromatic" + (Array.isArray(cfg.processStreets) && cfg.processStreets.length < 3 ? " · portofoliu: " + cfg.processStreets.map((k) => ({ coffee: "Coffee Street", fintech: "Fintech Boulevard", medical: "Medical Avenue" }[k] || k)).join(", ") : "") + " · apoi oferta financiară"));
     box.append(hero, items, tot);
     const TP = pkTotals(cfg);
     if (TP) {
