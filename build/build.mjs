@@ -994,6 +994,10 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
   const base = join(root, "site", "rapoarte");
   (function walk(d, rel) { let fs = []; try { fs = readdirSync(d); } catch { return; } for (const f of fs) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p, rel + f + "/"); else { mkdirSync(join(pub, "rapoarte", rel), { recursive: true }); copyFileSync(p, join(pub, "rapoarte", rel, f)); } } })(base, "");
 }
+// r322 (Daniel, 27 Oct): /prezentare/proces-<code>/, the studio's process as slides for live meetings (build/prezentare.mjs,
+// site/prezentare/). Private like /rapoarte/: written after the pass above (no footer, no cookie card, no GA4), never
+// in PAGES (no sitemap, no llms.txt), noindex in the page and in server.js's headers, linked from nowhere
+try { const { buildPrezentare } = await import("./prezentare.mjs"); await buildPrezentare({ root, pub, mediaMap, COVERS, canvases }); } catch (e) { console.warn("[build] prezentare skipped:", e.message); }
 // beta 3.1 (Daniel): "at the gloves with I O N", the Two Min Lab mini-game: its own page, /play/gloves/, with its own
 // script and styles (src/minigame.js + .css, minified, hashed), so the map's bundle does not carry it: the map opens
 // the page in its case frame only when the game is asked for. Written after the pass above: no footer, no cookie card
