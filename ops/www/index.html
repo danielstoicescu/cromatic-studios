@@ -192,6 +192,10 @@ tr:hover td { background: var(--soft-bg); }
 td.ti button { all: unset; cursor: pointer; font-weight: 600; }
 td.ti button:focus-visible { outline: 3px solid var(--ink); }
 .stat { display: inline-block; min-width: 100px; text-align: center; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--ink); font-weight: 700; font-size: 13px; }
+/* r327 (Daniel): every status label stays on one line */
+.stat, .lane-h span, .card .askfb, .card .working, .card .sent, .opt, .verdict, .mv .st, .need .kd, .lg span, .tag .t { white-space: nowrap; }
+.lane-h span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lane-h { gap: 8px; } .lane-h > span:first-child { font-size: clamp(13px, 1.05vw, 16px); }
 
 /* rail boxes */
 .box { background: var(--card); border: var(--line); box-shadow: var(--soft); border-radius: 24px; overflow: hidden; }
@@ -1717,7 +1721,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
 
   <section class="legend" id="legend" hidden aria-label="Legendă">
     <div class="lg"><b>Status</b>
-      <span><i class="c-decide"></i>De decis de tine</span><span><i class="c-open"></i>De făcut</span><span><i class="c-in-progress"></i>Claude lucrează la</span><span><i class="c-beta"></i>Claude done · need feedback</span>
+      <span><i class="c-decide"></i>De decis</span><span><i class="c-open"></i>De făcut</span><span><i class="c-in-progress"></i>Claude lucrează</span><span><i class="c-beta"></i>Claude done · need feedback</span>
       <span><i class="c-on-beta"></i>Trimis pe beta</span><span><i class="c-done"></i>Trimis pe live · ultimele 24 h</span><span><i class="c-celebrated"></i>yay! · pe live de peste o zi</span><span><i class="c-paused"></i>Pe pauză</span><span><i class="c-dropped"></i>Renunțat</span></div>
     <div class="lg"><b>Prioritate</b><span><span class="pr P0">P0</span> acum</span><span><span class="pr P1">P1</span> săptămâna asta</span><span><span class="pr P2">P2</span> când e loc</span><span><span class="pr P3">P3</span> când e timp</span></div>
     <div class="lg"><b>Zone</b><span><svg class="ic"><use href="#i-bulb"/></svg>Creative &amp; Growth</span><span><svg class="ic"><use href="#i-code"/></svg>Development</span><span><svg class="ic"><use href="#i-flag"/></svg>Management</span></div>
@@ -1996,7 +2000,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   const blobUrl = (a) => (window.__ops ? OPS_BLOB : "/_blob/" + a.id);
   const isImg = (a) => /^image\//.test(a.type || ""), isVid = (a) => /^video\//.test(a.type || "");
   const PRI = { P0: 0, P1: 1, P2: 2, P3: 3 };
-  const STATUS = [["decide", "De decis de tine"], ["open", "De făcut"], ["in-progress", "Claude lucrează la"], ["beta", "Claude done · need feedback"], ["on-beta", "Trimis pe beta"], ["done", "Trimis pe live"], ["paused", "Pe pauză"], ["dropped", "Renunțat"]];
+  const STATUS = [["decide", "De decis"], ["open", "De făcut"], ["in-progress", "Claude lucrează"], ["beta", "Claude done · need feedback"], ["on-beta", "Trimis pe beta"], ["done", "Trimis pe live"], ["paused", "Pe pauză"], ["dropped", "Renunțat"]];
   const LANE_SUB = { decide: "așteaptă o decizie sau o confirmare de la tine", open: "pregătite, încă nepornite", "in-progress": "în lucru acum la Claude sau la un agent", beta: "gata de la Claude: verifici și dai feedback", "on-beta": "pe beta.cromaticstudios.com, așteaptă să-l trimiți pe live", done: "pe cromaticstudios.com, în ultimele 24 h", paused: "oprite deocamdată", dropped: "nu se mai fac" };
   const SLAB = Object.fromEntries(STATUS); SLAB.celebrated = "yay!";
   const norm = (s) => (s === "needs-confirmation" || s === "needs-decision" ? "decide" : s || "open");
