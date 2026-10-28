@@ -36,10 +36,10 @@ index 4fad8e5..c75efb5 100644
  // r133: the Romanian website, from the English pages and site/i18n/ro.json
 diff --git a/build/megamenu.mjs b/build/megamenu.mjs
 new file mode 100644
-index 0000000..6f540bf
+index 0000000..2fda7ff
 --- /dev/null
 +++ b/build/megamenu.mjs
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,118 @@
 +// r365 (Daniel, 28 Oct; beta only, through beta/nav2.patch): the Street Index as the header's mega menu. "Work" in the
 +// website's header opens it: the sentence filter and the search on top, Coffee Street, Fintech Boulevard and Medical
 +// Avenue in three columns, The Shortest Shortcut as a row along the bottom, and a preview of the brand you point at
@@ -89,16 +89,16 @@ index 0000000..6f540bf
 +    if (page && !gal[page]) gal[page] = caseGallery(pub, page, 6);
 +    return [...new Set([cover, ...((page && gal[page]) || [])].filter(Boolean))].slice(0, 4).map((u) => pair(at(u, 960), at(u, 480))).join(" ");
 +  };
-+  const item = (s, id, { name, cat, desc, poster, href, cover, page, wip, ch, extra = "" }) => {
++  const item = (s, id, { name, cat, desc, poster, href, cover, page, wip, ch, c, extra = "" }) => {
 +    const ps = pics(cover, page), t0 = ps.split(" ")[0], th = !ps ? "" : t0.includes(",") ? t0.split(",")[1] : `/assets/w/${t0.split(".")[0]}-${t0.split(".")[2]}.webp`;
 +    const q = [name, cat, poster, s.street, extra].join(" ").toLowerCase().replace(/\s+/g, " ").trim();
-+    return `<li><a class="mm-i" href="${href}" data-id="${id}" data-ch="${ch}" data-q="${esc(q)}" data-pics="${esc(ps)}"${page ? "" : ' data-nocase=""'} aria-describedby="mmd-${id}">`
++    return `<li><a class="mm-i" href="${href}" data-id="${id}" data-ch="${ch}" data-q="${esc(q)}" data-pics="${esc(ps)}" data-c="${esc(/^#[0-9a-f]{3,8}$/i.test(c || "") ? c : s.col)}"${page ? "" : ' data-nocase=""'} aria-describedby="mmd-${id}">`
 +      + `<span class="mm-th" aria-hidden="true">${th ? `<img alt="" data-src="${th}" decoding="async">` : ""}</span>`
 +      + `<span class="mm-t"><span class="mm-nm">${esc(name)}</span>${wip ? ` <span class="mm-wip mono">Work in progress</span>` : ""}<span class="mm-ct mono">${esc(cat)}</span></span>`
 +      + `<span class="mm-d" id="mmd-${id}" hidden>${esc(desc)}</span></a></li>`;
 +  };
 +  const street = (s, si) => {
-+    const rows = s.list.map((p, i) => item(s, `${s.k}${pad(i + 1)}`, { name: p.name, cat: p.cat, desc: p.desc, poster: p.poster, href: p.page ? `/work/${p.page}/` : `/site/#street-${s.k.toLowerCase()}`, cover: p.cover, page: p.page, wip: p.wip, ch: chaptersOf(p).join(" ") }));
++    const rows = s.list.map((p, i) => item(s, `${s.k}${pad(i + 1)}`, { name: p.name, cat: p.cat, desc: p.desc, poster: p.poster, href: p.page ? `/work/${p.page}/` : `/site/#street-${s.k.toLowerCase()}`, cover: p.cover, page: p.page, wip: p.wip, c: p.c, ch: chaptersOf(p).join(" ") }));
 +    if (s.zd.length) {
 +      const first = s.zd.find((b) => b.page && b.cover);
 +      rows.push(item(s, `${s.k}zd`, { name: W.yard(s.zd.length), cat: "Beauty & Supplement Park", desc: s.zd.map((b) => b.name).join(", "), poster: "", href: s.slug ? `/industries/${s.slug}/` : `/site/#street-${s.k.toLowerCase()}`, cover: first?.cover, page: first?.page, ch: "voice world crowd", extra: "zdrovit " + s.zd.map((b) => `${b.name} ${b.line}`).join(" ") }));
@@ -124,7 +124,7 @@ index 0000000..6f540bf
 +<div class="mm-grid">
 +${streets.map(street).join("\n")}
 +<aside class="mm-pv" aria-hidden="true">
-+<a class="mm-cv" href="/site/#work" tabindex="-1"><img class="mm-im" alt="" decoding="async"><img class="mm-im" alt="" decoding="async"></a>
++<a class="mm-cv" href="/site/#work" tabindex="-1"><img class="mm-lq" alt="" decoding="async"><img class="mm-im" alt="" decoding="async"><img class="mm-im" alt="" decoding="async"></a>
 +<div class="mm-gal"></div>
 +<p class="mm-pk mono"><span class="mm-pst"></span> <span class="mm-pnum"></span></p>
 +<p class="mm-pn"></p>
@@ -142,7 +142,8 @@ index 0000000..6f540bf
 +
 +  let n = 0;
 +  // the header: "Work" becomes the menu's button (the link stays for a page without the script), the phone menu
-+  // gets the same button, and the menu itself sits at the end of the header
++  // gets the same button, and the menu itself sits right after the header (r371: not inside it; the header's
++  // backdrop-filter made it the panel's containing block, so the panel travelled with the header)
 +  const inject = (page) => {
 +    if (!page.includes('<header class="hdr">') || page.includes('id="mm"')) return page;
 +    const btn = (cls) => `<button class="mm-btn${cls}" type="button" aria-expanded="false" aria-controls="mm" aria-haspopup="dialog"><span>Work</span><i aria-hidden="true"></i></button>`;
@@ -152,7 +153,8 @@ index 0000000..6f540bf
 +    const i = out.indexOf("</header>", out.indexOf('<header class="hdr">'));
 +    if (i < 0 || !out.includes('class="mm-btn')) return page;
 +    n++;
-+    return out.slice(0, i) + html + "\n" + out.slice(i);
++    const j = i + "</header>".length;
++    return out.slice(0, j) + "\n" + html + out.slice(j);
 +  };
 +  return { inject, count: () => n, total, bytes: html.length };
 +}
@@ -260,10 +262,10 @@ index d852e9f..e2822ff 100644
 \ No newline at end of file
 diff --git a/site/megamenu.css b/site/megamenu.css
 new file mode 100644
-index 0000000..b496546
+index 0000000..267b778
 --- /dev/null
 +++ b/site/megamenu.css
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,184 @@
 +/* r365 (beta) · the header's mega menu: the Street Index under "Work" (build/megamenu.mjs, site/megamenu.js).
 +   Paper, ink, one yellow; the brands' pictures lead, each street keeps its colour as a small square and an underline. */
 +.mm-btn { display: none; }
@@ -274,12 +276,14 @@ index 0000000..b496546
 +.js .nav .mm-alt, .js .mnav .mm-alt { display: none; }
 +.mm[hidden], .mm-scrim[hidden] { display: none !important; }
 +
-+/* the panel: under the header, as wide as the screen; the header is its containing block (backdrop-filter) */
-+.mm { position: fixed; z-index: 2; top: 100%; left: 0; right: 0; height: calc(100vh - var(--mm-top, 72px)); height: calc(100dvh - var(--mm-top, 72px)); pointer-events: none; }
++/* the panel: under the header, as wide as the screen. r371: it sits after the header (not in it) and is fixed to the
++   screen at the header's bottom (--mm-top, measured on open), above everything on the page (the sticky street bar,
++   the wall, the cards); the header (z 50) stays above the scrim, so "Work" is never covered */
++.mm { position: fixed; z-index: 58; top: var(--mm-top, 72px); left: 0; right: 0; height: calc(100vh - var(--mm-top, 72px)); height: calc(100dvh - var(--mm-top, 72px)); pointer-events: none; }
 +.mm-scroll { pointer-events: auto; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border-bottom: 1px solid var(--ink); outline: 0;
 +  clip-path: inset(0 0 100% 0); transition: clip-path .18s var(--eoq); }
 +.mm.open .mm-scroll { clip-path: inset(0 0 -2px 0); }
-+.mm-scrim { position: fixed; z-index: 1; top: 100%; left: 0; right: 0; height: 100vh; background: rgba(13,12,9,.34); opacity: 0; transition: opacity .16s var(--eoq); }
++.mm-scrim { position: fixed; z-index: 57; top: var(--mm-top, 72px); left: 0; right: 0; bottom: 0; background: rgba(13,12,9,.34); opacity: 0; transition: opacity .16s var(--eoq); }
 +.mm.open + .mm-scrim { opacity: 1; }
 +.mm-in { width: min(1440px, 100% - 64px); margin-inline: auto; padding: 26px 0 22px; }
 +.mm-in { opacity: 0; transform: translateY(-6px); transition: opacity .14s var(--eoq), transform .18s var(--eoq); }
@@ -369,6 +373,10 @@ index 0000000..b496546
 +.mm-cv::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--sc, var(--y)); }
 +.mm-im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.02); transition: opacity .16s var(--eoq), transform .2s var(--eoq); }
 +.mm-im.on { opacity: 1; transform: none; }
++/* r371: the brand's small cover, blurred, under its real one; on a switch the last brand's pictures go with no fade */
++.mm-lq { position: absolute; inset: -12px; width: calc(100% + 24px); height: calc(100% + 24px); object-fit: cover; filter: blur(10px); opacity: 0; transition: opacity .12s var(--eoq); }
++.mm-lq.on { opacity: 1; }
++.mm-pv.cut .mm-im, .mm-pv.cut .mm-lq { transition: none !important; }
 +.mm-gal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; min-height: 0; }
 +.mm-gal button { padding: 0; border: 0; aspect-ratio: 4 / 3; background: #ebe8df; overflow: hidden; cursor: pointer; opacity: .55; transition: opacity .12s; }
 +.mm-gal button.on, .mm-gal button:hover { opacity: 1; }
@@ -382,7 +390,9 @@ index 0000000..b496546
 +.mm-pv:not(.case) .mm-go-case, .mm-pv.case .mm-go-st { display: none; }
 +.mm-foot { display: flex; justify-content: flex-end; align-items: center; gap: 24px; margin-top: 18px !important; padding-top: 14px; border-top: 1px solid rgba(13,12,9,.12); font-weight: 700; font-size: 15px; }
 +.mm-foot a { text-decoration: none; background: linear-gradient(var(--ink), var(--ink)) 0 100% / 100% 1.5px no-repeat; padding-bottom: 2px; }
-+html.mm-lock, html.mm-lock body { overflow: hidden; }
++/* r371: only the root is locked. overflow: hidden on body too made body the header's scroller, so the sticky header
++   (and the panel with it) snapped back to the top of the page as soon as the menu opened anywhere below it */
++html.mm-lock { overflow: hidden; }
 +
 +@media (max-width: 1180px) and (min-width: 861px) {
 +  .mm-in { width: calc(100% - 40px); }
@@ -396,7 +406,7 @@ index 0000000..b496546
 +  .mnav .mm-btn { display: none; }
 +  .js .mnav .mm-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 8px 0; border: 0; border-bottom: 1px solid rgba(13,12,9,.08); background: none; color: var(--ink); font: 800 22px/1.6 var(--f); text-align: left; cursor: pointer; }
 +  .mnav .mm-btn i { width: 10px; height: 10px; border-width: 0 2.5px 2.5px 0; transform: rotate(-45deg); margin-right: 6px; }
-+  .mm { top: 0; height: 100vh; height: 100dvh; z-index: 5; }
++  .mm { top: 0; height: 100vh; height: 100dvh; z-index: 58; }
 +  .mm-scroll { height: 100%; max-height: none; border: 0; box-shadow: none; clip-path: none; transform: translateY(16px); opacity: 0; transition: transform .2s var(--eoq), opacity .14s var(--eoq); }
 +  .mm.open .mm-scroll { clip-path: none; transform: none; opacity: 1; }
 +  .mm-scrim { display: none !important; }
@@ -436,16 +446,16 @@ index 0000000..b496546
 +}
 +@media (prefers-reduced-motion: reduce) {
 +  .mm-scroll, .mm.open .mm-scroll { clip-path: none !important; transform: none !important; opacity: 1 !important; transition: none !important; }
-+  .mm-in, .mm-im, .mm-i, .mm-i::before, .mm-scrim { transition: none !important; transform: none !important; }
++  .mm-in, .mm-im, .mm-lq, .mm-i, .mm-i::before, .mm-scrim { transition: none !important; transform: none !important; }
 +  .mm-in { opacity: 1; }
 +}
 +.mm.filtering .mm-grid .mm-i { color: var(--ink); }
 diff --git a/site/megamenu.js b/site/megamenu.js
 new file mode 100644
-index 0000000..5770e0d
+index 0000000..ba24ab1
 --- /dev/null
 +++ b/site/megamenu.js
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,261 @@
 +// r365 (beta) · the header's mega menu, the Street Index under "Work" (build/megamenu.mjs writes it, megamenu.css draws it).
 +// Opens on a click, or on a resting pointer over "Work" on a desktop; Esc, the scrim or the round button close it and the
 +// focus goes back to the button. Inside: Tab stays in the menu, the arrows walk the names, a name shows its brand in the
@@ -469,6 +479,7 @@ index 0000000..5770e0d
 +
 +  const load = (img) => { if (img && !img.src && img.dataset.src) img.src = img.dataset.src; };
 +  const boot = () => { if (booted) return; booted = true; if (PHONE.matches) lazyRails(); };
++  let warmed = false;
 +  // on a phone the rails' covers load as they come near (vertical and sideways)
 +  let io = null;
 +  const lazyRails = () => {
@@ -477,27 +488,63 @@ index 0000000..5770e0d
 +    $$(".mm-th img").forEach((i) => !i.src && io.observe(i));
 +  };
 +
-+  // the preview: the cover (two layers that cross-fade), the gallery, the words
-+  const ims = $$(".mm-im", pv), gal = $(".mm-gal", pv), cv = $(".mm-cv", pv);
-+  let layer = 0, want = "";
-+  const showPic = (u) => {
-+    if (!u || want === u) return; want = u;
-+    const nx = ims[layer ^ 1], go = () => { if (want !== u) return; nx.classList.add("on"); ims[layer].classList.remove("on"); layer ^= 1; };
-+    if (nx.getAttribute("src") === u && nx.complete) { go(); return; }
-+    nx.onload = nx.onerror = () => { nx.onload = nx.onerror = null; go(); };
-+    nx.src = u;
++  // r371 pictures, ready before they are needed and never another brand's: a small cache of decoded images
++  // (new Image + decode, fetchpriority on the one wanted now). Nothing is asked for before the menu first opens.
++  const cache = new Map(); // url -> { img, ok: promise, done }
++  const get = (u, prio = "auto") => {
++    if (!u) return null;
++    let c = cache.get(u);
++    if (c) { cache.delete(u); cache.set(u, c); return c; } // most recent last
++    const img = new Image(); img.decoding = "async"; try { img.fetchPriority = prio; } catch {}
++    c = { img, done: false };
++    img.src = u;
++    c.ok = (img.decode ? img.decode() : new Promise((r, j) => { img.onload = r; img.onerror = j; })).then(() => { c.done = true; return u; });
++    c.ok.catch(() => cache.delete(u));
++    cache.set(u, c);
++    if (cache.size > 120) { const k = cache.keys().next().value; cache.delete(k); } // the browser keeps its own copy
++    return c;
++  };
++  const picsOf = (a) => (a.dataset.pics || "").split(" ").filter(Boolean).map((x) => x.includes(",") ? x.split(",") : ((h, b, sm) => [`/assets/w/${h}-${b}.webp`, `/assets/w/${h}-${sm}.webp`])(...x.split(".")));
++  // on open: the 480 covers of what is on screen (small); on a name: its 960 cover and gallery, its neighbours' covers
++  const warmCovers = () => visible().forEach((a) => { const p = picsOf(a)[0]; p && get(p[1], "low"); });
++  const warm = (a) => {
++    if (!a || PHONE.matches) return;
++    const ps = picsOf(a); if (!ps.length) return;
++    get(ps[0][0], "high"); ps.forEach((p) => get(p[1]));
++    const vs = visible(), i = vs.indexOf(a);
++    [vs[i - 1], vs[i + 1]].forEach((n) => { const q = n && picsOf(n)[0]; q && get(q[0], "low"); });
++    get(ps[0][0]).ok.then(() => ps.slice(1).forEach((p) => get(p[0], "low")), () => {});
++  };
++
++  // the preview: on a new brand its own colour at once (and its small cover, blurred, if it is already here), then its
++  // cover fades in once decoded, only if that brand is still the one pointed at (tok); within a brand the gallery's
++  // pictures cross-fade on the two layers
++  const ims = $$(".mm-im", pv), lq = $(".mm-lq", pv), gal = $(".mm-gal", pv), cv = $(".mm-cv", pv);
++  let layer = 0, want = "", tok = 0;
++  const showPic = (u, fresh) => {
++    if (!u || (want === u && !fresh)) return; want = u;
++    const t = tok, c = get(u, "high"), nx = ims[layer ^ 1];
++    const go = () => { if (want !== u || t !== tok) return; nx.src = u; const put = () => { if (want !== u || t !== tok) return; nx.classList.add("on"); ims[layer].classList.remove("on"); layer ^= 1; }; nx.decode ? nx.decode().then(put, put) : put(); };
++    if (c.done) go(); else c.ok.then(go, () => {});
 +  };
 +  const preview = (a) => {
 +    if (!a || a === cur) return;
 +    if (cur) cur.classList.remove("on");
 +    cur = a; a.classList.add("on");
 +    if (PHONE.matches || getComputedStyle(pv).display === "none") return;
-+    const st = a.closest(".mm-st"), list = $$(".mm-i:not([hidden])", st).filter((x) => !x.closest("li").hidden);
-+    const pics = (a.dataset.pics || "").split(" ").filter(Boolean).map((x) => x.includes(",") ? x.split(",") : ((h, b, sm) => [`/assets/w/${h}-${b}.webp`, `/assets/w/${h}-${sm}.webp`])(...x.split(".")));
++    const t = ++tok, st = a.closest(".mm-st"), list = $$(".mm-i:not([hidden])", st).filter((x) => !x.closest("li").hidden);
++    const pics = picsOf(a);
++    warm(a);
++    // the last brand's pictures go at once (no fade out), its colour and small cover take the frame
++    pv.classList.add("cut"); ims.forEach((i) => i.classList.remove("on")); lq.classList.remove("on"); want = "";
++    cv.style.backgroundColor = a.dataset.c || "";
++    const small = pics[0] && get(pics[0][1]);
++    if (small) { const sh = () => { if (t !== tok) return; lq.src = pics[0][1]; const put = () => t === tok && lq.getAttribute("src") === pics[0][1] && lq.classList.add("on"); lq.decode ? lq.decode().then(put, put) : put(); }; small.done ? sh() : small.ok.then(sh, () => {}); }
++    pv.getBoundingClientRect(); pv.classList.remove("cut");
 +    pv.style.setProperty("--sc", st.style.getPropertyValue("--sc"));
 +    cv.href = a.getAttribute("href");
 +    pv.classList.toggle("case", !a.hasAttribute("data-nocase"));
-+    showPic(pics[0] ? pics[0][0] : "");
++    showPic(pics[0] ? pics[0][0] : "", true);
 +    gal.innerHTML = pics.length > 1 ? pics.map((p, j) => `<button type="button" tabindex="-1" class="${j ? "" : "on"}"><img src="${p[1]}" alt="" decoding="async"></button>`).join("") : "";
 +    $$("button", gal).forEach((b, j) => { const on = () => { showPic(pics[j][0]); $$("button", gal).forEach((x) => x.classList.toggle("on", x === b)); }; b.addEventListener("mouseenter", on); b.addEventListener("click", on); });
 +    $(".mm-pst", pv).textContent = $(".mm-sn", st).textContent;
@@ -519,10 +566,11 @@ index 0000000..5770e0d
 +    if (mn && mn.classList.contains("open")) { mn.classList.remove("open"); mb && mb.setAttribute("aria-expanded", "false"); }
 +    boot(); setTop();
 +    const w = lockW(); if (w > 0) { root.style.setProperty("--mm-sb", w + "px"); d.body.style.paddingRight = w + "px"; }
-+    root.classList.add("mm-lock");
++    root.classList.add("mm-lock"); setTop();
 +    mm.hidden = false; scrim.hidden = false;
 +    btns.forEach((b) => b.setAttribute("aria-expanded", "true"));
 +    if (!cur || cur.closest("li").hidden) preview(visible()[0]); else { const c = cur; cur = null; preview(c); }
++    if (!warmed && !PHONE.matches) { warmed = true; requestAnimationFrame(warmCovers); }
 +    mm.getBoundingClientRect(); // the closed state is laid out, so the opening animates
 +    requestAnimationFrame(() => mm.classList.add("open"));
 +    // on a phone the sheet is a screen of its own: the back gesture closes it instead of leaving the page
