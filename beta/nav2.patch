@@ -1,8 +1,17 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index 4fad8e5..b797a72 100644
+index 4fad8e5..c75efb5 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
-@@ -516,7 +516,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
+@@ -409,6 +409,8 @@ const A = (name) => {
+ };
+ const siteSrc = (f) => join(root, "site", f);
+ let siteCss = readFileSync(siteSrc("site.css"), "utf8"), siteJs = readFileSync(siteSrc("site.js"), "utf8");
++// r365 (beta): the header's mega menu (the Street Index as "Work"), its own files, carried by the site's stylesheet and script
++for (const [f, k] of [["megamenu.css", "css"], ["megamenu.js", "js"]]) { try { const t = readFileSync(siteSrc(f), "utf8"); if (k === "css") siteCss += "\n" + t; else siteJs += "\n" + t; } catch {} }
+ try {
+   const { transformSync } = await import("esbuild");
+   siteCss = transformSync(siteCss, { loader: "css", minify: true }).code;
+@@ -516,7 +518,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
  const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
@@ -11,6 +20,637 @@ index 4fad8e5..b797a72 100644
  const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
+@@ -779,6 +781,13 @@ for (const sl of R.serviceSlugs) page(`services/${sl}`, R.servicePage(sl, COVERS
+ page("team", R.teamPage());
+ // r136: the privacy policy (EN here, RO through the dictionary)
+ page("privacy", R.privacyPage());
++// r365 (beta): the mega menu goes into every English page with the site header, before the Romanian pass translates it
++try {
++  const { makeMegaMenu } = await import("./megamenu.mjs");
++  const MM = makeMegaMenu({ root, pub, R, COVERS });
++  for (const p of Object.keys(PAGES)) { const f = join(pub, p, "index.html"); try { const t = readFileSync(f, "utf8"), o = MM.inject(t); if (o !== t) writeFileSync(f, o); } catch {} }
++  console.log(`[megamenu] ${MM.count()} pages, ${MM.total} places, ${(MM.bytes / 1024).toFixed(1)} KB of markup each`);
++} catch (e) { console.warn("[build] megamenu skipped:", e.message); }
+ const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/", "/privacy/"];
+ const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`).sort();
+ // r133: the Romanian website, from the English pages and site/i18n/ro.json
+diff --git a/build/megamenu.mjs b/build/megamenu.mjs
+new file mode 100644
+index 0000000..d4876aa
+--- /dev/null
++++ b/build/megamenu.mjs
+@@ -0,0 +1,116 @@
++// r365 (Daniel, 28 Oct; beta only, through beta/nav2.patch): the Street Index as the header's mega menu. "Work" in the
++// website's header opens it: the sentence filter and the search on top, Coffee Street, Fintech Boulevard and Medical
++// Avenue in three columns, The Shortest Shortcut as a row along the bottom, and a preview of the brand you point at
++// (its cover and a mini gallery). On a phone it is a full-screen sheet: the filter, then each street as a rail of covers.
++// Written into every English page that carries the site header, after the case pages exist (their pictures make the
++// galleries) and before the Romanian pass (so site/i18n/ro.json translates it and ro.missing.json lists what it lacks).
++// Its look and behaviour: site/megamenu.css + site/megamenu.js, appended to the site's own stylesheet and script.
++// Pictures: nothing loads until the menu opens; every picture is a small WebP copy from site/.img-cache (480 for the
++// lists and the gallery, 960 for the preview), the original only when no copy exists.
++import { readFileSync, existsSync, copyFileSync, mkdirSync } from "node:fs";
++import { join } from "node:path";
++import { createHash } from "node:crypto";
++import { chaptersOf, caseGallery, SI_WORDS } from "./streetindex.mjs";
++
++const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
++const pad = (n) => String(n).padStart(2, "0");
++
++export function makeMegaMenu({ root, pub, R, COVERS }) {
++  const cache = join(root, "site", ".img-cache");
++  const sized = new Map();
++  // the picture at about `w` px wide: the image pass's own copy (same content hash, same name), else the file itself
++  const at = (src, w) => {
++    if (!src || !src.startsWith("/assets/")) return src || "";
++    const key = src + "@" + w;
++    if (sized.has(key)) return sized.get(key);
++    let out = src;
++    try {
++      const h = createHash("sha1").update(readFileSync(join(pub, src))).digest("hex").slice(0, 12);
++      for (const ww of w <= 480 ? [480, 960] : [960, 1600, 480]) {
++        const name = [`${h}-${ww}.webp`, `${h}-${ww}s.webp`].find((n) => existsSync(join(cache, n)));
++        if (!name) continue;
++        mkdirSync(join(pub, "assets", "w"), { recursive: true });
++        if (!existsSync(join(pub, "assets", "w", name))) copyFileSync(join(cache, name), join(pub, "assets", "w", name));
++        out = `/assets/w/${name}`; break;
++      }
++    } catch {}
++    sized.set(key, out);
++    return out;
++  };
++  // a picture's two sizes; the image pass's copies (same hash, two widths) as one short token, "hash.960.480"
++  const pair = (big, small) => { const a = /^\/assets\/w\/([0-9a-f]{12})-(\w+)\.webp$/.exec(big), b = /^\/assets\/w\/([0-9a-f]{12})-(\w+)\.webp$/.exec(small); return a && b && a[1] === b[1] ? `${a[1]}.${a[2]}.${b[2]}` : `${big},${small}`; };
++  const W = SI_WORDS.en;
++  const streets = R.workStreets(COVERS);
++  const total = streets.reduce((n, s) => n + s.list.length + (s.zd.length ? 1 : 0), 0);
++  const gal = {};
++  const pics = (cover, page) => {
++    if (page && !gal[page]) gal[page] = caseGallery(pub, page, 6);
++    return [...new Set([cover, ...((page && gal[page]) || [])].filter(Boolean))].slice(0, 4).map((u) => pair(at(u, 960), at(u, 480))).join(" ");
++  };
++  const item = (s, id, { name, cat, desc, poster, href, cover, page, wip, ch, extra = "" }) => {
++    const ps = pics(cover, page), t0 = ps.split(" ")[0], th = !ps ? "" : t0.includes(",") ? t0.split(",")[1] : `/assets/w/${t0.split(".")[0]}-${t0.split(".")[2]}.webp`;
++    const q = [name, cat, poster, s.street, extra].join(" ").toLowerCase().replace(/\s+/g, " ").trim();
++    return `<li><a class="mm-i" href="${href}" data-id="${id}" data-ch="${ch}" data-q="${esc(q)}" data-pics="${esc(ps)}"${page ? "" : ' data-nocase=""'} aria-describedby="mmd-${id}">`
++      + `<span class="mm-th" aria-hidden="true">${th ? `<img alt="" data-src="${th}" decoding="async">` : ""}</span>`
++      + `<span class="mm-t"><span class="mm-nm">${esc(name)}</span>${wip ? ` <span class="mm-wip mono">Work in progress</span>` : ""}<span class="mm-ct mono">${esc(cat)}</span></span>`
++      + `<span class="mm-d" id="mmd-${id}" hidden>${esc(desc)}</span></a></li>`;
++  };
++  const street = (s, si) => {
++    const rows = s.list.map((p, i) => item(s, `${s.k}${pad(i + 1)}`, { name: p.name, cat: p.cat, desc: p.desc, poster: p.poster, href: p.page ? `/work/${p.page}/` : `/site/#street-${s.k.toLowerCase()}`, cover: p.cover, page: p.page, wip: p.wip, ch: chaptersOf(p).join(" ") }));
++    if (s.zd.length) {
++      const first = s.zd.find((b) => b.page && b.cover);
++      rows.push(item(s, `${s.k}zd`, { name: W.yard(s.zd.length), cat: "Beauty & Supplement Park", desc: s.zd.map((b) => b.name).join(", "), poster: "", href: s.slug ? `/industries/${s.slug}/` : `/site/#street-${s.k.toLowerCase()}`, cover: first?.cover, page: first?.page, ch: "voice world crowd", extra: "zdrovit " + s.zd.map((b) => `${b.name} ${b.line}`).join(" ") }));
++    }
++    const n = s.list.length + (s.zd.length ? 1 : 0);
++    return `<section class="mm-st${s.k === "D" ? " mm-row" : ""}" data-k="${s.k}" style="--sc:${s.col}" aria-labelledby="mmh-${s.k}">
++<div class="mm-sh"><span class="mm-no mono" aria-hidden="true">${pad(si + 1)}</span><h2 class="mm-sn" id="mmh-${s.k}">${esc(s.street)}</h2><span class="mm-sc mono" data-n="${n}">${pad(n)}</span></div>
++<ul class="mm-ul">${rows.join("")}</ul>
++<p class="mm-none mono" hidden>Nothing here for that</p>
++</section>`;
++  };
++  const opt = (v, l) => `<option value="${v}">${esc(l)}</option>`;
++  const html = `<div class="mm" id="mm" role="dialog" aria-modal="true" aria-labelledby="mm-title" data-total="${total}" hidden>
++<div class="mm-scroll" tabindex="-1">
++<div class="mm-in">
++<div class="mm-top"><p class="mm-k mono" id="mm-title">The Street Index</p><button class="mm-x" type="button" aria-label="Close the menu"><i aria-hidden="true"></i></button></div>
++<form class="mm-f" role="search" action="/site/#work">
++<p class="mm-sent"><span class="mm-dim">${W.show}</span> <label class="mm-sel"><span class="mm-sr">${W.show}</span><select name="ch">${opt("", W.all)}${Object.entries(W.chapters).map(([v, l]) => opt(v, l)).join("")}</select></label> <span class="mm-dim">${W.on}</span> <label class="mm-sel"><span class="mm-sr">${W.on}</span><select name="st">${opt("", W.every)}${streets.map((s) => opt(s.k, s.street)).join("")}</select></label></p>
++<span class="mm-opts" hidden><span data-v="ch:">${W.all}</span>${Object.entries(W.chapters).map(([v, l]) => `<span data-v="ch:${v}">${esc(l)}</span>`).join("")}<span data-v="st:">${W.every}</span></span>
++<div class="mm-tools"><label class="mm-search"><span class="mm-sr">${W.searchLabel}</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg><input type="search" name="q" placeholder="${esc(W.search)}" autocomplete="off" spellcheck="false" enterkeyhint="go"><button type="button" class="mm-clear mono" hidden>${W.clear}</button></label>
++<p class="mm-count" aria-live="polite"></p></div>
++</form>
++<div class="mm-grid">
++${streets.map(street).join("\n")}
++<aside class="mm-pv" aria-hidden="true">
++<a class="mm-cv" href="/site/#work" tabindex="-1"><img class="mm-im" alt="" decoding="async"><img class="mm-im" alt="" decoding="async"></a>
++<div class="mm-gal"></div>
++<p class="mm-pk mono"><span class="mm-pst"></span> <span class="mm-pnum"></span></p>
++<p class="mm-pn"></p>
++<p class="mm-pc mono"></p>
++<p class="mm-pd"></p>
++<p class="mm-pgo"><span class="mm-go-case">Open the case</span><span class="mm-go-st">See it on its street</span> <span aria-hidden="true">→</span></p>
++</aside>
++</div>
++<p class="mm-empty mono" hidden>Nothing for that yet. Try a client, a field or a street.</p>
++<p class="mm-foot"><span class="mm-hint mono">Point at a name to see the work</span><a href="/site/#work">Every project, street by street <span aria-hidden="true">→</span></a></p>
++</div>
++</div>
++</div>
++<div class="mm-scrim" hidden></div>`;
++
++  let n = 0;
++  // the header: "Work" becomes the menu's button (the link stays for a page without the script), the phone menu
++  // gets the same button, and the menu itself sits at the end of the header
++  const inject = (page) => {
++    if (!page.includes('<header class="hdr">') || page.includes('id="mm"')) return page;
++    const btn = (cls) => `<button class="mm-btn${cls}" type="button" aria-expanded="false" aria-controls="mm" aria-haspopup="dialog"><span>Work</span><i aria-hidden="true"></i></button>`;
++    let out = page
++      .replace(/(<nav class="nav" aria-label="Main">\s*)<a href="((?:\/site\/)?#work)">Work<\/a>/, (m, a, h) => `${a}${btn("")}<a class="mm-alt" href="${h}">Work</a>`)
++      .replace(/(<nav id="mnav" class="mnav" aria-label="Mobile">\s*)<a href="((?:\/site\/)?#work)">Work<\/a>/, (m, a, h) => `${a}${btn(" mm-mb")}<a class="mm-alt" href="${h}">Work</a>`);
++    const i = out.indexOf("</header>", out.indexOf('<header class="hdr">'));
++    if (i < 0 || !out.includes('class="mm-btn')) return page;
++    n++;
++    return out.slice(0, i) + html + "\n" + out.slice(i);
++  };
++  return { inject, count: () => n, total, bytes: html.length };
++}
+diff --git a/build/streetindex.mjs b/build/streetindex.mjs
+index 5928447..2f04fa1 100644
+--- a/build/streetindex.mjs
++++ b/build/streetindex.mjs
+@@ -17,16 +17,32 @@ export const SI_PATHS = ["/streetindex/", "/ro/streetindex/"];
+ 
+ const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+ const pad = (n) => String(n).padStart(2, "0");
+-const STREET_SLUG = { A: "coffee-street", B: "fintech-boulevard", C: "medical-avenue", D: "the-shortest-shortcut" };
++export const STREET_SLUG = { A: "coffee-street", B: "fintech-boulevard", C: "medical-avenue", D: "the-shortest-shortcut" };
+ 
+ // the four filter chapters, read from each project's fields (data.mjs has no chapters[] yet, see brief §7.4)
+-const CH = {
++export const CH = {
+   dream: /strateg|position|naming|persona|brand universe|workshop/i,
+   voice: /brand|identit|logo|label|visual|design/i,
+   world: /web|site|app|packag|box|film|video|product|merch|print|sticker|ui\b|ux|3d|label|tv/i,
+   crowd: /content|social|growth|campaign|communicat|photo|ads|motion|smart tv|event|festival|pr\b/i
+ };
+-const chaptersOf = (p) => Object.keys(CH).filter((k) => CH[k].test(`${p.cat} ${p.desc}`));
++export const chaptersOf = (p) => Object.keys(CH).filter((k) => CH[k].test(`${p.cat} ${p.desc}`));
++
++// the media of each built case page: its hero first, then its pictures, in page order (logos and small pictures out).
++// Shared with the header's mega menu (build/megamenu.mjs), which reads the same case pages before the image pass
++export const caseGallery = (pub, page, max = 6) => {
++  const f = join(pub, "work", page, "index.html");
++  if (!existsSync(f)) return [];
++  const html = readFileSync(f, "utf8").split('class="c2-next"')[0], out = []; // not the "Next case" picture at the end
++  for (const tag of html.match(/<img\b[^>]*>/g) || []) {
++    const src = (/data-lz-src="([^"]+)"/.exec(tag) || /\ssrc="(\/[^"]+)"/.exec(tag) || [])[1];
++    const w = Number((/\swidth="(\d+)"/.exec(tag) || [])[1] || 0);
++    if (!src || src.startsWith("data:") || /alt="Cromatic Studios"/.test(tag) || /\.svg$/.test(src) || (w && w < 360)) continue;
++    if (!out.includes(src)) out.push(src);
++    if (out.length >= max) break;
++  }
++  return out;
++};
+ 
+ const T = {
+   en: {
+@@ -82,20 +98,7 @@ export async function buildStreetIndex({ root, pub, mediaMap, COVERS, R }) {
+   const roOf = (t) => { const k = String(t ?? "").replace(/\s+/g, " ").trim(); const v = RO.get(k) ?? RO.get(k.replace(/&/g, "&amp;")); return v != null && v !== "" ? v : t; };
+   const m = (k) => mediaMap.get(k)?.src || "";
+ 
+-  // the media of each built case page: its hero first, then its pictures, in page order (logos and small pictures out)
+-  const galleryOf = (page) => {
+-    const f = join(pub, "work", page, "index.html");
+-    if (!existsSync(f)) return [];
+-    const html = readFileSync(f, "utf8").split('class="c2-next"')[0], out = []; // not the "Next case" picture at the end
+-    for (const tag of html.match(/<img\b[^>]*>/g) || []) {
+-      const src = (/data-lz-src="([^"]+)"/.exec(tag) || /\ssrc="(\/[^"]+)"/.exec(tag) || [])[1];
+-      const w = Number((/\swidth="(\d+)"/.exec(tag) || [])[1] || 0);
+-      if (!src || src.startsWith("data:") || /alt="Cromatic Studios"/.test(tag) || /\.svg$/.test(src) || (w && w < 360)) continue;
+-      if (!out.includes(src)) out.push(src);
+-      if (out.length >= 6) break;
+-    }
+-    return out;
+-  };
++  const galleryOf = (page) => caseGallery(pub, page);
+ 
+   const css = readFileSync(join(root, "site", "streetindex", "si.css"), "utf8");
+   const js = readFileSync(join(root, "site", "streetindex", "si.js"), "utf8");
+@@ -256,3 +259,5 @@ ${ch.js}
+   }
+   console.log(`[streetindex] ${SI_PATHS.join(" + ")} -> ${streets.length} streets, ${total} places, ${cases} cases, beta only; view transition opt-in on ${nvt} case pages`);
+ }
++// the sentence filter's words, for the header's mega menu (build/megamenu.mjs; its Romanian comes from site/i18n/ro.json)
++export const SI_WORDS = T;
+diff --git a/site/i18n/ro.json b/site/i18n/ro.json
+index d852e9f..e921b22 100644
+--- a/site/i18n/ro.json
++++ b/site/i18n/ro.json
+@@ -4626,5 +4626,26 @@
+  "Coffee is where we grew up. <a href=\"/work/two-minutes/\">Two Minutes</a> has been our client and our neighbour for a decade, and in the Cromatic City we always stop there for four double espressos. Then the street filled up. Specialty shops like <a href=\"/work/steam/\">Steam</a>, Sip and OMA Coffee in Brașov. Equipment brands like <a href=\"/work/craft-coffee/\">Craft Coffee</a> and Artisan Coffee Gear. And <a href=\"/work/slow-coffee-festival/\">Slow Coffee Festival</a>, the biggest coffee lovers community in the country, whose brand universe we have upgraded every edition since 2021.": "Cafeaua e locul în care am crescut. <a href=\"/work/two-minutes/\">Two Minutes</a> ne e client și vecin de zece ani, iar în orașul Cromatic oprim mereu acolo pentru patru espresso-uri duble. Apoi strada s-a umplut. Cafenele de specialitate precum <a href=\"/work/steam/\">Steam</a>, Sip și OMA Coffee din Brașov. Branduri de echipamente precum <a href=\"/work/craft-coffee/\">Craft Coffee</a> și Artisan Coffee Gear. Și <a href=\"/work/slow-coffee-festival/\">Slow Coffee Festival</a>, cea mai mare comunitate de iubitori de cafea din țară, căruia îi îmbunătățim universul de brand la fiecare ediție, din 2021.",
+  "WIP": "WIP",
+  "024056 Bucharest, Sector 2": "024056 București, Sector 2",
+- "Get directions": "Cum ajungi"
++ "Get directions": "Cum ajungi",
++ "The Street Index": "Indexul străzilor",
++ "Close the menu": "Închide meniul",
++ "Show me": "Arată-mi",
++ "on": "de pe",
++ "all the work": "toate proiectele",
++ "brand strategy": "strategie de brand",
++ "identity": "identitate",
++ "websites, apps, packaging, film": "website-uri, aplicații, ambalaje, film",
++ "content and growth": "conținut și creștere",
++ "every street": "toate străzile",
++ "Search the work": "Caută în proiecte",
++ "a client, a field, a street": "un client, un domeniu, o stradă",
++ "Clear": "Șterge",
++ "Nothing here for that": "Nimic aici pentru asta",
++ "The Zdrovit yard · 18 brands": "Curtea Zdrovit · 18 branduri",
++ "Aspasia, Bonilash, Glucopil, Gripovit, Help 4 Brain, Lacalut, Lacium, Litorsal, Maximag, OchiSan, Optisomn, Parasoftin, Periferisan, Prevomit, Slaboficat, Supramax, Vizik, Vizimel": "Aspasia, Bonilash, Glucopil, Gripovit, Help 4 Brain, Lacalut, Lacium, Litorsal, Maximag, OchiSan, Optisomn, Parasoftin, Periferisan, Prevomit, Slaboficat, Supramax, Vizik, Vizimel",
++ "Open the case": "Deschide studiul de caz",
++ "See it on its street": "Vezi-l pe strada lui",
++ "Nothing for that yet. Try a client, a field or a street.": "Nimic deocamdată. Încearcă un client, un domeniu sau o stradă.",
++ "Point at a name to see the work": "Arată spre un nume ca să vezi lucrarea",
++ "Every project, street by street <span aria-hidden=\"true\">→</span>": "Toate proiectele, stradă cu stradă <span aria-hidden=\"true\">→</span>"
+ }
+\ No newline at end of file
+diff --git a/site/megamenu.css b/site/megamenu.css
+new file mode 100644
+index 0000000..82cbc5c
+--- /dev/null
++++ b/site/megamenu.css
+@@ -0,0 +1,171 @@
++/* r365 (beta) · the header's mega menu: the Street Index under "Work" (build/megamenu.mjs, site/megamenu.js).
++   Paper, ink, one yellow; the brands' pictures lead, each street keeps its colour as a small square and an underline. */
++.mm-btn { display: none; }
++.js .nav .mm-btn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 0; border: 0; background: linear-gradient(var(--y), var(--y)) 0 100% / 0 3px no-repeat; color: inherit; font: 600 15px/1.6 var(--f); cursor: pointer; transition: background-size .3s var(--eoq); }
++.js .nav .mm-btn:hover, .js .nav .mm-btn[aria-expanded="true"] { background-size: 100% 3px; }
++.mm-btn i { width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); transition: transform .25s var(--eoq); }
++.mm-btn[aria-expanded="true"] i { transform: translateY(1px) rotate(225deg); }
++.js .nav .mm-alt, .js .mnav .mm-alt { display: none; }
++.mm[hidden], .mm-scrim[hidden] { display: none !important; }
++
++/* the panel: under the header, as wide as the screen; the header is its containing block (backdrop-filter) */
++.mm { position: fixed; z-index: 2; top: 100%; left: 0; right: 0; height: calc(100vh - var(--mm-top, 72px)); height: calc(100dvh - var(--mm-top, 72px)); pointer-events: none; }
++.mm-scroll { pointer-events: auto; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border-bottom: 1px solid var(--ink); box-shadow: 0 24px 48px -24px rgba(13,12,9,.35); outline: 0;
++  clip-path: inset(0 0 100% 0); transition: clip-path .34s var(--eoq); }
++.mm.open .mm-scroll { clip-path: inset(0 0 -60px 0); }
++.mm-scrim { position: fixed; z-index: 1; top: 100%; left: 0; right: 0; height: 100vh; background: rgba(13,12,9,.34); opacity: 0; transition: opacity .25s var(--eoq); }
++.mm.open + .mm-scrim { opacity: 1; }
++.mm-in { width: min(1440px, 100% - 64px); margin-inline: auto; padding: 26px 0 22px; }
++.mm-in > *, .mm-st { opacity: 0; transform: translateY(10px); transition: opacity .3s var(--eoq), transform .42s var(--eoq); }
++.mm.open .mm-in > *, .mm.open .mm-st { opacity: 1; transform: none; }
++.mm.open .mm-grid > :nth-child(2) { transition-delay: .03s; } .mm.open .mm-grid > :nth-child(3) { transition-delay: .06s; }
++.mm.open .mm-grid > :nth-child(4) { transition-delay: .09s; } .mm.open .mm-pv { transition-delay: .05s; }
++.mm p { margin: 0; }
++.mm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
++.mm-top { display: none; }
++.mm-x { width: 44px; height: 44px; flex: none; border: 1px solid var(--ink); border-radius: 50%; background: var(--y); cursor: pointer; position: relative; padding: 0; }
++.mm-x i::before, .mm-x i::after { content: ""; position: absolute; left: 12px; right: 12px; top: 50%; height: 2.5px; margin-top: -1.25px; background: var(--ink); border-radius: 2px; transform: rotate(45deg); }
++.mm-x i::after { transform: rotate(-45deg); }
++
++/* the sentence and the search */
++.mm-f { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 14px 32px; padding-bottom: 20px; border-bottom: 1px solid var(--ink); }
++.mm-sent { font: 800 clamp(28px, 2.6vw, 40px)/1.12 var(--f); letter-spacing: -.035em; padding-bottom: 4px; }
++.mm-sel { white-space: nowrap; }
++.mm-dim { color: #a9a69d; }
++.mm-sel { position: relative; display: inline-block; }
++.mm-sel select { width: var(--w, auto); max-width: 100%; appearance: none; -webkit-appearance: none; background: transparent; border: 0; border-bottom: 3px solid var(--ink); border-radius: 0; color: var(--ink); font: inherit; letter-spacing: inherit; line-height: 1.08; padding: 0 .62em 1px 0; cursor: pointer; }
++.mm-sel select:focus-visible { outline: 0; border-bottom-color: var(--y); box-shadow: 0 3px 0 var(--ink); }
++.mm-sel::after { content: ""; position: absolute; right: .12em; top: 50%; width: .2em; height: .2em; border: solid var(--ink); border-width: 0 3px 3px 0; transform: translateY(-70%) rotate(45deg); pointer-events: none; }
++.mm-tools { display: flex; align-items: center; gap: 20px; }
++.mm-search { display: flex; align-items: center; gap: 10px; height: 46px; width: 320px; padding: 0 16px 0 18px; border: 1.5px solid var(--ink); border-radius: 999px; background: #fff; }
++.mm-search:focus-within { box-shadow: 0 0 0 3px var(--y); }
++.mm-search svg { width: 19px; height: 19px; flex: none; fill: none; stroke: var(--ink); stroke-width: 2; }
++.mm-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 500 17px/1 var(--f); }
++.mm-search input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
++.mm-clear { border: 0; background: none; color: var(--muted); font-size: 10.5px; cursor: pointer; padding: 6px 0; }
++.mm-count { min-width: 11.5em; color: var(--muted); font-size: 15px; line-height: 1.3; white-space: nowrap; }
++.mm-count b { color: var(--ink); font-weight: 800; }
++
++/* three streets in columns, the shortcut along the bottom, the preview on the right */
++.mm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr); grid-template-rows: auto auto; column-gap: 36px; padding-top: 22px; align-items: start; }
++.mm-st { min-width: 0; }
++.mm-row { grid-column: 1 / 4; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) ; column-gap: 36px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(13,12,9,.12); }
++.mm-sh { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(13,12,9,.12); margin-bottom: 6px; }
++.mm-row .mm-sh { border: 0; padding: 0; margin: 0; }
++.mm-no { color: var(--muted); font-size: 10.5px; }
++.mm-sn { font: 800 19px/1.1 var(--f); letter-spacing: -.02em; display: flex; align-items: center; gap: 9px; }
++.mm-sn::after { content: ""; width: 9px; height: 9px; background: var(--sc); flex: none; }
++.mm-sc { margin-left: auto; color: var(--muted); font-size: 10.5px; }
++.mm-ul { list-style: none; margin: 0; padding: 0; }
++.mm-row .mm-ul { display: flex; flex-wrap: wrap; gap: 0 36px; }
++.mm-i { position: relative; display: flex; align-items: center; gap: 12px; padding: 5px 0 5px 0; text-decoration: none; color: var(--ink); border-radius: 0; transition: color .18s, padding .25s var(--eoq); }
++.mm-i::before { content: ""; position: absolute; left: 0; top: 50%; width: 12px; height: 3px; margin-top: -1.5px; background: var(--sc); transform: scaleX(0); transform-origin: 0 50%; transition: transform .25s var(--eoq); }
++.mm-t { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; min-width: 0; }
++.mm-nm { font: 700 17px/1.25 var(--f); letter-spacing: -.01em; }
++.mm-wip { font-size: 9.5px; color: var(--muted); }
++.mm-ct { display: none; width: 100%; color: var(--muted); font-size: 10px; letter-spacing: .1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++.mm-th { display: none; flex: none; width: 52px; height: 38px; background: #ebe8df; overflow: hidden; }
++.mm-th img { width: 100%; height: 100%; object-fit: cover; }
++.mm-row .mm-ct { display: block; width: auto; }
++.mm-grid:hover .mm-i, .mm-grid:focus-within .mm-i { color: #a9a69d; }
++.mm-grid .mm-i.on, .mm-grid .mm-i:hover, .mm-grid .mm-i:focus-visible { color: var(--ink); }
++.mm-i.on { padding-left: 20px; }
++.mm-i.on::before { transform: scaleX(1); }
++.mm-i:focus-visible { outline: 0; }
++.mm-i:focus-visible .mm-nm { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
++mark.mm-hl { background: var(--y); color: var(--ink); padding: 0 1px; font-style: normal; font-weight: inherit; border-radius: 0; }
++.mm-none { color: var(--muted); font-size: 10.5px; padding: 8px 0; }
++.mm-empty { padding: 18px 0 0; color: var(--muted); }
++
++/* filtering: every row shows its picture and its fields, a street with nothing steps back */
++.mm.filtering .mm-th { display: block; }
++.mm.filtering .mm-ct { display: block; }
++.mm.filtering .mm-i { padding-top: 4px; padding-bottom: 4px; }
++.mm.filtering .mm-i.on { padding-left: 0; }
++.mm.filtering .mm-i::before { display: none; }
++.mm.filtering .mm-i.on .mm-th { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--sc); }
++.mm-st.empty .mm-sh { opacity: .45; }
++.mm.solo .mm-st:not(.hit) { display: none; }
++.mm.solo .mm-st.hit { grid-column: 1 / 4; grid-row: 1; }
++.mm.solo .mm-st.hit .mm-ul { columns: 3; column-gap: 36px; }
++.mm.solo .mm-st.hit li { break-inside: avoid; }
++.mm li[hidden] { display: none; }
++
++/* the preview: the brand's cover, a mini gallery, the words */
++.mm-pv { grid-column: 4; grid-row: 1 / 3; position: sticky; top: 0; min-width: 0; }
++.mm-cv { position: relative; display: block; aspect-ratio: 16 / 11; overflow: hidden; background: #ebe8df; }
++.mm-cv::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--sc, var(--y)); }
++.mm-im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.035); transition: opacity .28s var(--eoq), transform .6s var(--eoq); }
++.mm-im.on { opacity: 1; transform: none; }
++.mm-cv:hover .mm-im.on { transform: scale(1.015); }
++.mm-gal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; min-height: 0; }
++.mm-gal button { padding: 0; border: 0; aspect-ratio: 4 / 3; background: #ebe8df; overflow: hidden; cursor: pointer; opacity: .55; transition: opacity .18s; }
++.mm-gal button.on, .mm-gal button:hover { opacity: 1; }
++.mm-gal img { width: 100%; height: 100%; object-fit: cover; }
++.mm-pk { margin-top: 14px !important; color: var(--muted); font-size: 10.5px; display: flex; justify-content: space-between; }
++.mm-pn { font: 800 28px/1.05 var(--f); letter-spacing: -.03em; margin-top: 6px !important; }
++.mm-pc { color: var(--muted); font-size: 10.5px; margin-top: 8px !important; }
++.mm-pd { color: #47443d; font-size: 15.5px; line-height: 1.45; margin-top: 8px !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
++.mm-pgo { margin-top: 12px !important; font-weight: 800; font-size: 15px; }
++.mm-pgo .mm-go-case, .mm-pgo .mm-go-st { background: linear-gradient(var(--y), var(--y)) 0 100% / 100% 3px no-repeat; padding-bottom: 2px; }
++.mm-pv:not(.case) .mm-go-case, .mm-pv.case .mm-go-st { display: none; }
++.mm-foot { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 18px !important; padding-top: 14px; border-top: 1px solid rgba(13,12,9,.12); font-weight: 700; font-size: 15px; }
++.mm-foot a { text-decoration: none; background: linear-gradient(var(--ink), var(--ink)) 0 100% / 100% 1.5px no-repeat; padding-bottom: 2px; }
++.mm-hint { color: var(--muted); font-size: 10.5px; }
++html.mm-lock, html.mm-lock body { overflow: hidden; }
++
++@media (max-width: 1180px) and (min-width: 861px) {
++  .mm-in { width: calc(100% - 40px); }
++  .mm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
++  .mm-pv { display: none; }
++  .mm-search { width: 280px; }
++  .mm-hint { display: none; }
++}
++
++/* a phone: a full-screen sheet, the filter on top, each street a rail of covers */
++@media (max-width: 860px) {
++  .mnav .mm-btn { display: none; }
++  .js .mnav .mm-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 8px 0; border: 0; border-bottom: 1px solid rgba(13,12,9,.08); background: none; color: var(--ink); font: 800 22px/1.6 var(--f); text-align: left; cursor: pointer; }
++  .mnav .mm-btn i { width: 10px; height: 10px; border-width: 0 2.5px 2.5px 0; transform: rotate(-45deg); margin-right: 6px; }
++  .mm { top: 0; height: 100vh; height: 100dvh; z-index: 5; }
++  .mm-scroll { height: 100%; max-height: none; border: 0; box-shadow: none; clip-path: none; transform: translateY(24px); opacity: 0; transition: transform .38s var(--eoq), opacity .22s var(--eoq); }
++  .mm.open .mm-scroll { clip-path: none; transform: none; opacity: 1; }
++  .mm-scrim { display: none !important; }
++  .mm-in { width: 100%; padding: 0 0 calc(28px + env(safe-area-inset-bottom)); }
++  .mm-top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 16px 0 20px; background: var(--paper); border-bottom: 1px solid rgba(13,12,9,.1); }
++  .mm-k { font-size: 12px; }
++  .mm-f { display: block; padding: 22px 20px 20px; }
++  .mm-sent { font-size: clamp(28px, 8.6vw, 38px); line-height: 1.16; }
++  .mm-tools { flex-wrap: wrap; gap: 12px; margin-top: 18px; }
++  .mm-search { width: 100%; height: 50px; }
++  .mm-search input { font-size: 17px; }
++  .mm-count { font-size: 14px; }
++  .mm-grid { display: block; padding-top: 6px; }
++  .mm-st, .mm-row { display: block; margin: 0; padding: 20px 0 6px; border: 0; }
++  .mm-sh, .mm-row .mm-sh { padding: 0 20px 0; border: 0; margin: 0; }
++  .mm-sn { font-size: 24px; }
++  .mm-ul, .mm-row .mm-ul { display: grid; grid-auto-flow: column; grid-auto-columns: 64%; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 20px; padding: 12px 20px 6px; scrollbar-width: none; }
++  .mm-ul::-webkit-scrollbar { display: none; }
++  .mm-ul li { scroll-snap-align: start; min-width: 0; }
++  .mm-i, .mm.filtering .mm-i { display: block; padding: 0; }
++  .mm-i::before { display: none; }
++  .mm-i.on { padding-left: 0; }
++  .mm-th, .mm.filtering .mm-th { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; margin-bottom: 10px; }
++  .mm-nm { font-size: 18px; font-weight: 800; }
++  .mm-ct, .mm-row .mm-ct { display: block; width: 100%; margin-top: 3px; }
++  .mm-grid:hover .mm-i, .mm-grid:focus-within .mm-i { color: var(--ink); }
++  .mm.filtering .mm-i.on .mm-th { box-shadow: none; }
++  .mm-none { padding: 10px 20px 0; }
++  .mm-st.empty { display: none; }
++  .mm.solo .mm-st.hit .mm-ul { columns: auto; }
++  .mm-pv { display: none; }
++  .mm-empty { padding: 20px; }
++  .mm-foot { margin: 22px 20px 0 !important; }
++  .mm-hint { display: none; }
++}
++@media (prefers-reduced-motion: reduce) {
++  .mm-scroll, .mm.open .mm-scroll { clip-path: none !important; transform: none !important; opacity: 1 !important; transition: none !important; }
++  .mm-in > *, .mm-st, .mm-im, .mm-i, .mm-i::before, .mm-scrim { transition: none !important; transform: none !important; }
++  .mm-in > *, .mm-st { opacity: 1; }
++}
++.mm.filtering .mm-grid .mm-i { color: var(--ink); }
+diff --git a/site/megamenu.js b/site/megamenu.js
+new file mode 100644
+index 0000000..02b0e96
+--- /dev/null
++++ b/site/megamenu.js
+@@ -0,0 +1,211 @@
++// r365 (beta) · the header's mega menu, the Street Index under "Work" (build/megamenu.mjs writes it, megamenu.css draws it).
++// Opens on a click, or on a resting pointer over "Work" on a desktop; Esc, the scrim or the round button close it and the
++// focus goes back to the button. Inside: Tab stays in the menu, the arrows walk the names, a name shows its brand in the
++// preview, Enter in the search opens the first match. Pictures load only once it is open.
++(() => {
++  const d = document, root = d.documentElement, mm = d.getElementById("mm");
++  if (!mm) return;
++  const RO = (root.lang || "").slice(0, 2) === "ro";
++  const $ = (s, el = mm) => el.querySelector(s), $$ = (s, el = mm) => [...el.querySelectorAll(s)];
++  const hdr = mm.closest(".hdr") || d.querySelector(".hdr"), scrim = mm.nextElementSibling, scroller = $(".mm-scroll");
++  const btns = $$('.mm-btn[aria-controls="mm"]', d);
++  const RM = matchMedia("(prefers-reduced-motion: reduce)"), PHONE = matchMedia("(max-width: 860px)"), FINE = matchMedia("(hover: hover) and (pointer: fine)");
++  const items = $$(".mm-i"), pv = $(".mm-pv"), f = $(".mm-f"), q = f.q, clear = $(".mm-clear"), count = $(".mm-count"), empty = $(".mm-empty");
++  const total = +mm.dataset.total || items.length;
++  let open = false, mode = "", opener = null, tHover = 0, tLeave = 0, tHide = 0, cur = null, booted = false;
++
++  // the select options in the page's language (the dictionary does not reach inside a <select>)
++  for (const s of $$(".mm-opts [data-v]")) { const [k, v] = s.dataset.v.split(":"), o = f[k] && [...f[k].options].find((x) => x.value === v); if (o) o.textContent = s.textContent; }
++  const names = items.map((a) => [$(".mm-nm", a), $(".mm-nm", a).textContent]), cats = items.map((a) => [$(".mm-ct", a), $(".mm-ct", a).textContent]);
++  const hay = new Map(items.map((a) => [a, (a.dataset.q + " " + a.textContent).toLowerCase()]));
++
++  const load = (img) => { if (img && !img.src && img.dataset.src) img.src = img.dataset.src; };
++  const boot = () => { if (booted) return; booted = true; if (PHONE.matches) lazyRails(); };
++  // on a phone the rails' covers load as they come near (vertical and sideways)
++  let io = null;
++  const lazyRails = () => {
++    if (!("IntersectionObserver" in window)) { $$(".mm-th img").forEach(load); return; }
++    io = io || new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { load(e.target); io.unobserve(e.target); } }), { root: null, rootMargin: "300px 50% 300px 50%" });
++    $$(".mm-th img").forEach((i) => !i.src && io.observe(i));
++  };
++
++  // the preview: the cover (two layers that cross-fade), the gallery, the words
++  const ims = $$(".mm-im", pv), gal = $(".mm-gal", pv), cv = $(".mm-cv", pv);
++  let layer = 0, want = "";
++  const showPic = (u) => {
++    if (!u || want === u) return; want = u;
++    const nx = ims[layer ^ 1], go = () => { if (want !== u) return; nx.classList.add("on"); ims[layer].classList.remove("on"); layer ^= 1; };
++    if (nx.getAttribute("src") === u && nx.complete) { go(); return; }
++    nx.onload = nx.onerror = () => { nx.onload = nx.onerror = null; go(); };
++    nx.src = u;
++  };
++  const preview = (a) => {
++    if (!a || a === cur) return;
++    if (cur) cur.classList.remove("on");
++    cur = a; a.classList.add("on");
++    if (PHONE.matches || getComputedStyle(pv).display === "none") return;
++    const st = a.closest(".mm-st"), list = $$(".mm-i:not([hidden])", st).filter((x) => !x.closest("li").hidden);
++    const pics = (a.dataset.pics || "").split(" ").filter(Boolean).map((x) => x.includes(",") ? x.split(",") : ((h, b, sm) => [`/assets/w/${h}-${b}.webp`, `/assets/w/${h}-${sm}.webp`])(...x.split(".")));
++    pv.style.setProperty("--sc", st.style.getPropertyValue("--sc"));
++    cv.href = a.getAttribute("href");
++    pv.classList.toggle("case", !a.hasAttribute("data-nocase"));
++    showPic(pics[0] ? pics[0][0] : "");
++    gal.innerHTML = pics.length > 1 ? pics.map((p, j) => `<button type="button" tabindex="-1" class="${j ? "" : "on"}"><img src="${p[1]}" alt="" decoding="async"></button>`).join("") : "";
++    $$("button", gal).forEach((b, j) => { const on = () => { showPic(pics[j][0]); $$("button", gal).forEach((x) => x.classList.toggle("on", x === b)); }; b.addEventListener("mouseenter", on); b.addEventListener("click", on); });
++    $(".mm-pst", pv).textContent = $(".mm-sn", st).textContent;
++    $(".mm-pnum", pv).textContent = String(list.indexOf(a) + 1).padStart(2, "0") + " / " + String(list.length).padStart(2, "0");
++    $(".mm-pn", pv).textContent = names[items.indexOf(a)][1];
++    $(".mm-pc", pv).textContent = cats[items.indexOf(a)][1];
++    $(".mm-pd", pv).textContent = $(".mm-d", a).textContent;
++  };
++  const visible = () => items.filter((a) => !a.closest("li").hidden && a.offsetParent !== null);
++
++  // open and close
++  const lockW = () => innerWidth - root.clientWidth;
++  const setTop = () => { const r = hdr.getBoundingClientRect(); mm.style.setProperty("--mm-top", Math.max(0, r.bottom) + "px"); };
++  const show = (how, by) => {
++    clearTimeout(tLeave); clearTimeout(tHide);
++    if (open) { if (how !== "hover") mode = how; return; }
++    open = true; mode = how; opener = by || btns.find((b) => b.offsetParent) || btns[0];
++    const mb = d.querySelector(".menu-btn"), mn = d.getElementById("mnav");
++    if (mn && mn.classList.contains("open")) { mn.classList.remove("open"); mb && mb.setAttribute("aria-expanded", "false"); }
++    boot(); setTop();
++    const w = lockW(); if (w > 0) { root.style.setProperty("--mm-sb", w + "px"); d.body.style.paddingRight = w + "px"; }
++    root.classList.add("mm-lock");
++    mm.hidden = false; scrim.hidden = false;
++    btns.forEach((b) => b.setAttribute("aria-expanded", "true"));
++    if (!cur || cur.closest("li").hidden) preview(visible()[0]); else { const c = cur; cur = null; preview(c); }
++    mm.getBoundingClientRect(); // the closed state is laid out, so the opening animates
++    requestAnimationFrame(() => mm.classList.add("open"));
++    if (how === "key" && !PHONE.matches) q.focus({ preventScroll: true });
++    else if (how !== "hover") scroller.focus({ preventScroll: true });
++  };
++  const hide = (back) => {
++    clearTimeout(tHover); clearTimeout(tLeave);
++    if (!open) return;
++    open = false; mode = "";
++    mm.classList.remove("open");
++    btns.forEach((b) => b.setAttribute("aria-expanded", "false"));
++    const done = () => { if (open) return; mm.hidden = true; scrim.hidden = true; root.classList.remove("mm-lock"); d.body.style.paddingRight = ""; };
++    if (RM.matches) done(); else tHide = setTimeout(done, PHONE.matches ? 220 : 160);
++    if (back && opener) { (opener.offsetParent ? opener : btns.find((b) => b.offsetParent) || opener).focus({ preventScroll: true }); }
++  };
++
++  for (const b of btns) {
++    b.addEventListener("click", (e) => {
++      if (!open) show(e.detail === 0 ? "key" : "click", b);
++      else if (mode === "hover") { mode = "click"; scroller.focus({ preventScroll: true }); } // a hover-opened menu stays when clicked
++      else hide(true);
++    });
++    // hover with intent: the pointer rests on "Work" for a moment (not a pass on the way to another link)
++    b.addEventListener("pointerenter", (e) => { if (e.pointerType !== "mouse" || !FINE.matches || PHONE.matches) return; clearTimeout(tLeave); if (!open) tHover = setTimeout(() => show("hover", b), 90); });
++    b.addEventListener("pointerleave", () => { clearTimeout(tHover); if (open && mode === "hover") tLeave = setTimeout(() => hide(false), 280); });
++    b.addEventListener("keydown", (e) => {
++      if (e.key === "ArrowDown" && !open) { e.preventDefault(); show("key", b); }
++      else if (e.key === "Tab" && !e.shiftKey && open) { e.preventDefault(); q.focus(); }
++    });
++  }
++  scroller.addEventListener("pointerenter", () => clearTimeout(tLeave));
++  scroller.addEventListener("pointerleave", (e) => { if (open && mode === "hover" && e.pointerType === "mouse") tLeave = setTimeout(() => hide(false), 280); });
++  scrim.addEventListener("click", () => hide(false));
++  $(".mm-x").addEventListener("click", () => hide(true));
++  addEventListener("pageshow", (e) => { if (e.persisted) hide(false); });
++  PHONE.addEventListener?.("change", () => open && hide(false));
++  addEventListener("resize", () => open && setTop());
++
++  // keys inside: Esc closes, Tab goes round, the arrows walk the names (up and down a street, sideways to the next)
++  const focusables = () => $$("a[href], button, input, select, [tabindex]:not([tabindex='-1'])").filter((x) => x.offsetParent !== null && !x.disabled && x.tabIndex >= 0);
++  const step = (from, key) => {
++    const vs = visible(); if (!vs.length) return null;
++    if (!from || !vs.includes(from)) return vs[0];
++    if (key === "Home") return vs[0]; if (key === "End") return vs[vs.length - 1];
++    const r = from.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
++    let best = null, bd = Infinity;
++    for (const a of vs) {
++      if (a === from) continue;
++      const s = a.getBoundingClientRect(), x = s.left + s.width / 2, y = s.top + s.height / 2, dx = x - cx, dy = y - cy;
++      const along = key === "ArrowDown" ? dy : key === "ArrowUp" ? -dy : key === "ArrowRight" ? dx : -dx, across = key === "ArrowDown" || key === "ArrowUp" ? Math.abs(dx) : Math.abs(dy);
++      if (along <= 2) continue;
++      const dist = along + across * 3;
++      if (dist < bd) { bd = dist; best = a; }
++    }
++    return best;
++  };
++  d.addEventListener("keydown", (e) => {
++    if (!open) return;
++    if (e.key === "Escape") {
++      if (e.target === q && q.value) { q.value = ""; run(); return; }
++      e.preventDefault(); hide(true); return;
++    }
++    if (e.key === "Tab") {
++      const fs = focusables(); if (!fs.length) return;
++      const i = fs.indexOf(d.activeElement);
++      if (i < 0 || (e.shiftKey && i === 0) || (!e.shiftKey && i === fs.length - 1)) { e.preventDefault(); fs[e.shiftKey ? fs.length - 1 : 0].focus(); }
++      return;
++    }
++    if (!mm.contains(e.target) || e.target.tagName === "SELECT") return;
++    if (!/^(Arrow(Up|Down|Left|Right)|Home|End)$/.test(e.key)) return;
++    if (e.target === q) { if (e.key !== "ArrowDown") return; e.preventDefault(); const a = visible()[0]; a && a.focus(); return; }
++    const a = step(e.target.closest(".mm-i"), e.key);
++    if (a) { e.preventDefault(); a.focus(); a.scrollIntoView({ block: "nearest", inline: "nearest" }); }
++  });
++  for (const a of items) {
++    a.addEventListener("mouseenter", () => FINE.matches && preview(a));
++    a.addEventListener("focus", () => preview(a));
++    a.addEventListener("click", (e) => go(e, a));
++  }
++  cv.addEventListener("click", (e) => cur && go(e, cur));
++  // into the case: the preview's cover becomes the case's hero where the browser can (the Street Index's own handoff,
++  // build/streetindex.mjs: the case pages opt in when this flag names them), then the menu closes behind
++  function go(e, a) {
++    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
++    if (a.hasAttribute("data-nocase")) { hide(false); return; }
++    try { sessionStorage.setItem("si-vt", new URL(a.href, location.href).pathname); } catch {}
++    if (!RM.matches && !PHONE.matches && "onpagereveal" in window) {
++      const s = d.createElement("style"); s.textContent = "@view-transition{navigation:auto}::view-transition-group(*){animation-duration:.2s}"; d.head.append(s);
++      $$(".mm-im").forEach((i) => (i.style.viewTransitionName = ""));
++      const on = $(".mm-im.on"); if (on && cur === a) on.style.viewTransitionName = "case-hero";
++    }
++  }
++
++  // the sentence filter and the search, live across the streets
++  const escH = (t) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
++  const mark = (t, w) => { const i = w ? t.toLowerCase().indexOf(w) : -1; return i < 0 ? escH(t) : escH(t.slice(0, i)) + `<mark class="mm-hl">${escH(t.slice(i, i + w.length))}</mark>` + escH(t.slice(i + w.length)); };
++  const fmt = (n, s) => RO ? `<b>${n} ${n === 1 ? "loc" : "locuri"}</b> pe ${s} ${s === 1 ? "stradă" : "străzi"}, din ${total}` : `<b>${n} ${n === 1 ? "place" : "places"}</b> on ${s} ${s === 1 ? "street" : "streets"}, of ${total}`;
++  const sts = $$(".mm-st");
++  function run() {
++    const ch = f.ch.value, sk = f.st.value, w = q.value.trim().toLowerCase(), on = !!(ch || sk || w);
++    let n = 0, ns = 0;
++    for (const s of sts) {
++      let m = 0;
++      for (const a of $$(".mm-i", s)) {
++        const ok = (!ch || a.dataset.ch.split(" ").includes(ch)) && (!sk || s.dataset.k === sk) && (!w || hay.get(a).includes(w));
++        a.closest("li").hidden = !ok; if (ok) m++;
++      }
++      const c = $(".mm-sc", s); c.textContent = String(on ? m : +c.dataset.n).padStart(2, "0");
++      s.classList.toggle("empty", !m); $(".mm-none", s).hidden = !!m; n += m; if (m) ns++;
++    }
++    names.forEach(([el, t]) => (el.innerHTML = mark(t, w)));
++    cats.forEach(([el, t]) => (el.innerHTML = mark(t, w)));
++    mm.classList.toggle("filtering", on);
++    // one street left (not the shortcut): its names spread over the three columns
++    const hits = sts.filter((s) => !s.classList.contains("empty")), solo = on && hits.length === 1 && hits[0].dataset.k !== "D";
++    mm.classList.toggle("solo", solo); sts.forEach((s) => s.classList.toggle("hit", solo && s === hits[0]));
++    clear.hidden = !w;
++    count.innerHTML = fmt(n, ns);
++    empty.hidden = !!n;
++    if (on || PHONE.matches) visible().forEach((a) => (PHONE.matches && io ? io.observe($(".mm-th img", a) || a) : load($(".mm-th img", a))));
++    if (open && (!cur || cur.closest("li").hidden)) { const v = visible()[0]; if (v) preview(v); }
++  }
++  // each select as wide as its words, so the sentence reads as one line
++  const sizer = d.createElement("span"); sizer.setAttribute("aria-hidden", "true"); sizer.style.cssText = "position:absolute;visibility:hidden;white-space:pre;left:-9999px;top:0";
++  const fit = (sel) => { if (!sel.offsetParent) return; const cs = getComputedStyle(sel); sizer.style.font = cs.font; sizer.style.letterSpacing = cs.letterSpacing; sizer.textContent = sel.options[sel.selectedIndex].text; sel.style.setProperty("--w", Math.ceil(sizer.getBoundingClientRect().width + parseFloat(cs.paddingRight) + 4) + "px"); };
++  const fitAll = () => { if (!sizer.isConnected) d.body.append(sizer); [f.ch, f.st].forEach(fit); };
++  f.addEventListener("submit", (e) => { e.preventDefault(); const a = visible()[0]; if (a) { a.focus(); a.click(); } });
++  f.addEventListener("input", run); f.addEventListener("change", (e) => { if (e.target.tagName === "SELECT") fit(e.target); run(); });
++  clear.addEventListener("click", () => { q.value = ""; run(); q.focus(); });
++  // the sentence is sized once it is on screen (fonts ready, the menu laid out)
++  new MutationObserver(() => { if (!mm.hidden) { fitAll(); d.fonts && d.fonts.ready.then(fitAll); } }).observe(mm, { attributes: true, attributeFilter: ["hidden"] });
++  addEventListener("resize", () => open && fitAll());
++  run();
++})();
 diff --git a/site/rapoarte/longevity-names-50c84c5bc5/index.html b/site/rapoarte/longevity-names-50c84c5bc5/index.html
 new file mode 100644
 index 0000000..1939139
