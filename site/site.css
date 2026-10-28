@@ -1435,3 +1435,6 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
   .streets-nav.stuck { transform: scale(.8); width: 125%; max-width: 125%; }
 }
 @media (prefers-reduced-motion: reduce) { .streets-nav { transition: none; } }
+/* r352: on phones a half card left alone after a full-width one (Printoteca after Sticker Republic) takes the full width,
+   one row tall (Daniel, 28 Oct: "same width as Sticker, but shorter") */
+@media (max-width: 600px) { .bcard:is(.b-xl, .b-w) + .bcard:is(.b-m, .b-s):last-child { grid-column: span 2; } }
