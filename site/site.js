@@ -392,8 +392,9 @@
   window.__czWall = WALL;
   const wallPaint = () => pwRows.forEach((row, i) => {
     const half = row._half; if (!half) return;
-    const x = (WALL.base * (1 + i * 0.25) + WALL.off[i]) % half;
-    row.style.transform = `translate3d(${(i % 2 ? x - half : -x).toFixed(1)}px,0,0)`;
+    const x = (WALL.base * (1 + i * 0.25) + WALL.off[i]) % half, tx = i % 2 ? x - half : -x;
+    (WALL.x || (WALL.x = []))[i] = tx; // beta: the CRT wall reads where each row is
+    row.style.transform = `translate3d(${tx.toFixed(1)}px,0,0)`;
   });
   if (!reduced && pwRows.length && "IntersectionObserver" in window) {
     const v = matchMedia("(max-width: 700px)").matches ? 3.5 : 5.6; // r362 (Daniel: "poate fi mai lent"): 0.7x of r360
@@ -463,3 +464,99 @@
 
   // r359: the boarding pass has its own script now (build/boarding.mjs)
 })();
+
+// BETA (r361, Daniel, 28 Oct): the wall of work as an old CRT set seen up close. On the drift's own frame loop
+// (window.__czWall.hooks, site.js above): each cover is bent by its place on the screen (a cylinder: bigger and nearer
+// in the middle, smaller and turned away at the edges, the top and bottom rows bowing a hair towards the middle), a faint
+// scanline and vignette lie over the wall only (the h1 and the link stay above them, crisp), and every 3-7 s two
+// visible covers lose the signal for 150-900 ms, each in its own analogue way: snow, horizontal sync loss, a vertical
+// roll, chroma misregistration, a signal drop, interlace jitter. Each disturbance eases in and out, flickers inside the
+// frame and blooms a little. One shared noise sprite (made once, on the first glitch), effect layers only on the two
+// covers, removed after. Nothing with reduced motion; nothing while the wall is off screen or the tab hidden; a cover
+// under the pointer is never picked. ?glitch=1 (or ?glitch=snow,hsync) glitches at once and often, for captures.
+(function () {
+  var W = window.__czWall, wall = document.querySelector(".pwall.pw-first");
+  if (!W || !W.go || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  wall.classList.add("crt");
+  var rowsEl = wall.querySelector(".pw-rows"), rows = [].slice.call(wall.querySelectorAll(".pw-row"));
+  var cards = [], vw = innerWidth, rowsLeft = 0, measure = function () {
+    vw = innerWidth; rowsLeft = rowsEl.getBoundingClientRect().left;
+    cards = []; rows.forEach(function (r, i) { [].forEach.call(r.querySelectorAll(".pw-case"), function (c) { cards.push({ el: c, row: i, l: c.offsetLeft, w: c.offsetWidth, h: c.offsetHeight }); }); });
+  };
+  measure(); addEventListener("resize", function () { setTimeout(measure, 120); });
+  var phone = matchMedia("(max-width: 700px)").matches, K = phone ? 0.6 : 1;
+  // the bend: nx = -1 (left edge of the screen) .. 1 (right edge)
+  var bend = function () {
+    var X = W.x || [];
+    for (var k = 0; k < cards.length; k++) {
+      var c = cards[k], cx = rowsLeft + (X[c.row] || 0) + c.l + c.w / 2, nx = (cx - vw / 2) / (vw / 2);
+      if (nx < -1.6 || nx > 1.6) { if (c.on) { c.el.style.transform = ""; c.on = 0; } continue; }
+      var q = Math.min(1, nx * nx), ry = -nx * 10 * K, s = 1 + (0.012 - 0.07 * q) * K, ty = (c.row === 0 ? 1 : c.row === 2 ? -1 : 0) * 10 * K * q, tz = (1 - q) * 8 * K;
+      c.el.style.transform = "perspective(1100px) translate3d(0," + ty.toFixed(1) + "px," + tz.toFixed(1) + "px) rotateY(" + ry.toFixed(2) + "deg) scale(" + s.toFixed(4) + ")";
+      c.on = 1; c.nx = nx;
+    }
+  };
+  // the shared noise: 4 frames of 160x120 snow, each line smeared sideways like a real tuner's (made once)
+  var NOISE = null, noise = function () {
+    if (NOISE) return NOISE;
+    var cv = document.createElement("canvas"), w = 160, h = 120; cv.width = w; cv.height = h * 4;
+    var g = cv.getContext("2d"), im = g.createImageData(w, h * 4), d = im.data;
+    for (var y = 0; y < h * 4; y++) { var line = 0.75 + Math.random() * 0.5, v = Math.random() * 255; for (var x = 0; x < w; x++) { v = v * 0.42 + Math.random() * 255 * 0.58; var o = (y * w + x) * 4, lum = Math.min(255, v * line); d[o] = d[o + 1] = d[o + 2] = lum; d[o + 3] = 255; } }
+    g.putImageData(im, 0, 0); NOISE = cv.toDataURL("image/png"); return NOISE;
+  };
+  var TYPES = ["snow", "hsync", "roll", "chroma", "drop", "jitter"];
+  var q = new URLSearchParams(location.search).get("glitch"), DEBUG = q != null, FORCE = q && q !== "1" ? q.split(",") : null;
+  var live = [], lastPair = "", timer = 0, hovered = null;
+  wall.addEventListener("pointerover", function (e) { hovered = e.target.closest && e.target.closest(".pw-case"); for (var i = live.length - 1; i >= 0; i--) if (live[i].el === hovered) { end(live[i]); live.splice(i, 1); } });
+  wall.addEventListener("pointerleave", function () { hovered = null; });
+  var env = function (p) { return Math.pow(Math.sin(Math.PI * Math.min(1, Math.max(0, p))), 0.6); }; // eases in and out
+  var layer = function (c, cls, img) { var L = document.createElement("i"); L.className = "gl " + cls; L.setAttribute("aria-hidden", "true"); if (img) L.style.backgroundImage = 'url("' + img + '")'; c.appendChild(L); return L; };
+  var start = function (card, type) {
+    var el = card.el, img = el.querySelector("img"), src = img && (img.currentSrc || img.src), dur = 150 + Math.random() * 750;
+    if (type === "roll" || type === "drop") dur = Math.max(dur, 520);
+    if (type === "snow" || type === "drop") dur = Math.max(dur, 360);
+    var g = { card: card, el: el, img: img, type: type, t0: performance.now(), dur: dur, L: [] };
+    el.classList.add("gl-on", "gl-" + type);
+    if (type === "snow" || type === "drop") { g.L.push(layer(el, "gl-noise", noise())); }
+    if (type === "hsync") { var n = 3 + Math.floor(Math.random() * 4), cuts = [0]; for (var i = 1; i < n; i++) cuts.push(Math.random()); cuts.push(1); cuts.sort(); for (var j = 0; j < n; j++) { var S = layer(el, "gl-img", src); S.style.clipPath = "inset(" + (cuts[j] * 100).toFixed(1) + "% 0 " + ((1 - cuts[j + 1]) * 100).toFixed(1) + "% 0)"; S._o = (Math.random() < 0.5 ? -1 : 1) * (4 + Math.random() * 18); g.L.push(S); } g.bar = layer(el, "gl-bar"); }
+    if (type === "roll") { var R = layer(el, "gl-roll"); R.innerHTML = '<b></b><s></s><b></b>'; [].forEach.call(R.querySelectorAll("b"), function (b) { b.style.backgroundImage = 'url("' + src + '")'; b.style.height = card.h + "px"; }); g.L.push(R); }
+    if (type === "chroma") { g.L.push(layer(el, "gl-img gl-r", src), layer(el, "gl-img gl-b", src)); g.dx = 2 + Math.random() * 2; }
+    if (type === "jitter") { g.L.push(layer(el, "gl-img gl-odd", src)); }
+    live.push(g);
+  };
+  var end = function (g) { g.L.concat(g.bar ? [g.bar] : []).forEach(function (L) { L.remove(); }); g.el.classList.remove("gl-on", "gl-" + g.type); if (g.img) { g.img.style.filter = ""; g.img.style.opacity = ""; } };
+  var frame = function (t) {
+    for (var i = live.length - 1; i >= 0; i--) {
+      var g = live[i], p = (t - g.t0) / g.dur;
+      if (p >= 1) { end(g); live.splice(i, 1); continue; }
+      var e = env(p), fl = 0.85 + Math.random() * 0.3; // sub-frame flicker
+      if (g.type === "snow") { g.L[0].style.opacity = (e * 0.9 * fl).toFixed(3); g.L[0].style.backgroundPosition = "0 " + (Math.floor(Math.random() * 4) * 33.333).toFixed(2) + "%"; g.img.style.filter = "brightness(" + (1 + 0.25 * e * fl).toFixed(3) + ") contrast(" + (1 - 0.3 * e).toFixed(3) + ")"; }
+      if (g.type === "hsync") { g.img.style.opacity = "0"; for (var k = 0; k < g.L.length; k++) { var S = g.L[k]; S.style.transform = "translate3d(" + (S._o * e * (0.7 + Math.random() * 0.6)).toFixed(1) + "px,0,0)"; } g.bar.style.transform = "translate3d(0," + ((p * 1.4 - 0.25) * g.card.h).toFixed(1) + "px,0)"; g.bar.style.opacity = (0.5 * e).toFixed(3); g.L.forEach(function (S) { S.style.filter = "brightness(" + (1 + 0.18 * e * fl).toFixed(3) + ")"; }); }
+      if (g.type === "roll") { var y = Math.min(1, Math.max(0, (p - 0.08) / 0.84)), yy = y < 0.5 ? 2 * y * y : 1 - Math.pow(-2 * y + 2, 2) / 2; g.img.style.opacity = "0"; g.L[0].style.transform = "translate3d(0," + (-yy * (g.card.h + 14)).toFixed(1) + "px,0)"; g.L[0].style.filter = "brightness(" + (1 + 0.15 * e * fl).toFixed(3) + ") contrast(" + (1 - 0.12 * e).toFixed(3) + ")"; }
+      if (g.type === "chroma") { var dx = (g.dx * e).toFixed(1); g.L[0].style.transform = "translate3d(" + dx + "px,0,0)"; g.L[1].style.transform = "translate3d(" + (-dx) + "px,0,0)"; g.L[0].style.opacity = g.L[1].style.opacity = (0.55 * e).toFixed(3); g.img.style.filter = "saturate(" + (1 - 0.45 * e).toFixed(3) + ") brightness(" + (1 + 0.08 * e * fl).toFixed(3) + ")"; }
+      if (g.type === "drop") { var dn = p < 0.55 ? Math.sin(Math.PI * p / 1.1) : 1 - (p - 0.55) / 0.45, over = p > 0.62 ? Math.sin(Math.PI * (p - 0.62) / 0.38) : 0; g.img.style.filter = "brightness(" + (1 - 0.78 * dn + 0.35 * over).toFixed(3) + ") saturate(" + (1 - 0.8 * dn).toFixed(3) + ")"; g.L[0].style.opacity = (0.55 * dn * fl).toFixed(3); g.L[0].style.backgroundPosition = "0 " + (Math.floor(Math.random() * 4) * 33.333).toFixed(2) + "%"; }
+      if (g.type === "jitter") { g.L[0].style.opacity = e > 0.05 ? "1" : "0"; g.L[0].style.transform = "translate3d(" + ((Math.random() < 0.5 ? -1 : 1) * (e > 0.5 ? 2 : 1)) + "px,0,0)"; g.img.style.filter = "brightness(" + (1 + 0.06 * fl * e).toFixed(3) + ")"; }
+    }
+  };
+  var visible = function () { return cards.filter(function (c) { return c.on && c.nx > -0.85 && c.nx < 0.85 && c.el !== hovered && !c.el.classList.contains("gl-on"); }); };
+  var fire = function () {
+    timer = 0;
+    if (!W.on || document.hidden) return;
+    var vis = visible();
+    if (vis.length >= 2) {
+      var a, b, key, tries = 0;
+      do { a = vis[Math.floor(Math.random() * vis.length)]; b = vis[Math.floor(Math.random() * vis.length)]; key = [cards.indexOf(a), cards.indexOf(b)].sort().join("-"); } while ((a === b || key === lastPair) && ++tries < 20);
+      if (a !== b) {
+        lastPair = key;
+        var pool = FORCE || TYPES, t1 = pool[Math.floor(Math.random() * pool.length)], t2; do { t2 = pool[Math.floor(Math.random() * pool.length)]; } while (t2 === t1 && pool.length > 1);
+        start(a, t1); start(b, t2);
+      }
+    }
+    plan();
+  };
+  var plan = function () { if (!timer) timer = setTimeout(fire, DEBUG ? 1300 : 3000 + Math.random() * 4000); };
+  W.hooks.push(function (t) { bend(); if (live.length) frame(t); if (!timer) plan(); });
+  if (DEBUG) setTimeout(fire, 900);
+  W.go();
+})();
+
