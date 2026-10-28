@@ -1757,36 +1757,29 @@ index 0000000..1939139
 +</body>
 +</html>
 diff --git a/site/site.css b/site/site.css
-index 9b248e2..8fc66e3 100644
+index 9b248e2..0fdc165 100644
 --- a/site/site.css
 +++ b/site/site.css
-@@ -1605,3 +1605,24 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
+@@ -1605,3 +1605,17 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
    a.bcard:is(:nth-child(6n+3), :nth-child(6n+4)) .bc-name::after { width: 24px; height: 24px; margin-top: -12px; right: 5px; }
  }
  @media (max-width: 340px) { .zd-list { grid-template-columns: 1fr; } }
-+/* BETA (r361, r362): the wall of work as a video wall of old monitors (site.js adds .crt): one perspective on the
-+   wall (its origin set by site.js to the wall's centre on screen), the rows keep 3D (preserve-3d) so every screen
-+   sits on the one curved surface; a dark bezel and small gaps like separate sets in one rig; a faint scanline and a
-+   touch of glass on each screen, a soft vignette on the wall; the h1 and the link stay flat above it all */
-+.pwall.crt .pw-rows { perspective: 1500px; transform-style: preserve-3d; gap: 10px; }
-+.pwall.crt .pw-row { transform-style: preserve-3d; gap: 10px; }
-+.pwall.crt .pw-case { border: 3px solid #161513; border-radius: 12px; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); backface-visibility: hidden; will-change: transform; }
-+.pwall.crt .pw-case img { border-radius: 8px; }
-+.pwall.crt::before { content: ""; position: absolute; inset: 14px 0 70px; z-index: 1; pointer-events: none; background: radial-gradient(120% 100% at 50% 50%, rgba(13,12,9,0) 62%, rgba(13,12,9,.18) 100%); }
-+.pwall.crt .pw-case::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: 8px;
-+  background: repeating-linear-gradient(0deg, rgba(13,12,9,.08) 0 1px, rgba(13,12,9,0) 1px 3px), radial-gradient(140% 120% at 30% 10%, rgba(255,255,255,.10), rgba(255,255,255,0) 45%), radial-gradient(110% 100% at 50% 50%, rgba(13,12,9,0) 70%, rgba(13,12,9,.22) 100%); }
-+@media (max-width: 700px) { .pwall.crt .pw-rows, .pwall.crt .pw-row { gap: 8px; } .pwall.crt .pw-case { border-width: 2px; border-radius: 10px; } }
-+.pw-case .gl { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: block; background: center / cover no-repeat; }
-+.pw-case .gl-noise { background-size: 100% 600%; background-repeat: no-repeat; opacity: 0; }
-+.pw-case.gl-drop .gl-noise { mix-blend-mode: screen; }
-+.pw-case .gl-bar { inset: 0 0 auto; height: 20%; background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.2) 45%, rgba(13,12,9,.3) 62%, rgba(13,12,9,0)); }
-+.pw-case .gl-roll { inset: 0 0 auto; display: flex; flex-direction: column; background: none; }
-+.pw-case .gl-roll b { display: block; flex: 0 0 auto; background: center / cover no-repeat; }
-+.pw-case .gl-roll s { display: block; flex: 0 0 14px; background: linear-gradient(180deg, #0d0c09 0 35%, #4a4740 48%, #0d0c09 62%); text-decoration: none; }
-+@media (prefers-reduced-motion: reduce) { .pwall.crt::before { display: none; } .pw-case .gl { display: none; } }
-+.pw-case.gl-on { background: #0d0c09; }
++/* BETA, CRT v3 (Daniel, 28 Oct): the wall of work as a rig of small 80s sets, drawn by site.js in one WebGL2 canvas
++   under the covers (.crt3). The rig faces you flat, a dark bezel per set and small gaps; the DOM covers stay on top,
++   see-through once their picture is on the glass (.crt-ready), so links, focus, the hover name and the first tap work
++   as before. No lift on hover (the set leans in on the glass instead). The h1 and the link stay flat above it all */
++.pwall.crt3 .pw-gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
++.pwall.crt3 .pw-rows { position: relative; z-index: 1; gap: 10px; }
++.pwall.crt3 .pw-row { gap: 10px; }
++.pwall.crt3 .pw-case { border-radius: 12px; background: #161513; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
++.pwall.crt3 .pw-case.crt-ready { background: transparent; }
++.pwall.crt3 .pw-case.crt-ready img { opacity: 0; }
++.pwall.crt3 .pw-case::after { display: none; }
++.pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) { translate: none; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
++.pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) img { scale: none; }
++@media (max-width: 700px) { .pwall.crt3 .pw-rows, .pwall.crt3 .pw-row { gap: 8px; } .pwall.crt3 .pw-case { border-radius: 10px; } }
 diff --git a/site/site.js b/site/site.js
-index 57b4c76..d1526e8 100644
+index 57b4c76..40db78e 100644
 --- a/site/site.js
 +++ b/site/site.js
 @@ -397,8 +397,9 @@
@@ -1801,130 +1794,197 @@ index 57b4c76..d1526e8 100644
    });
    if (!reduced && pwRows.length && "IntersectionObserver" in window) {
      const v = matchMedia("(max-width: 700px)").matches ? 3.5 : 5.6; // r362 (Daniel: "poate fi mai lent"): 0.7x of r360
-@@ -468,3 +469,126 @@
+@@ -407,6 +408,9 @@
+       if (!WALL.on || d.hidden) { WALL.last = 0; return; }
+       const dt = WALL.last ? Math.min(0.1, (t - WALL.last) / 1000) : 0; WALL.last = t;
+       pwRows.forEach((r, i) => { if (!WALL.hold[i]) WALL.off[i] += v * dt * (1 + i * 0.1); });
++      // beta (Daniel, 28 Oct: more covers pass as you scroll, "foaaarte sleek"): the scroll part glides after the
++      // scroll, critically damped (about 0.1 of the way a frame at 60 fps, the same at any frame rate)
++      if (WALL.tgt != null) { const k = 1 - Math.exp(-6.3 * dt), e = WALL.tgt - WALL.base; WALL.base = Math.abs(e) < 0.05 ? WALL.tgt : WALL.base + e * k; }
+       wallPaint(); WALL.hooks.forEach((f) => f(t, dt));
+       WALL.raf = requestAnimationFrame(loop);
+     };
+@@ -444,9 +448,11 @@
+       if (pwRows.length) {
+         const r = pwall.getBoundingClientRect();
+         if (r.top < vh && r.bottom > 0) {
+-          WALL.base = (vh - r.top) * 0.35 + 40;
++          // beta: 0.8 px a scrolled px (was 0.35, 2.3x), so each row brings in about two more covers across the fold;
++          // the drift loop eases WALL.base to it (WALL.tgt); the first read lands at once
++          WALL.tgt = (vh - r.top) * 0.8 + 40; if (!WALL.init || !WALL.raf) { WALL.init = 1; WALL.base = WALL.tgt; }
+           pwRows.forEach((row) => { if (!row._half) row._half = row.scrollWidth / 2; });
+-          wallPaint();
++          if (!WALL.raf) wallPaint();
+         }
+       }
+     };
+@@ -468,3 +474,169 @@
  
    // r359: the boarding pass has its own script now (build/boarding.mjs)
  })();
 +
-+// BETA (r361, r362: Daniel, 28 Oct): the wall of work as a video wall of old monitors. On the drift's own frame loop
-+// (window.__czWall.hooks, site.js above). ONE surface: one perspective on the wall with its origin at the wall's centre
-+// on screen; every cover sits on a shallow concave sphere around the viewer by its x and y from that centre (the outer
-+// ones turn towards you, the corners on both axes), with a small bezel and small gaps like separate sets in one rig.
-+// A faint scanline on each screen, a soft vignette on the wall; the h1 and the link stay flat and crisp above them.
-+// Every 6-10 s ONE visible screen loses its signal for under a second, like a set does: snow, a signal drop, the
-+// horizontal hold slipping, or the picture rolling once. Each one: a fast onset, a sustain where the tuner fights back
-+// (the picture half returns, flickers inside the frame), and a recovery with a short brightness bloom; the noise takes
-+// the screen's own brightness. One shared noise sprite (made on the first glitch), layers only on that screen and
-+// removed after; nothing with reduced motion, off screen or in a hidden tab; a screen under the pointer is never
-+// picked (and the pointer ends its glitch). ?glitch=1 (or ?glitch=snow,roll) glitches at once and often, for captures.
++// BETA, CRT v3 (Daniel, 28 Oct: "calculează exact cum ar arăta prin tub CRT"; his picks: the 80s look, clearly curved
++// spherical tubes, and a wall of many small sets). Every cover is its own convex 80s tube in a flat bezel; the rig faces
++// you flat (no card is turned any more), and the one shared perspective comes from the optics: each tube is ray-traced
++// from one eye in front of the middle of the screen, so the domes, their bulge and the window's reflection on the glass
++// shift together across the rig. WebGL2, on the drift's own frame loop (window.__czWall.hooks: nothing off screen or in
++// a hidden tab). The maths (~/cromatic-ops/refs/wall-crt/crt-research.md): a sphere of radius R = 0.85 x the screen's
++// diagonal through the screen's corners; the eye ray meets it; the picture is laid on the glass by arc length (as
++// crt-geom does), so straight lines bow and the middle swells; rounded raster corners, a strong edge falloff (glass
++// thickening to the rim), Gaussian scanlines that widen on bright parts, a fine mask on 2x screens, halation, a touch
++// of misconvergence, a bezel shadow and one soft specular window. The DOM covers stay where they are, above the canvas,
++// transparent: links, focus, the hover name and the first-tap name work as before, and because every set's bezel IS its
++// DOM box (the bulge lives inside it) a pointer always lands on the set it is over. The h1 and the link stay flat above.
++// Every 6-10 s ONE visible screen loses its signal (snow, a drop, the horizontal hold slipping, the picture rolling),
++// now in the shader. No WebGL2, reduced motion, a lost context: the flat wall (A). ?glitch=1 (or ?glitch=snow,roll)
++// glitches at once and often; ?crt=R,d tries other radii and distances (both in diagonals).
 +(function () {
 +  var W = window.__czWall, wall = document.querySelector(".pwall.pw-first");
 +  if (!W || !W.go || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-+  wall.classList.add("crt");
-+  var rowsEl = wall.querySelector(".pw-rows"), rows = [].slice.call(wall.querySelectorAll(".pw-row"));
-+  var phone = matchMedia("(max-width: 700px)").matches, K = phone ? 0.65 : 1;
-+  var cards = [], vw = innerWidth, rowsLeft = 0, H = 1, measure = function () {
-+    vw = innerWidth; var r = rowsEl.getBoundingClientRect(); rowsLeft = r.left; H = rowsEl.offsetHeight || 1;
-+    // the one perspective: its origin is the middle of the wall as it is on screen
-+    rowsEl.style.perspectiveOrigin = (vw / 2 - rowsLeft).toFixed(0) + "px " + (H / 2).toFixed(0) + "px";
-+    cards = []; rows.forEach(function (row, i) { [].forEach.call(row.querySelectorAll(".pw-case"), function (c) { cards.push({ el: c, row: i, l: c.offsetLeft, w: c.offsetWidth, h: c.offsetHeight, cy: row.offsetTop + c.offsetTop + c.offsetHeight / 2 }); }); });
-+    rows.forEach(function (row) { row._half = row.scrollWidth / 2; });
++  var cv = document.createElement("canvas"), gl = null;
++  try { gl = cv.getContext("webgl2", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false }); } catch (e) {}
++  if (!gl) return;
++  var phone = matchMedia("(max-width: 700px)").matches, Q = new URLSearchParams(location.search);
++  var geo = (Q.get("crt") || "").split(",").map(Number), RK = geo[0] > 0.3 ? geo[0] : 0.85, DK = geo[1] > 0.5 ? geo[1] : 2.0;
++  var DPR = Math.min(devicePixelRatio || 1, 2), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 6 : 8, RAD = phone ? 10 : 12;
++  cv.className = "pw-gl"; cv.setAttribute("aria-hidden", "true");
++  var VS = "#version 300 es\nlayout(location=0) in vec2 aC;layout(location=1) in vec4 iBox;layout(location=2) in vec4 iA;layout(location=3) in vec4 iG;layout(location=4) in vec4 iM;uniform vec2 uRes;out vec2 vP;flat out vec4 vBox,vA,vG,vM;void main(){vec2 p=iBox.xy+aC*iBox.zw;vP=(aC-.5)*iBox.zw;vBox=iBox;vA=iA;vG=iG;vM=iM;gl_Position=vec4(p/uRes*2.-1.,0.,1.);gl_Position.y=-gl_Position.y;}";
++  var FS = "#version 300 es\nprecision highp float;precision highp sampler2DArray;uniform sampler2DArray uT;uniform float uPitch,uDpr,uBez,uRad,uRk,uDk,uSeed,uMask,uTime;in vec2 vP;flat in vec4 vBox,vA,vG,vM;out vec4 o;" +
++    "float rr(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}" +
++    "float h1(vec2 p){p=fract(p*vec2(.1031,.1030));p+=dot(p,p.yx+33.33);return fract((p.x+p.y)*p.x);}" +
++    "vec3 tx(vec2 u){return textureLod(uT,vec3(clamp(u,.001,.999),vA.x),0.).rgb;}vec3 tb(vec2 u,float l){return textureLod(uT,vec3(clamp(u,.001,.999),vA.x),l).rgb;}" +
++    "void main(){vec2 hf=vBox.zw*.5;float aa=1./uDpr;" +
++    // the set: a flat bezel with rounded corners; outside it nothing
++    "float so=rr(vP,hf,uRad);float al=1.-smoothstep(-aa,aa,so);if(al<=0.){discard;}" +
++    "float dg=2.*length(hf-uBez);vec2 ab=(hf-uBez)/dg,P=vP/dg;float R=uRk,dE=uDk,zc=-sqrt(max(R*R-dot(ab,ab),1e-4));" +
++    // the face swells towards you in the middle of each edge: shrink it so that swell (and the eye's slant) stays inside the bezel
++    "vec2 ze=sqrt(R*R-ab*ab)+zc;ab*=(dE-ze)/dE*(1.-1.6*length(vA.zw)*(ze.x+ze.y));zc=-sqrt(max(R*R-dot(ab,ab),1e-4));" +
++    // the eye (shared direction, vA.zw = lateral offset per unit of depth) and the ray through this pixel
++    "vec3 E=vec3(vA.zw*dE,dE),dir=normalize(vec3(P,0.)-E),oc=E-vec3(0.,0.,zc);float b=dot(oc,dir),a2=dot(dir,dir),c=dot(oc,oc)-R*R,ds=b*b-c;" +
++    "vec3 S=E+dir*(-b-sqrt(max(ds,0.))),n=(S-vec3(0.,0.,zc))/R;" +
++    // arc length on the glass: the corners of the raster sit on the corners of the opening
++    "float al0=acos(clamp(n.z,-1.,1.));vec2 q=R*al0*n.xy/max(length(n.xy),1e-5);float sc=R*acos(-zc/R)/length(ab);vec2 AB=ab*sc;vec2 f=q/AB;" +
++    "float rc=.15*2.*AB.y,sd=rr(q,AB,rc);" +
++    // the plastic: warm black, a little lighter at the top, a hairline catching the light on its top edge
++    "vec3 pl=mix(vec3(.135,.128,.112),vec3(.07,.066,.058),clamp(vP.y/vBox.w+.5,0.,1.));pl+=.05*(1.-smoothstep(0.,1.5,-so))*step(vP.y,-hf.y+3.);" +
++    "float px=1./(sc*dg);if(sd>0.){vec3 cc=sd<1.6*px?vec3(.02):pl;o=vec4(cc*al,al);return;}" +
++    "vec2 ras=f*.5+.5,uv=ras;float hov=vA.y,ty=vG.x,p=vG.y,s=vG.z,bl=vG.w,yy=vM.x,ln=max(60.,floor(vBox.w*uDpr/uPitch));" +
++    "uv=(uv-.5)/(1.+.05*hov)+.5;" +
++    // the glitches (1 snow, 2 drop, 3 the horizontal hold, 4 the vertical roll)
++    "float nz=0.,vbi=0.,bar=0.;" +
++    "if(ty>2.5&&ty<3.5){float nb=5.,bd=floor(clamp(ras.y+.04*sin(uTime*11.+ras.y*9.+vM.y),0.,.999)*nb),sg=mod(bd,2.)*2.-1.,bc=(bd+.5)/nb;uv.x+=sg*s*(10.+14.*sin(bd*2.1+vM.y))/(2.*AB.x*dg)+sg*s*.1*(ras.y-bc);float yb=p*1.3-.2;bar=s*.6*exp(-pow((ras.y-yb)/.06,2.));}" +
++    "if(ty>3.5){float y=ras.y+yy*1.06;y=mod(y,1.06);if(y>1.){vbi=1.;}uv.y=y;}" +
++    "vec2 mc=f*.0011;vec3 col=vec3(tx(uv+mc).r,tx(uv).g,tx(uv-mc).b);" +
++    // halation: the glass scatters the bright parts into a soft glow around them
++    "vec3 hl=.5*tb(uv,3.5)+.5*tb(uv,5.);" +
++    "col=mix(col,tb(uv,1.6),.12);col+=.09*hl*hl;float lu=dot(col,vec3(.299,.587,.114)),la=dot(hl,vec3(.299,.587,.114));" +
++    "if(ty>.5){float fl=.88+.24*h1(vec2(uSeed,7.));vec3 pc=col;float br=1.-.15*s+.32*bl,ct=1.-.25*s+.08*bl,st=1.-.5*s;" +
++    " if(ty>1.5&&ty<2.5){float dk=min(1.,s*1.15);br=1.-.82*dk+.4*bl;st=1.-.9*dk;ct=1.-.3*dk;}" +
++    " pc=(pc-.5)*ct+.5;pc*=br;pc=mix(vec3(dot(pc,vec3(.299,.587,.114))),pc,st);" +
++    " float lnn=floor(ras.y*ln*2.),sm=h1(vec2(lnn,uSeed*13.1));nz=mix(sm,h1(vec2(floor(gl_FragCoord.x/(1.5*uDpr)),lnn+uSeed*71.)),.6)*(.7+.6*h1(vec2(lnn*.37,uSeed)));" +
++    " float ns=(.45+la*1.1);float amt=ty<1.5?min(1.,s*1.05)*.92*fl:ty<2.5?.32*min(1.,s*1.15)*fl:(ty<3.5?.12:.1)*s*fl;" +
++    " col=ty>1.5&&ty<2.5?pc+vec3(nz*ns)*amt:mix(pc,vec3(nz*ns),amt);col+=bar;}" +
++    "if(vbi>.5){float m=(mod(ras.y+yy*1.06,1.06)-1.)/.06;col=vec3(.04)+vec3(.22)*exp(-pow((m-.5)/.12,2.));}" +
++    // the hover: the picture leans in a little, its bottom darkens under the name
++    "col*=1.-hov*.68*smoothstep(.42,1.02,ras.y);" +
++    // scanlines: a Gaussian beam that widens where the picture is bright
++    "float Y=ras.y*ln,fw=fwidth(Y),sgm=mix(.24,.42,clamp(lu,0.,1.)),bw=0.;for(int i=-2;i<=2;i++){float fy=fract(Y+fw*.2*float(i))-.5;bw+=exp(-.5*fy*fy/(sgm*sgm));}bw/=5.;float mn=sgm*2.5066*.95;col*=mix(1.,bw/mn,.42*(1.-smoothstep(.3,.55,fw)));" +
++    // the mask (only where there are pixels enough for it): an aperture of three phosphor stripes
++    "if(uMask>.5){float m=mod(floor(gl_FragCoord.x),3.);col*=mix(vec3(1.),vec3(m<.5?1.08:.84,m>.5&&m<1.5?1.08:.84,m>1.5?1.08:.84),.7);}" +
++    // edge falloff: the glass thickens to the rim and the beam lands at a slant there
++    "float e=(1.-.85*f.x*f.x)*(1.-.85*f.y*f.y);col*=.42+.58*pow(clamp(e,0.,1.),.6);" +
++    // the bezel's shadow on the glass, deeper under the top edge
++    "float sh=rr(q-vec2(0.,.022*AB.y),AB,rc);col*=mix(.3,1.,smoothstep(0.,7.*px,-sh));" +
++    // the glass: the room's dim reflection (the black of an 80s screen is a grey) and one soft window up on the left
++    "vec3 V=normalize(E-S),Rf=reflect(-V,n);float sp=dot(Rf,normalize(vec3(-.42,-.62,1.)));col+=vec3(.03,.032,.03)+vec3(1.,.99,.96)*(smoothstep(.95,.995,sp)*.13+pow(max(sp,0.),6.)*.07);" +
++    "float ed=smoothstep(0.,aa*1.5*px,-sd);col=mix(vec3(.02),col,ed);o=vec4(clamp(col,0.,1.)*al,al);}";
++  var mk = function (t, src) { var s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); return s; };
++  var prog = gl.createProgram(), vs = mk(gl.VERTEX_SHADER, VS), fs = mk(gl.FRAGMENT_SHADER, FS);
++  gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
++  var PAR = gl.getExtension("KHR_parallel_shader_compile"), ready = false, dead = false, U = {};
++  // the covers: one layer each in a texture array, uploaded from the wall's own <img> once it is loaded and decoded
++  var rowsEl = wall.querySelector(".pw-rows"), rows = [].slice.call(wall.querySelectorAll(".pw-row")), cards = [], layers = {}, NL = 0, queue = [];
++  rows.forEach(function (row, i) { [].forEach.call(row.querySelectorAll(".pw-case"), function (el) { var k = el.getAttribute("href"); if (!(k in layers)) layers[k] = { i: NL++, up: 0, cards: [] }; var L = layers[k]; var c = { el: el, img: el.querySelector("img"), row: i, L: L, hov: 0 }; L.cards.push(c); cards.push(c); }); });
++  var tex = null, inst = new Float32Array(cards.length * 16), ibuf = null, vao = null;
++  var lost = function () { dead = true; wall.classList.remove("crt3"); cv.remove(); };
++  cv.addEventListener("webglcontextlost", function (e) { e.preventDefault(); lost(); });
++  var setup = function () {
++    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { lost(); return; }
++    gl.useProgram(prog); ["uRes", "uT", "uPitch", "uDpr", "uBez", "uRad", "uRk", "uDk", "uSeed", "uMask", "uTime"].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
++    tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
++    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 10, gl.RGBA8, 560, 380, NL); // mips: the halation reads the blurred levels
++    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
++    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
++    vao = gl.createVertexArray(); gl.bindVertexArray(vao);
++    var qb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
++    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
++    ibuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferData(gl.ARRAY_BUFFER, inst.byteLength, gl.DYNAMIC_DRAW);
++    for (var a = 1; a <= 4; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, 64, (a - 1) * 16); gl.vertexAttribDivisor(a, 1); }
++    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
++    gl.uniform1i(U.uT, 0); gl.uniform1f(U.uDpr, DPR); gl.uniform1f(U.uPitch, PITCH); gl.uniform1f(U.uBez, BEZ); gl.uniform1f(U.uRad, RAD); gl.uniform1f(U.uRk, RK); gl.uniform1f(U.uDk, DK); gl.uniform1f(U.uMask, DPR >= 1.9 ? 1 : 0);
++    wall.insertBefore(cv, wall.firstChild); wall.classList.add("crt3"); measure(); ready = true;
++    cards.forEach(function (c) { if (c.img && !c.L.dec) { var go = function () { if (c.L.dec) return; c.L.dec = 1; (c.img.decode ? c.img.decode() : Promise.resolve()).then(function () { queue.push(c); }, function () { c.L.dec = 0; }); }; if (c.img.complete && c.img.naturalWidth) go(); else c.img.addEventListener("load", go, { once: true }); } });
 +  };
-+  measure(); addEventListener("resize", function () { setTimeout(measure, 150); });
-+  // the surface: nx, ny = -1 .. 1 from the wall's centre (x by half the screen's width, y by half the wall's height)
-+  var AY = 9 * K, AX = 6 * K, Z = 34 * K;
-+  var bend = function () {
-+    var X = W.x || [];
-+    for (var k = 0; k < cards.length; k++) {
-+      var c = cards[k], cx = rowsLeft + (X[c.row] || 0) + c.l + c.w / 2, nx = (cx - vw / 2) / (vw / 2), ny = (c.cy - H / 2) / (H / 2);
-+      if (nx < -1.5 || nx > 1.5) { if (c.on) { c.el.style.transform = ""; c.on = 0; } continue; }
-+      var ry = -nx * AY, rx = ny * AX, tz = (nx * nx * 0.8 + ny * ny * 0.35) * Z;
-+      c.el.style.transform = "translate3d(0,0," + tz.toFixed(1) + "px) rotateY(" + ry.toFixed(2) + "deg) rotateX(" + rx.toFixed(2) + "deg)";
-+      c.on = 1; c.nx = nx;
-+    }
++  // where everything is (on resize only): each set's box in the wall, without its row's current drift
++  var vw = 1, wh = 1, secTop = 0, D = 1, measure = function () {
++    var r = wall.getBoundingClientRect(), X = W.x || []; vw = r.width; wh = r.height; secTop = r.top + scrollY; D = innerWidth * (phone ? 4 : 1.8);
++    cv.width = Math.round(vw * DPR); cv.height = Math.round(wh * DPR);
++    cards.forEach(function (c) { var b = c.el.getBoundingClientRect(); c.x = b.left - r.left - (X[c.row] || 0); c.y = b.top - r.top; c.w = b.width; c.h = b.height; });
++    if (ready || gl.isProgram(prog)) { gl.viewport(0, 0, cv.width, cv.height); }
 +  };
-+  // the shared noise: 6 frames of 160x120 snow, each line smeared sideways the way a tuner smears it (made once)
-+  var NOISE = null, noise = function () {
-+    if (NOISE) return NOISE;
-+    var cv = document.createElement("canvas"), w = 160, h = 120, F = 6; cv.width = w; cv.height = h * F;
-+    var g = cv.getContext("2d"), im = g.createImageData(w, h * F), d = im.data;
-+    for (var y = 0; y < h * F; y++) { var line = 0.7 + Math.random() * 0.6, v = Math.random() * 255; for (var x = 0; x < w; x++) { v = v * 0.45 + Math.random() * 255 * 0.55; var o = (y * w + x) * 4, lum = Math.min(255, v * line); d[o] = d[o + 1] = d[o + 2] = lum; d[o + 3] = 255; } }
-+    g.putImageData(im, 0, 0); NOISE = cv.toDataURL("image/png"); return NOISE;
-+  };
-+  // a screen's own brightness (once per cover, from an 8x8 copy of its picture): its snow is as bright as it was
-+  var lumaOf = function (c) {
-+    if (c.luma != null) return c.luma;
-+    c.luma = 0.5;
-+    try { var img = c.el.querySelector("img"), cv = document.createElement("canvas"); cv.width = cv.height = 8; var g = cv.getContext("2d"); g.drawImage(img, 0, 0, 8, 8); var d = g.getImageData(0, 0, 8, 8).data, s = 0; for (var i = 0; i < d.length; i += 4) s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; c.luma = s / 64 / 255; } catch (e) {}
-+    return c.luma;
-+  };
-+  var TYPES = ["snow", "drop", "hsync", "roll"], DUR = { snow: [520, 900], drop: [620, 950], hsync: [380, 760], roll: [700, 980] };
-+  var q = new URLSearchParams(location.search).get("glitch"), DEBUG = q != null, FORCE = q && q !== "1" ? q.split(",") : null;
-+  var live = null, last = null, lastType = "", timer = 0, hovered = null;
-+  wall.addEventListener("pointerover", function (e) { hovered = e.target.closest && e.target.closest(".pw-case"); if (live && live.el === hovered) { end(live); live = null; } });
-+  wall.addEventListener("pointerleave", function () { hovered = null; });
-+  // the signal: a fast loss (12%), a sustain where it fights back, the recovery (last 30%) with a bloom
-+  var sig = function (p, g) {
-+    if (p < 0.12) { var a = p / 0.12; return a * a * (3 - 2 * a); }
-+    if (p < 0.7) return 0.78 + 0.22 * Math.sin(p * g.f1) * Math.sin(p * g.f2 + 1.3); // the tuner catching the signal for a moment
-+    var r = (p - 0.7) / 0.3; return 1 - r * r * (3 - 2 * r);
-+  };
++  var rz = 0; addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (ready) measure(); }, 150); });
++  addEventListener("load", function () { if (ready) measure(); });
++  // the pointer and the keyboard: the set under them leans in (the DOM decides which one, so it is always the right one)
++  var over = null, focus = null;
++  wall.addEventListener("pointerover", function (e) { over = e.target.closest && e.target.closest(".pw-case"); if (live && live.c.el === over) live = null; });
++  wall.addEventListener("pointerleave", function () { over = null; });
++  wall.addEventListener("focusin", function (e) { focus = e.target.closest && e.target.closest(".pw-case"); });
++  wall.addEventListener("focusout", function () { focus = null; });
++  // the glitches: when, which screen, how the signal goes (a fast loss, a sustain where the tuner fights back, the recovery with a bloom)
++  var TYPES = ["snow", "drop", "hsync", "roll"], TID = { snow: 1, drop: 2, hsync: 3, roll: 4 }, DUR = { snow: [520, 900], drop: [620, 950], hsync: [380, 760], roll: [700, 980] };
++  var gq = Q.get("glitch"), DEBUG = gq != null, FORCE = gq && gq !== "1" ? gq.split(",").filter(function (x) { return TID[x]; }) : null;
++  if (FORCE && !FORCE.length) FORCE = null;
++  var live = null, last = null, lastType = "", next = 0;
++  var sig = function (p, g) { if (p < 0.12) { var a = p / 0.12; return a * a * (3 - 2 * a); } if (p < 0.7) return 0.78 + 0.22 * Math.sin(p * g.f1) * Math.sin(p * g.f2 + 1.3); var r = (p - 0.7) / 0.3; return 1 - r * r * (3 - 2 * r); };
 +  var bloom = function (p) { return p < 0.7 ? 0 : Math.sin(Math.PI * Math.min(1, (p - 0.7) / 0.3)) * Math.exp(-2.2 * (p - 0.7) / 0.3); };
-+  var layer = function (c, cls, img) { var L = document.createElement("i"); L.className = "gl " + cls; L.setAttribute("aria-hidden", "true"); if (img) L.style.backgroundImage = 'url("' + img + '")'; c.appendChild(L); return L; };
-+  var start = function (card, type) {
-+    var el = card.el, img = el.querySelector("img"), src = img && (img.currentSrc || img.src), R = DUR[type];
-+    var g = { card: card, el: el, img: img, type: type, t0: performance.now(), dur: R[0] + Math.random() * (R[1] - R[0]), L: [], f1: 22 + Math.random() * 18, f2: 41 + Math.random() * 30, luma: lumaOf(card) };
-+    el.classList.add("gl-on", "gl-" + type);
-+    var N = layer(el, "gl-noise", noise()); N.style.filter = "brightness(" + (0.45 + g.luma * 1.1).toFixed(2) + ") contrast(" + (0.9 + (1 - g.luma) * 0.3).toFixed(2) + ")"; g.L.push(N); g.noise = N;
-+    if (type === "hsync") { var n = 4 + Math.floor(Math.random() * 3); g.cuts = []; for (var i = 0; i < n; i++) { var S = layer(el, "gl-img", src); S._k = i; g.L.push(S); g.cuts.push(S); } g.n = n; g.bar = layer(el, "gl-bar"); g.L.push(g.bar); g.ph = Math.random() * 6; }
-+    if (type === "roll") { var Rl = layer(el, "gl-roll"); Rl.innerHTML = "<b></b><s></s><b></b>"; [].forEach.call(Rl.querySelectorAll("b"), function (b) { b.style.backgroundImage = 'url("' + src + '")'; b.style.height = card.h + "px"; }); g.roll = Rl; g.L.push(Rl); }
-+    live = g;
++  var rollY = function (p) { var y = Math.min(1, Math.max(0, (p - 0.06) / 0.8)); return y < 0.75 ? 1.03 * Math.pow(y / 0.75, 2.2) : 1 + 0.03 * Math.cos(Math.PI * 1.5 * (y - 0.75) / 0.25) * Math.exp(-4 * (y - 0.75) / 0.25); };
++  var fire = function (t) {
++    var vis = cards.filter(function (c) { return c.on && Math.abs(c.nx) < 0.8 && c.el !== over && c.el !== focus && c !== last && c.L.up; });
++    if (!vis.length) return;
++    var c = vis[Math.floor(Math.random() * vis.length)], all = FORCE || TYPES, pool = all.filter(function (x) { return x !== lastType || all.length === 1; }), type = pool[Math.floor(Math.random() * pool.length)], R = DUR[type];
++    last = c; lastType = type; live = { c: c, type: TID[type], t0: t, dur: R[0] + Math.random() * (R[1] - R[0]), f1: 22 + Math.random() * 18, f2: 41 + Math.random() * 30, ph: Math.random() * 6 };
 +  };
-+  var end = function (g) { g.L.forEach(function (L) { L.remove(); }); g.el.classList.remove("gl-on", "gl-" + g.type); if (g.img) { g.img.style.filter = ""; g.img.style.opacity = ""; } };
-+  var frame = function (t) {
-+    var g = live, p = (t - g.t0) / g.dur;
-+    if (p >= 1) { end(g); live = null; return; }
-+    var s = sig(p, g), b = bloom(p), fl = 0.88 + Math.random() * 0.24, fr = "0 " + (Math.floor(Math.random() * 6) * 20) + "%";
-+    var pic = "brightness(" + (1 - 0.15 * s + 0.32 * b).toFixed(3) + ") contrast(" + (1 - 0.25 * s + 0.08 * b).toFixed(3) + ") saturate(" + (1 - 0.5 * s).toFixed(3) + ")";
-+    g.noise.style.backgroundPosition = fr;
-+    if (g.type === "snow") { g.noise.style.opacity = (Math.min(1, s * 1.05) * 0.92 * fl).toFixed(3); g.img.style.filter = pic; }
-+    if (g.type === "drop") {
-+      // the picture sinks to a dark, faintly noisy field and comes back brighter for a moment
-+      var dk = Math.min(1, s * 1.15); g.img.style.filter = "brightness(" + (1 - 0.82 * dk + 0.4 * b).toFixed(3) + ") saturate(" + (1 - 0.9 * dk).toFixed(3) + ") contrast(" + (1 - 0.3 * dk).toFixed(3) + ")";
-+      g.noise.style.opacity = (0.32 * dk * fl).toFixed(3);
++  var frame = function (t, dt) {
++    if (dead) return;
++    if (!ready) { if (!PAR || gl.getProgramParameter(prog, PAR.COMPLETION_STATUS_KHR)) setup(); return; }
++    // at most two covers a frame go up to the GPU (each a single 560 x 380 copy)
++    var upd = 0;
++    for (var u = 0; u < 2 && queue.length; u++) { var c0 = queue.shift(); if (c0.L.up) continue; try { gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex); gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, c0.L.i, 560, 380, 1, gl.RGBA, gl.UNSIGNED_BYTE, c0.img); c0.L.up = 1; upd = 1; c0.L.cards.forEach(function (x) { x.el.classList.add("crt-ready"); }); } catch (e) {} }
++    if (upd) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
++    if (!next) next = t + (DEBUG ? 900 : 6000 + Math.random() * 4000);
++    if (!live && t >= next) { fire(t); next = t + (DEBUG ? 1600 : 6000 + Math.random() * 4000); }
++    var X = W.x || [], ex = vw / 2, ey = scrollY + innerHeight / 2 - secTop, n = 0, k = 1 - Math.exp(-(dt || 0.016) / 0.06);
++    var g = live, gp = 0, gs = 0, gb = 0;
++    if (g) { gp = (t - g.t0) / g.dur; if (gp >= 1) { live = g = null; } else { gs = sig(gp, g); gb = bloom(gp); } }
++    for (var i = 0; i < cards.length; i++) {
++      var c = cards[i], x = c.x + (X[c.row] || 0);
++      c.on = x + c.w > -2 && x < vw + 2 && c.L.up; if (!c.on) continue;
++      var cx = x + c.w / 2, cy = c.y + c.h / 2; c.nx = (cx - vw / 2) / (vw / 2);
++      c.hov += ((c.el === over || c.el === focus || c.el.classList.contains("show") ? 1 : 0) - c.hov) * k;
++      var gg = g && g.c === c, o = n * 16;
++      inst[o] = x; inst[o + 1] = c.y; inst[o + 2] = c.w; inst[o + 3] = c.h;
++      inst[o + 4] = c.L.i; inst[o + 5] = c.hov; inst[o + 6] = (ex - cx) / D; inst[o + 7] = (ey - cy) / D;
++      inst[o + 8] = gg ? g.type : 0; inst[o + 9] = gg ? gp : 0; inst[o + 10] = gg ? gs : 0; inst[o + 11] = gg ? gb : 0;
++      inst[o + 12] = gg && g.type === 4 ? rollY(gp) : 0; inst[o + 13] = gg ? g.ph : 0; inst[o + 14] = 0; inst[o + 15] = 0; n++;
 +    }
-+    if (g.type === "hsync") {
-+      // the horizontal hold slips: the picture tears into bands that drift sideways and lean, a bright bar rolls through
-+      g.img.style.opacity = "0"; var h = g.card.h, n = g.n;
-+      for (var k = 0; k < n; k++) {
-+        var S = g.cuts[k], y0 = (k / n + 0.04 * Math.sin(t / 90 + k * 1.7 + g.ph)), y1 = ((k + 1) / n + 0.04 * Math.sin(t / 90 + (k + 1) * 1.7 + g.ph));
-+        S.style.clipPath = "inset(" + (Math.max(0, y0) * 100).toFixed(1) + "% 0 " + (Math.max(0, 1 - y1) * 100).toFixed(1) + "% 0)";
-+        var off = s * (10 + 14 * Math.sin(k * 2.1 + g.ph)) * (k % 2 ? -1 : 1) * (0.85 + Math.random() * 0.3);
-+        S.style.transform = "translate3d(" + off.toFixed(1) + "px,0,0) skewX(" + (s * 6 * (k % 2 ? 1 : -1)).toFixed(2) + "deg)"; S.style.filter = pic;
-+      }
-+      g.bar.style.transform = "translate3d(0," + ((p * 1.3 - 0.2) * h).toFixed(1) + "px,0)"; g.bar.style.opacity = (0.6 * s).toFixed(3);
-+      g.noise.style.opacity = (0.12 * s * fl).toFixed(3);
-+    }
-+    if (g.type === "roll") {
-+      // the vertical hold lets go: the picture rolls up once, gathering speed, then the hold catches it, overshoots a hair and settles
-+      g.img.style.opacity = "0"; var y = Math.min(1, Math.max(0, (p - 0.06) / 0.8)), yy = y < 0.75 ? 1.03 * Math.pow(y / 0.75, 2.2) : 1 + 0.03 * Math.cos(Math.PI * 1.5 * (y - 0.75) / 0.25) * Math.exp(-4 * (y - 0.75) / 0.25);
-+      g.roll.style.transform = "translate3d(0," + (-yy * (g.card.h + 14)).toFixed(1) + "px,0)";
-+      g.roll.style.filter = pic; g.noise.style.opacity = (0.1 * s * fl).toFixed(3);
-+    }
++    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
++    if (!n) return;
++    gl.useProgram(prog); gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, inst, 0, n * 16);
++    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
++    gl.uniform2f(U.uRes, vw, wh); gl.uniform1f(U.uSeed, Math.floor(Math.random() * 997)); gl.uniform1f(U.uTime, t / 1000);
++    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
 +  };
-+  var visible = function () { return cards.filter(function (c) { return c.on && c.nx > -0.8 && c.nx < 0.8 && c.el !== hovered && c !== last && c.el.querySelector("img") && c.el.querySelector("img").complete; }); };
-+  var fire = function () {
-+    timer = 0;
-+    if (!W.on || document.hidden || live) return plan();
-+    var vis = visible();
-+    if (vis.length) {
-+      var c = vis[Math.floor(Math.random() * vis.length)], pool = (FORCE || TYPES).filter(function (x) { return x !== lastType || (FORCE || TYPES).length === 1; }), type = pool[Math.floor(Math.random() * pool.length)];
-+      last = c; lastType = type; start(c, type);
-+    }
-+    plan();
-+  };
-+  var plan = function () { if (!timer) timer = setTimeout(fire, DEBUG ? 1600 : 6000 + Math.random() * 4000); };
-+  W.hooks.push(function (t) { bend(); if (live) frame(t); if (!timer) plan(); });
-+  if (DEBUG) setTimeout(fire, 900);
++  W.hooks.push(frame);
++  window.__czCrt = { cards: cards, get live() { return live; }, R: RK, d: DK };
 +  W.go();
 +})();
