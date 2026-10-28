@@ -36,7 +36,7 @@ index 4fad8e5..c75efb5 100644
  // r133: the Romanian website, from the English pages and site/i18n/ro.json
 diff --git a/build/megamenu.mjs b/build/megamenu.mjs
 new file mode 100644
-index 0000000..d4876aa
+index 0000000..6f540bf
 --- /dev/null
 +++ b/build/megamenu.mjs
 @@ -0,0 +1,116 @@
@@ -116,7 +116,7 @@ index 0000000..d4876aa
 +<div class="mm-in">
 +<div class="mm-top"><p class="mm-k mono" id="mm-title">The Street Index</p><button class="mm-x" type="button" aria-label="Close the menu"><i aria-hidden="true"></i></button></div>
 +<form class="mm-f" role="search" action="/site/#work">
-+<p class="mm-sent"><span class="mm-dim">${W.show}</span> <label class="mm-sel"><span class="mm-sr">${W.show}</span><select name="ch">${opt("", W.all)}${Object.entries(W.chapters).map(([v, l]) => opt(v, l)).join("")}</select></label> <span class="mm-dim">${W.on}</span> <label class="mm-sel"><span class="mm-sr">${W.on}</span><select name="st">${opt("", W.every)}${streets.map((s) => opt(s.k, s.street)).join("")}</select></label></p>
++<p class="mm-sent"><span class="mm-dim">${W.show}</span> <label class="mm-sel"><span class="mm-sr">${W.show}</span><select name="ch">${opt("", W.all)}${Object.entries(W.chapters).map(([v, l]) => opt(v, l)).join("")}</select></label> <span class="mm-dim mm-on">${W.on}</span> <label class="mm-sel"><span class="mm-sr">${W.on}</span><select name="st">${opt("", W.every)}${streets.map((s) => opt(s.k, s.street)).join("")}</select></label></p>
 +<span class="mm-opts" hidden><span data-v="ch:">${W.all}</span>${Object.entries(W.chapters).map(([v, l]) => `<span data-v="ch:${v}">${esc(l)}</span>`).join("")}<span data-v="st:">${W.every}</span></span>
 +<div class="mm-tools"><label class="mm-search"><span class="mm-sr">${W.searchLabel}</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg><input type="search" name="q" placeholder="${esc(W.search)}" autocomplete="off" spellcheck="false" enterkeyhint="go"><button type="button" class="mm-clear mono" hidden>${W.clear}</button></label>
 +<p class="mm-count" aria-live="polite"></p></div>
@@ -133,8 +133,8 @@ index 0000000..d4876aa
 +<p class="mm-pgo"><span class="mm-go-case">Open the case</span><span class="mm-go-st">See it on its street</span> <span aria-hidden="true">→</span></p>
 +</aside>
 +</div>
-+<p class="mm-empty mono" hidden>Nothing for that yet. Try a client, a field or a street.</p>
-+<p class="mm-foot"><span class="mm-hint mono">Point at a name to see the work</span><a href="/site/#work">Every project, street by street <span aria-hidden="true">→</span></a></p>
++<div class="mm-empty" hidden><p class="mm-e1">Nothing for that yet.</p><p class="mm-e2">Try a client, a field or a street.</p><button type="button" class="mm-reset">Show all the work</button></div>
++<p class="mm-foot"><a href="/site/#work">Every project, street by street <span aria-hidden="true">→</span></a></p>
 +</div>
 +</div>
 +</div>
@@ -225,10 +225,10 @@ index 5928447..2f04fa1 100644
 +// the sentence filter's words, for the header's mega menu (build/megamenu.mjs; its Romanian comes from site/i18n/ro.json)
 +export const SI_WORDS = T;
 diff --git a/site/i18n/ro.json b/site/i18n/ro.json
-index d852e9f..e921b22 100644
+index d852e9f..e2822ff 100644
 --- a/site/i18n/ro.json
 +++ b/site/i18n/ro.json
-@@ -4626,5 +4626,26 @@
+@@ -4626,5 +4626,27 @@
   "Coffee is where we grew up. <a href=\"/work/two-minutes/\">Two Minutes</a> has been our client and our neighbour for a decade, and in the Cromatic City we always stop there for four double espressos. Then the street filled up. Specialty shops like <a href=\"/work/steam/\">Steam</a>, Sip and OMA Coffee in Brașov. Equipment brands like <a href=\"/work/craft-coffee/\">Craft Coffee</a> and Artisan Coffee Gear. And <a href=\"/work/slow-coffee-festival/\">Slow Coffee Festival</a>, the biggest coffee lovers community in the country, whose brand universe we have upgraded every edition since 2021.": "Cafeaua e locul în care am crescut. <a href=\"/work/two-minutes/\">Two Minutes</a> ne e client și vecin de zece ani, iar în orașul Cromatic oprim mereu acolo pentru patru espresso-uri duble. Apoi strada s-a umplut. Cafenele de specialitate precum <a href=\"/work/steam/\">Steam</a>, Sip și OMA Coffee din Brașov. Branduri de echipamente precum <a href=\"/work/craft-coffee/\">Craft Coffee</a> și Artisan Coffee Gear. Și <a href=\"/work/slow-coffee-festival/\">Slow Coffee Festival</a>, cea mai mare comunitate de iubitori de cafea din țară, căruia îi îmbunătățim universul de brand la fiecare ediție, din 2021.",
   "WIP": "WIP",
   "024056 Bucharest, Sector 2": "024056 București, Sector 2",
@@ -252,39 +252,38 @@ index d852e9f..e921b22 100644
 + "Aspasia, Bonilash, Glucopil, Gripovit, Help 4 Brain, Lacalut, Lacium, Litorsal, Maximag, OchiSan, Optisomn, Parasoftin, Periferisan, Prevomit, Slaboficat, Supramax, Vizik, Vizimel": "Aspasia, Bonilash, Glucopil, Gripovit, Help 4 Brain, Lacalut, Lacium, Litorsal, Maximag, OchiSan, Optisomn, Parasoftin, Periferisan, Prevomit, Slaboficat, Supramax, Vizik, Vizimel",
 + "Open the case": "Deschide studiul de caz",
 + "See it on its street": "Vezi-l pe strada lui",
-+ "Nothing for that yet. Try a client, a field or a street.": "Nimic deocamdată. Încearcă un client, un domeniu sau o stradă.",
-+ "Point at a name to see the work": "Arată spre un nume ca să vezi lucrarea",
++ "Nothing for that yet.": "Nimic aici, deocamdată.",
++ "Try a client, a field or a street.": "Încearcă un client, un domeniu sau o stradă.",
++ "Show all the work": "Arată toate proiectele",
 + "Every project, street by street <span aria-hidden=\"true\">→</span>": "Toate proiectele, stradă cu stradă <span aria-hidden=\"true\">→</span>"
  }
 \ No newline at end of file
 diff --git a/site/megamenu.css b/site/megamenu.css
 new file mode 100644
-index 0000000..82cbc5c
+index 0000000..b496546
 --- /dev/null
 +++ b/site/megamenu.css
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,176 @@
 +/* r365 (beta) · the header's mega menu: the Street Index under "Work" (build/megamenu.mjs, site/megamenu.js).
 +   Paper, ink, one yellow; the brands' pictures lead, each street keeps its colour as a small square and an underline. */
 +.mm-btn { display: none; }
-+.js .nav .mm-btn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 0; border: 0; background: linear-gradient(var(--y), var(--y)) 0 100% / 0 3px no-repeat; color: inherit; font: 600 15px/1.6 var(--f); cursor: pointer; transition: background-size .3s var(--eoq); }
++.js .nav .mm-btn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 0; border: 0; background: linear-gradient(var(--y), var(--y)) 0 100% / 0 3px no-repeat; color: inherit; font: 600 15px/1.6 var(--f); cursor: pointer; transition: background-size .18s var(--eoq); }
 +.js .nav .mm-btn:hover, .js .nav .mm-btn[aria-expanded="true"] { background-size: 100% 3px; }
-+.mm-btn i { width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); transition: transform .25s var(--eoq); }
++.mm-btn i { width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); transition: transform .18s var(--eoq); }
 +.mm-btn[aria-expanded="true"] i { transform: translateY(1px) rotate(225deg); }
 +.js .nav .mm-alt, .js .mnav .mm-alt { display: none; }
 +.mm[hidden], .mm-scrim[hidden] { display: none !important; }
 +
 +/* the panel: under the header, as wide as the screen; the header is its containing block (backdrop-filter) */
 +.mm { position: fixed; z-index: 2; top: 100%; left: 0; right: 0; height: calc(100vh - var(--mm-top, 72px)); height: calc(100dvh - var(--mm-top, 72px)); pointer-events: none; }
-+.mm-scroll { pointer-events: auto; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border-bottom: 1px solid var(--ink); box-shadow: 0 24px 48px -24px rgba(13,12,9,.35); outline: 0;
-+  clip-path: inset(0 0 100% 0); transition: clip-path .34s var(--eoq); }
-+.mm.open .mm-scroll { clip-path: inset(0 0 -60px 0); }
-+.mm-scrim { position: fixed; z-index: 1; top: 100%; left: 0; right: 0; height: 100vh; background: rgba(13,12,9,.34); opacity: 0; transition: opacity .25s var(--eoq); }
++.mm-scroll { pointer-events: auto; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border-bottom: 1px solid var(--ink); outline: 0;
++  clip-path: inset(0 0 100% 0); transition: clip-path .18s var(--eoq); }
++.mm.open .mm-scroll { clip-path: inset(0 0 -2px 0); }
++.mm-scrim { position: fixed; z-index: 1; top: 100%; left: 0; right: 0; height: 100vh; background: rgba(13,12,9,.34); opacity: 0; transition: opacity .16s var(--eoq); }
 +.mm.open + .mm-scrim { opacity: 1; }
 +.mm-in { width: min(1440px, 100% - 64px); margin-inline: auto; padding: 26px 0 22px; }
-+.mm-in > *, .mm-st { opacity: 0; transform: translateY(10px); transition: opacity .3s var(--eoq), transform .42s var(--eoq); }
-+.mm.open .mm-in > *, .mm.open .mm-st { opacity: 1; transform: none; }
-+.mm.open .mm-grid > :nth-child(2) { transition-delay: .03s; } .mm.open .mm-grid > :nth-child(3) { transition-delay: .06s; }
-+.mm.open .mm-grid > :nth-child(4) { transition-delay: .09s; } .mm.open .mm-pv { transition-delay: .05s; }
++.mm-in { opacity: 0; transform: translateY(-6px); transition: opacity .14s var(--eoq), transform .18s var(--eoq); }
++.mm.open .mm-in { opacity: 1; transform: none; }
 +.mm p { margin: 0; }
 +.mm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 +.mm-top { display: none; }
@@ -296,7 +295,8 @@ index 0000000..82cbc5c
 +.mm-f { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 14px 32px; padding-bottom: 20px; border-bottom: 1px solid var(--ink); }
 +.mm-sent { font: 800 clamp(28px, 2.6vw, 40px)/1.12 var(--f); letter-spacing: -.035em; padding-bottom: 4px; }
 +.mm-sel { white-space: nowrap; }
-+.mm-dim { color: #a9a69d; }
++.mm-dim { color: #8c887e; }
++.mm-on { white-space: nowrap; }
 +.mm-sel { position: relative; display: inline-block; }
 +.mm-sel select { width: var(--w, auto); max-width: 100%; appearance: none; -webkit-appearance: none; background: transparent; border: 0; border-bottom: 3px solid var(--ink); border-radius: 0; color: var(--ink); font: inherit; letter-spacing: inherit; line-height: 1.08; padding: 0 .62em 1px 0; cursor: pointer; }
 +.mm-sel select:focus-visible { outline: 0; border-bottom-color: var(--y); box-shadow: 0 3px 0 var(--ink); }
@@ -307,7 +307,7 @@ index 0000000..82cbc5c
 +.mm-search svg { width: 19px; height: 19px; flex: none; fill: none; stroke: var(--ink); stroke-width: 2; }
 +.mm-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 500 17px/1 var(--f); }
 +.mm-search input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
-+.mm-clear { border: 0; background: none; color: var(--muted); font-size: 10.5px; cursor: pointer; padding: 6px 0; }
++.mm-clear { border: 0; border-radius: 4px; background: none; color: var(--muted); font-size: 10.5px; cursor: pointer; padding: 6px 0; }
 +.mm-count { min-width: 11.5em; color: var(--muted); font-size: 15px; line-height: 1.3; white-space: nowrap; }
 +.mm-count b { color: var(--ink); font-weight: 800; }
 +
@@ -323,8 +323,8 @@ index 0000000..82cbc5c
 +.mm-sc { margin-left: auto; color: var(--muted); font-size: 10.5px; }
 +.mm-ul { list-style: none; margin: 0; padding: 0; }
 +.mm-row .mm-ul { display: flex; flex-wrap: wrap; gap: 0 36px; }
-+.mm-i { position: relative; display: flex; align-items: center; gap: 12px; padding: 5px 0 5px 0; text-decoration: none; color: var(--ink); border-radius: 0; transition: color .18s, padding .25s var(--eoq); }
-+.mm-i::before { content: ""; position: absolute; left: 0; top: 50%; width: 12px; height: 3px; margin-top: -1.5px; background: var(--sc); transform: scaleX(0); transform-origin: 0 50%; transition: transform .25s var(--eoq); }
++.mm-i { position: relative; display: flex; align-items: center; gap: 12px; padding: 5px 0 5px 0; text-decoration: none; color: var(--ink); border-radius: 0; transition: color .12s, padding .15s var(--eoq); }
++.mm-i::before { content: ""; position: absolute; left: 0; top: 50%; width: 12px; height: 3px; margin-top: -1.5px; background: var(--sc); transform: scaleX(0); transform-origin: 0 50%; transition: transform .15s var(--eoq); }
 +.mm-t { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; min-width: 0; }
 +.mm-nm { font: 700 17px/1.25 var(--f); letter-spacing: -.01em; }
 +.mm-wip { font-size: 9.5px; color: var(--muted); }
@@ -332,7 +332,7 @@ index 0000000..82cbc5c
 +.mm-th { display: none; flex: none; width: 52px; height: 38px; background: #ebe8df; overflow: hidden; }
 +.mm-th img { width: 100%; height: 100%; object-fit: cover; }
 +.mm-row .mm-ct { display: block; width: auto; }
-+.mm-grid:hover .mm-i, .mm-grid:focus-within .mm-i { color: #a9a69d; }
++.mm-grid:hover .mm-i, .mm-grid:focus-within .mm-i { color: #8c887e; }
 +.mm-grid .mm-i.on, .mm-grid .mm-i:hover, .mm-grid .mm-i:focus-visible { color: var(--ink); }
 +.mm-i.on { padding-left: 20px; }
 +.mm-i.on::before { transform: scaleX(1); }
@@ -340,7 +340,14 @@ index 0000000..82cbc5c
 +.mm-i:focus-visible .mm-nm { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
 +mark.mm-hl { background: var(--y); color: var(--ink); padding: 0 1px; font-style: normal; font-weight: inherit; border-radius: 0; }
 +.mm-none { color: var(--muted); font-size: 10.5px; padding: 8px 0; }
-+.mm-empty { padding: 18px 0 0; color: var(--muted); }
++.mm-empty { padding: 40px 0 8px; max-width: 34em; }
++.mm-e1 { font: 800 clamp(26px, 2.4vw, 34px)/1.1 var(--f); letter-spacing: -.03em; }
++.mm-e2 { margin-top: 8px !important; color: var(--muted); font-size: 17px; line-height: 1.45; }
++.mm-reset { margin-top: 20px; height: 46px; padding: 0 22px; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--y); color: var(--ink); font: 700 15px/1 var(--f); cursor: pointer; }
++.mm-reset:hover { background: var(--ink); color: var(--paper); }
++.mm.none .mm-grid { display: none; }
++/* one focus mark for every control in the menu: an ink ring, clear of the shape */
++.mm-x:focus-visible, .mm-reset:focus-visible, .mm-clear:focus-visible, .mm-foot a:focus-visible, .mm-cv:focus-visible, .mm-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 +
 +/* filtering: every row shows its picture and its fields, a street with nothing steps back */
 +.mm.filtering .mm-th { display: block; }
@@ -360,11 +367,10 @@ index 0000000..82cbc5c
 +.mm-pv { grid-column: 4; grid-row: 1 / 3; position: sticky; top: 0; min-width: 0; }
 +.mm-cv { position: relative; display: block; aspect-ratio: 16 / 11; overflow: hidden; background: #ebe8df; }
 +.mm-cv::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--sc, var(--y)); }
-+.mm-im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.035); transition: opacity .28s var(--eoq), transform .6s var(--eoq); }
++.mm-im { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.02); transition: opacity .16s var(--eoq), transform .2s var(--eoq); }
 +.mm-im.on { opacity: 1; transform: none; }
-+.mm-cv:hover .mm-im.on { transform: scale(1.015); }
 +.mm-gal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; min-height: 0; }
-+.mm-gal button { padding: 0; border: 0; aspect-ratio: 4 / 3; background: #ebe8df; overflow: hidden; cursor: pointer; opacity: .55; transition: opacity .18s; }
++.mm-gal button { padding: 0; border: 0; aspect-ratio: 4 / 3; background: #ebe8df; overflow: hidden; cursor: pointer; opacity: .55; transition: opacity .12s; }
 +.mm-gal button.on, .mm-gal button:hover { opacity: 1; }
 +.mm-gal img { width: 100%; height: 100%; object-fit: cover; }
 +.mm-pk { margin-top: 14px !important; color: var(--muted); font-size: 10.5px; display: flex; justify-content: space-between; }
@@ -374,9 +380,8 @@ index 0000000..82cbc5c
 +.mm-pgo { margin-top: 12px !important; font-weight: 800; font-size: 15px; }
 +.mm-pgo .mm-go-case, .mm-pgo .mm-go-st { background: linear-gradient(var(--y), var(--y)) 0 100% / 100% 3px no-repeat; padding-bottom: 2px; }
 +.mm-pv:not(.case) .mm-go-case, .mm-pv.case .mm-go-st { display: none; }
-+.mm-foot { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 18px !important; padding-top: 14px; border-top: 1px solid rgba(13,12,9,.12); font-weight: 700; font-size: 15px; }
++.mm-foot { display: flex; justify-content: flex-end; align-items: center; gap: 24px; margin-top: 18px !important; padding-top: 14px; border-top: 1px solid rgba(13,12,9,.12); font-weight: 700; font-size: 15px; }
 +.mm-foot a { text-decoration: none; background: linear-gradient(var(--ink), var(--ink)) 0 100% / 100% 1.5px no-repeat; padding-bottom: 2px; }
-+.mm-hint { color: var(--muted); font-size: 10.5px; }
 +html.mm-lock, html.mm-lock body { overflow: hidden; }
 +
 +@media (max-width: 1180px) and (min-width: 861px) {
@@ -384,7 +389,6 @@ index 0000000..82cbc5c
 +  .mm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 +  .mm-pv { display: none; }
 +  .mm-search { width: 280px; }
-+  .mm-hint { display: none; }
 +}
 +
 +/* a phone: a full-screen sheet, the filter on top, each street a rail of covers */
@@ -393,23 +397,26 @@ index 0000000..82cbc5c
 +  .js .mnav .mm-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 8px 0; border: 0; border-bottom: 1px solid rgba(13,12,9,.08); background: none; color: var(--ink); font: 800 22px/1.6 var(--f); text-align: left; cursor: pointer; }
 +  .mnav .mm-btn i { width: 10px; height: 10px; border-width: 0 2.5px 2.5px 0; transform: rotate(-45deg); margin-right: 6px; }
 +  .mm { top: 0; height: 100vh; height: 100dvh; z-index: 5; }
-+  .mm-scroll { height: 100%; max-height: none; border: 0; box-shadow: none; clip-path: none; transform: translateY(24px); opacity: 0; transition: transform .38s var(--eoq), opacity .22s var(--eoq); }
++  .mm-scroll { height: 100%; max-height: none; border: 0; box-shadow: none; clip-path: none; transform: translateY(16px); opacity: 0; transition: transform .2s var(--eoq), opacity .14s var(--eoq); }
 +  .mm.open .mm-scroll { clip-path: none; transform: none; opacity: 1; }
 +  .mm-scrim { display: none !important; }
-+  .mm-in { width: 100%; padding: 0 0 calc(28px + env(safe-area-inset-bottom)); }
-+  .mm-top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 16px 0 20px; background: var(--paper); border-bottom: 1px solid rgba(13,12,9,.1); }
++  .mm-in { width: 100%; padding: 0 0 calc(104px + env(safe-area-inset-bottom)); opacity: 1; transform: none; transition: none; }
++  .mm-top { display: flex; align-items: center; height: 64px; padding: 0 20px; }
++  /* the close button sits where the thumb is: bottom right, over the sheet, clear of the home bar */
++  .mm-x { position: absolute; z-index: 3; right: 16px; bottom: calc(20px + env(safe-area-inset-bottom)); width: 60px; height: 60px; }
++  .mm-x i::before, .mm-x i::after { left: 18px; right: 18px; }
 +  .mm-k { font-size: 12px; }
-+  .mm-f { display: block; padding: 22px 20px 20px; }
++  .mm-f { display: block; padding: 4px 20px 24px; }
 +  .mm-sent { font-size: clamp(28px, 8.6vw, 38px); line-height: 1.16; }
 +  .mm-tools { flex-wrap: wrap; gap: 12px; margin-top: 18px; }
 +  .mm-search { width: 100%; height: 50px; }
 +  .mm-search input { font-size: 17px; }
 +  .mm-count { font-size: 14px; }
 +  .mm-grid { display: block; padding-top: 6px; }
-+  .mm-st, .mm-row { display: block; margin: 0; padding: 20px 0 6px; border: 0; }
++  .mm-st, .mm-row { display: block; margin: 0; padding: 36px 0 4px; border: 0; }
 +  .mm-sh, .mm-row .mm-sh { padding: 0 20px 0; border: 0; margin: 0; }
 +  .mm-sn { font-size: 24px; }
-+  .mm-ul, .mm-row .mm-ul { display: grid; grid-auto-flow: column; grid-auto-columns: 64%; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 20px; padding: 12px 20px 6px; scrollbar-width: none; }
++  .mm-ul, .mm-row .mm-ul { display: grid; grid-auto-flow: column; grid-auto-columns: 80%; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 20px; padding: 14px 20px 6px; scrollbar-width: none; }
 +  .mm-ul::-webkit-scrollbar { display: none; }
 +  .mm-ul li { scroll-snap-align: start; min-width: 0; }
 +  .mm-i, .mm.filtering .mm-i { display: block; padding: 0; }
@@ -424,22 +431,21 @@ index 0000000..82cbc5c
 +  .mm-st.empty { display: none; }
 +  .mm.solo .mm-st.hit .mm-ul { columns: auto; }
 +  .mm-pv { display: none; }
-+  .mm-empty { padding: 20px; }
-+  .mm-foot { margin: 22px 20px 0 !important; }
-+  .mm-hint { display: none; }
++  .mm-empty { padding: 32px 20px 8px; }
++  .mm-foot { justify-content: flex-start; margin: 40px 20px 0 !important; }
 +}
 +@media (prefers-reduced-motion: reduce) {
 +  .mm-scroll, .mm.open .mm-scroll { clip-path: none !important; transform: none !important; opacity: 1 !important; transition: none !important; }
-+  .mm-in > *, .mm-st, .mm-im, .mm-i, .mm-i::before, .mm-scrim { transition: none !important; transform: none !important; }
-+  .mm-in > *, .mm-st { opacity: 1; }
++  .mm-in, .mm-im, .mm-i, .mm-i::before, .mm-scrim { transition: none !important; transform: none !important; }
++  .mm-in { opacity: 1; }
 +}
 +.mm.filtering .mm-grid .mm-i { color: var(--ink); }
 diff --git a/site/megamenu.js b/site/megamenu.js
 new file mode 100644
-index 0000000..02b0e96
+index 0000000..5770e0d
 --- /dev/null
 +++ b/site/megamenu.js
-@@ -0,0 +1,211 @@
+@@ -0,0 +1,223 @@
 +// r365 (beta) · the header's mega menu, the Street Index under "Work" (build/megamenu.mjs writes it, megamenu.css draws it).
 +// Opens on a click, or on a resting pointer over "Work" on a desktop; Esc, the scrim or the round button close it and the
 +// focus goes back to the button. Inside: Tab stays in the menu, the arrows walk the names, a name shows its brand in the
@@ -454,7 +460,7 @@ index 0000000..02b0e96
 +  const RM = matchMedia("(prefers-reduced-motion: reduce)"), PHONE = matchMedia("(max-width: 860px)"), FINE = matchMedia("(hover: hover) and (pointer: fine)");
 +  const items = $$(".mm-i"), pv = $(".mm-pv"), f = $(".mm-f"), q = f.q, clear = $(".mm-clear"), count = $(".mm-count"), empty = $(".mm-empty");
 +  const total = +mm.dataset.total || items.length;
-+  let open = false, mode = "", opener = null, tHover = 0, tLeave = 0, tHide = 0, cur = null, booted = false;
++  let open = false, mode = "", opener = null, tHover = 0, tLeave = 0, tHide = 0, cur = null, booted = false, pushed = false;
 +
 +  // the select options in the page's language (the dictionary does not reach inside a <select>)
 +  for (const s of $$(".mm-opts [data-v]")) { const [k, v] = s.dataset.v.split(":"), o = f[k] && [...f[k].options].find((x) => x.value === v); if (o) o.textContent = s.textContent; }
@@ -519,6 +525,8 @@ index 0000000..02b0e96
 +    if (!cur || cur.closest("li").hidden) preview(visible()[0]); else { const c = cur; cur = null; preview(c); }
 +    mm.getBoundingClientRect(); // the closed state is laid out, so the opening animates
 +    requestAnimationFrame(() => mm.classList.add("open"));
++    // on a phone the sheet is a screen of its own: the back gesture closes it instead of leaving the page
++    if (PHONE.matches && !pushed) { try { history.pushState({ ...(history.state || {}), mm: 1 }, ""); pushed = true; } catch {} }
 +    if (how === "key" && !PHONE.matches) q.focus({ preventScroll: true });
 +    else if (how !== "hover") scroller.focus({ preventScroll: true });
 +  };
@@ -529,7 +537,9 @@ index 0000000..02b0e96
 +    mm.classList.remove("open");
 +    btns.forEach((b) => b.setAttribute("aria-expanded", "false"));
 +    const done = () => { if (open) return; mm.hidden = true; scrim.hidden = true; root.classList.remove("mm-lock"); d.body.style.paddingRight = ""; };
-+    if (RM.matches) done(); else tHide = setTimeout(done, PHONE.matches ? 220 : 160);
++    if (RM.matches) done(); else tHide = setTimeout(done, PHONE.matches ? 200 : 180);
++    // the sheet's history step (the phone's back gesture closes it) goes away with it, unless a link is taking over
++    if (pushed) { pushed = false; if (history.state && history.state.mm) history.back(); }
 +    if (back && opener) { (opener.offsetParent ? opener : btns.find((b) => b.offsetParent) || opener).focus({ preventScroll: true }); }
 +  };
 +
@@ -552,6 +562,7 @@ index 0000000..02b0e96
 +  scrim.addEventListener("click", () => hide(false));
 +  $(".mm-x").addEventListener("click", () => hide(true));
 +  addEventListener("pageshow", (e) => { if (e.persisted) hide(false); });
++  addEventListener("popstate", () => { if (open && pushed) { pushed = false; hide(false); } });
 +  PHONE.addEventListener?.("change", () => open && hide(false));
 +  addEventListener("resize", () => open && setTop());
 +
@@ -601,6 +612,7 @@ index 0000000..02b0e96
 +  // build/streetindex.mjs: the case pages opt in when this flag names them), then the menu closes behind
 +  function go(e, a) {
 +    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
++    if (pushed) { pushed = false; try { history.replaceState({ ...history.state, mm: 0 }, ""); } catch {} } // the link takes the sheet's history step
 +    if (a.hasAttribute("data-nocase")) { hide(false); return; }
 +    try { sessionStorage.setItem("si-vt", new URL(a.href, location.href).pathname); } catch {}
 +    if (!RM.matches && !PHONE.matches && "onpagereveal" in window) {
@@ -613,7 +625,11 @@ index 0000000..02b0e96
 +  // the sentence filter and the search, live across the streets
 +  const escH = (t) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 +  const mark = (t, w) => { const i = w ? t.toLowerCase().indexOf(w) : -1; return i < 0 ? escH(t) : escH(t.slice(0, i)) + `<mark class="mm-hl">${escH(t.slice(i, i + w.length))}</mark>` + escH(t.slice(i + w.length)); };
-+  const fmt = (n, s) => RO ? `<b>${n} ${n === 1 ? "loc" : "locuri"}</b> pe ${s} ${s === 1 ? "stradă" : "străzi"}, din ${total}` : `<b>${n} ${n === 1 ? "place" : "places"}</b> on ${s} ${s === 1 ? "street" : "streets"}, of ${total}`;
++  // Romanian counts take "de" from 20 on ("44 de locuri"); unfiltered, the count is just the city ("44 places on 4 streets")
++  const de = (n) => (n % 100 >= 20 || (n >= 100 && n % 100 === 0) ? "de " : "");
++  const fmt = (n, s, on) => RO
++    ? `<b>${n} ${de(n)}${n === 1 ? "loc" : "locuri"}</b> pe ${s} ${s === 1 ? "stradă" : "străzi"}${on ? `, din ${total}` : ""}`
++    : `<b>${n} ${n === 1 ? "place" : "places"}</b> on ${s} ${s === 1 ? "street" : "streets"}${on ? `, of ${total}` : ""}`;
 +  const sts = $$(".mm-st");
 +  function run() {
 +    const ch = f.ch.value, sk = f.st.value, w = q.value.trim().toLowerCase(), on = !!(ch || sk || w);
@@ -634,10 +650,11 @@ index 0000000..02b0e96
 +    const hits = sts.filter((s) => !s.classList.contains("empty")), solo = on && hits.length === 1 && hits[0].dataset.k !== "D";
 +    mm.classList.toggle("solo", solo); sts.forEach((s) => s.classList.toggle("hit", solo && s === hits[0]));
 +    clear.hidden = !w;
-+    count.innerHTML = fmt(n, ns);
-+    empty.hidden = !!n;
++    count.innerHTML = n ? fmt(n, ns, on) : "";
++    empty.hidden = !!n; mm.classList.toggle("none", !n);
 +    if (on || PHONE.matches) visible().forEach((a) => (PHONE.matches && io ? io.observe($(".mm-th img", a) || a) : load($(".mm-th img", a))));
-+    if (open && (!cur || cur.closest("li").hidden)) { const v = visible()[0]; if (v) preview(v); }
++    // the preview follows the filter: a hidden brand gives way to the first match, a visible one gets its new position
++    if (open) { const v = !cur || cur.closest("li").hidden ? visible()[0] : cur; if (v) { cur && cur.classList.remove("on"); cur = null; preview(v); } }
 +  }
 +  // each select as wide as its words, so the sentence reads as one line
 +  const sizer = d.createElement("span"); sizer.setAttribute("aria-hidden", "true"); sizer.style.cssText = "position:absolute;visibility:hidden;white-space:pre;left:-9999px;top:0";
@@ -646,6 +663,7 @@ index 0000000..02b0e96
 +  f.addEventListener("submit", (e) => { e.preventDefault(); const a = visible()[0]; if (a) { a.focus(); a.click(); } });
 +  f.addEventListener("input", run); f.addEventListener("change", (e) => { if (e.target.tagName === "SELECT") fit(e.target); run(); });
 +  clear.addEventListener("click", () => { q.value = ""; run(); q.focus(); });
++  $(".mm-reset").addEventListener("click", () => { q.value = ""; f.ch.value = ""; f.st.value = ""; fitAll(); run(); q.focus(); });
 +  // the sentence is sized once it is on screen (fonts ready, the menu laid out)
 +  new MutationObserver(() => { if (!mm.hidden) { fitAll(); d.fonts && d.fonts.ready.then(fitAll); } }).observe(mm, { attributes: true, attributeFilter: ["hidden"] });
 +  addEventListener("resize", () => open && fitAll());
@@ -1691,10 +1709,10 @@ index 0000000..1939139
 +</body>
 +</html>
 diff --git a/site/site.css b/site/site.css
-index d20f856..0b45fef 100644
+index 9b248e2..8fc66e3 100644
 --- a/site/site.css
 +++ b/site/site.css
-@@ -1599,3 +1599,24 @@
+@@ -1605,3 +1605,24 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
    a.bcard:is(:nth-child(6n+3), :nth-child(6n+4)) .bc-name::after { width: 24px; height: 24px; margin-top: -12px; right: 5px; }
  }
  @media (max-width: 340px) { .zd-list { grid-template-columns: 1fr; } }
