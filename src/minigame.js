@@ -3406,7 +3406,7 @@
     try {
       if (window.parent !== window || new URLSearchParams(location.search).get("embed") === "1" || !document.referrer) return null;
       const r = new URL(document.referrer);
-      if (r.origin !== location.origin || r.pathname === "/" || r.pathname === "/index.html" || /^\/play\//.test(r.pathname)) return null;
+      if (r.origin !== location.origin || /^\/city\/?(?:index\.html)?$/.test(r.pathname) || /^\/play\//.test(r.pathname)) return null; // r356: the map is /city/, "/" is the website
       return r.pathname + r.search;
     } catch { return null; }
   })();
@@ -3416,7 +3416,7 @@
     TRK.ev("gloves_back_to_map", { from_screen: from, to: BACK_URL ? "site" : "map" }); // r211; TASK-094: where to
     SND.music(null); unlockLandscape();
     try { if (window.parent !== window && window.parent.location.origin === location.origin) { window.parent.postMessage({ cz: "gloves-close" }, location.origin); return; } } catch {}
-    location.href = BACK_URL || "/?map";
+    location.href = BACK_URL || "/city/?map";
   }
   const PAUSE_ITEMS = ["RESUME", "MOVES", "CHANGE FIGHTERS", BACK_URL ? "BACK" : "BACK TO MAP"]; // beta 3.64: the move list
   let pmenu = 0;

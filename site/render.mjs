@@ -74,12 +74,12 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     <nav class="nav" aria-label="Main">
       ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
     </nav>
-    <a class="drive-btn" href="/" title="The full 3D experience: drive through Bucharest">${STAR}<span>Take the 3D drive</span></a>
+    <a class="drive-btn" href="/" title="Our work as a 3D city of Bucharest, to drive through">${STAR}<span>Drive in the Cromatic City</span></a>
     <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span></button>
   </div>
   <nav id="mnav" class="mnav" aria-label="Mobile">
     ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
-    <a class="drive-btn" href="/">${STAR}<span>Take the 3D drive</span></a>
+    <a class="drive-btn" href="/">${STAR}<span>Drive in the Cromatic City</span></a>
   </nav>
 </header>`;
 
@@ -97,7 +97,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     </address>
     <div class="ftr-links">
       <a href="/site/#work">Work</a><a href="/site/#services">Services</a><a href="/site/#contact">Start a project</a>
-      <a href="/">The 3D drive</a><a href="${STUDIO.legalUrl}">cromaticstudios.com</a>
+      <a href="/">Drive in the Cromatic City</a><a href="${STUDIO.legalUrl}">cromaticstudios.com</a>
     </div>
   </div>
   <div class="wrap ftr-motto"><span class="cupspin" aria-hidden="true"></span><p>There is always a coffee.</p></div>
@@ -275,7 +275,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   }).join("");
   const SVC_LINKS = { "Branding & Design": ["brand-strategy", "brand-identity"], "Video Production": ["video-production"], "UX & UI Design": ["websites-apps"], "Growth & Content": ["social-media-content"] };
   const STREET_INK = { A: "#fff", B: "#fff", C: "#0d0c09", D: "#0d0c09", E: "#0d0c09" };
-  const SITE_TITLE = "Cromatic Studios: brand strategy, identity, web & film in Bucharest";
+  const SITE_TITLE = "Cromatic Studios · Branding, web & film studio in Bucharest"; // r356: <= 60 characters (the home page now)
+  // r356: <= 155 characters
+  const HOME_DESC = "Independent brand studio in Bucharest since 2014. Strategy, identity, websites and apps, film and content for indie brands. One coffee away.";
   function home(covers = {}) {
     const ld = { "@context": "https://schema.org", "@graph": [
       studioNode(SITE, SAME_AS),
@@ -322,7 +324,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   </section>`;
     };
     const preload = false && hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "";
-    return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld, preload })}
+    return `${head({ title: SITE_TITLE, desc: HOME_DESC, path: "/site/", ld, preload })}
 ${header(true)}
 <main id="main">
   ${/* r349 (Daniel, new order): the wall of work is the first fold, under one line; then the four chapters; then the
@@ -358,7 +360,7 @@ ${header(true)}
       </div>
       <div class="hc-ed-r">
         <p class="hc-ed-p">Every project is a place in a city we built for it. Drive through it, or read it street by street.</p>
-        <div class="hc-ed-a"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a>
+        <div class="hc-ed-a"><a class="btn btn-y" href="/">${STAR}<span>Drive in the Cromatic City</span></a>
         <a class="hc-classic" href="#streets">or continue to our works in the classic way <span aria-hidden="true">↓</span></a></div>
       </div>
     </div>
@@ -373,7 +375,25 @@ ${header(true)}
     </div>
   </section>
 
-  <div class="road-div" aria-hidden="true"><span class="cupspin road-cup"></span></div>
+  ${/* r356 (Daniel, 28 Oct): the road band with the walking cup is gone; in its place a half-height invitation into the
+     city, on the drive loop (poster first, the loop only on screen, its pause button, never with reduced motion) */ ""}<section class="hero hero-city hc-half hc-tour" aria-labelledby="hct-h">
+   <div class="hc-card">
+    ${hp.d ? `<picture class="hc-pic">${hp.m ? `<source media="(max-width: 700px)" srcset="${hp.m.src}" width="${hp.m.w}" height="${hp.m.h}">` : ""}<img src="${hp.d.src}" width="${hp.d.w}" height="${hp.d.h}" alt="A vintage Dacia 1300 driving through the Cromatic City, our 3D Bucharest, at sunset" loading="lazy" decoding="async"></picture>` : ""}
+    ${heroVideo()}
+    <i class="hc-shade" aria-hidden="true"></i>
+    <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
+    <div class="wrap hc-in hc-ed">
+      <div class="hc-ed-l">
+        <p class="hc-kick mono">The Cromatic City</p>
+        <h2 class="hc-h" id="hct-h">Come for a drive</h2>
+      </div>
+      <div class="hc-ed-r">
+        <p class="hc-ed-p">Our work, as a city you can drive through. Every brand has its street, and there is a coffee stop on the way.</p>
+        <div class="hc-ed-a"><a class="btn btn-y" href="/">${STAR}<span>Drive in the Cromatic City</span></a></div>
+      </div>
+    </div>
+   </div>
+  </section>
   <section id="services" class="sec">
     <div class="wrap">
       <p class="eyebrow mono">Full tank of services</p>
@@ -427,8 +447,8 @@ ${header(true)}
 
   <section class="drive-cta">
     <div class="wrap dc-in">
-      <p><b>Prefer the long way round?</b> The same story is also a 3D drive through Bucharest, with a coffee stop and a few surprises.</p>
-      <a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a>
+      <p><b>Prefer the long way round?</b> The same story is also the Cromatic City, a 3D Bucharest you can drive through, with a coffee stop and a few surprises.</p>
+      <a class="btn btn-y" href="/">${STAR}<span>Drive in the Cromatic City</span></a>
     </div>
   </section>
 </main>

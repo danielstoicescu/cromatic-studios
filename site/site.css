@@ -1438,3 +1438,9 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
 /* r352: on phones a half card left alone after a full-width one (Printoteca after Sticker Republic) takes the full width,
    one row tall (Daniel, 28 Oct: "same width as Sticker, but shorter") */
 @media (max-width: 600px) { .bcard:is(.b-xl, .b-w) + .bcard:is(.b-m, .b-s):last-child { grid-column: span 2; } }
+
+/* r356: the invitation into the Cromatic City, where the road band with the cup was: half a screen, never more */
+.hero-city.hc-tour { margin: 0; padding: clamp(20px, 2.4vw, 32px) 0; }
+.hc-tour .hc-card { min-height: 54vh; min-height: 54svh; }
+.hero-city.hc-tour .hc-h { font-size: clamp(48px, 6vw, 104px); }
+@media (max-width: 700px) { .hc-tour .hc-card { min-height: 56svh; } .hc-tour .hc-ed { padding-top: 96px; } }

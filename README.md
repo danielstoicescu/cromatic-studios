@@ -34,8 +34,9 @@ State when this file was written: **live 4.10** (r296, `3559138`); beta = live +
 
 | Path | Served by |
 |---|---|
-| `/` and `/?map` | the 3D map (`?intro` forces the full opening, `?welcome` the welcome card) |
-| `/site/`, `/ro/`, `/work/*`, `/ro/proiecte/*`, `/industries/*`, `/services/*`, `/team/` | the normal website |
+| `/`, `/ro/` | the website's home page (EN, RO). Since r356; built as `/site/` and moved by `build/homemove.mjs` at the end of the build |
+| `/city/` and `/city/?map` | the 3D map, the Cromatic City (`?intro` forces the full opening, `?welcome` the welcome card). `/site/` 301s to `/`; `/` with a parameter the map reads (`map`, `drive`, `intro`, `boarding`, `world`, ... or `utm_*`) 301s to `/city/` with its query (server.js `homeMove`) |
+| `/work/*`, `/ro/proiecte/*`, `/industries/*`, `/services/*`, `/team/` | the normal website |
 | `/play/gloves/` | the 2M2F mini-game |
 | `/lp/<slug>/`, `/ro/lp/<slug>/` | ads landing pages |
 | `/onboarding/`, `/rapoarte/<slug>/` | launch page, private reports |

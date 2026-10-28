@@ -340,6 +340,7 @@ function serveBeta(req, res) {
   let path;
   try { path = normalize(decodeURIComponent(u.pathname)).replace(/\\/g, "/"); } catch { res.writeHead(400); return res.end(); }
   if (path === "/robots.txt") { res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" }); return res.end("User-agent: *\nDisallow: /\n"); }
+  { const hm = homeMove(path, u.search); if (hm) { res.writeHead(301, { Location: hm }); return res.end(); } } // r356
   if (/\/index\.html$/.test(path)) { res.writeHead(301, { Location: path.slice(0, -10) + u.search }); return res.end(); }
   if (path.endsWith("/")) path += "index.html";
   let full = join(BETA_ROOT, path), st = full.startsWith(BETA_ROOT + "/") ? statOr(full) : null, status = 200;
@@ -384,6 +385,16 @@ const OLD = {
   // r139c (N46): the Witanalytica page's address now spells the brand
   "/work/witanalitica/": "/work/witanalytica/", "/ro/proiecte/witanalitica/": "/ro/proiecte/witanalytica/"
 };
+// r356 (Daniel, 28 Oct: "Poți face mutarea direct pe live"): the website is the home page, the 3D map lives at /city/.
+// /site/ goes home for good; an old deep link into the map (a parameter the map reads, or a campaign link from the
+// stories and QR codes, which all landed on the map) still lands in the map, its query kept. A bare click id
+// (fbclid, gclid: added by Facebook and Google to ANY link) does not: it stays on the home page
+const CITY_Q = /(?:^|&)(?:map|drive|intro|nointro|welcome|boarding|onb|world|place|stop|go|work|noreflect|nomerge|bench|utm_[a-z]+)(?:[=&]|$)/i;
+function homeMove(pathname, search) {
+  if (/^\/site(?:\/(?:index\.html)?)?$/.test(pathname)) return "/" + search;
+  if (pathname === "/" && search.length > 1 && CITY_Q.test(search.slice(1))) return "/city/" + search;
+  return null;
+}
 const GONE = /^\/(?:testestes|online-core-beta|author\/[^/]+|feed|comments\/feed|wp-sitemap[^/]*\.xml|sitemap_index\.xml|xmlrpc\.php)\/?$/;
 // the new address of an old WordPress page (or null)
 function oldTarget(pathname) {
@@ -399,6 +410,8 @@ function finalUrl(url) {
   const u = new URL(url, "http://x");
   let p = u.pathname;
   try { p = normalize(decodeURIComponent(p)).replace(/\\/g, "/"); } catch { return url; }
+  const hm = homeMove(p, u.search); // r356
+  if (hm) return hm;
   const old = oldTarget(p);
   if (old) return old + (old.includes("#") ? "" : u.search); // r139c: the query goes along (?embed=1 from the map)
   if (/\/index\.html$/.test(p)) p = p.slice(0, -10);
@@ -408,6 +421,8 @@ function finalUrl(url) {
 function legacy(req, res) {
   const p0 = new URL(req.url, "http://x").pathname;
   const p = !p0.endsWith("/") && !/\.[a-z0-9]+$/i.test(p0) ? p0 + "/" : p0;
+  const u0 = new URL(req.url, "http://x"), hm = homeMove(p0, u0.search); // r356
+  if (hm) { res.writeHead(301, { Location: hm, "Cache-Control": "public, max-age=86400" }); res.end(); return true; }
   const to = oldTarget(p0);
   if (to) { res.writeHead(301, { Location: to + (to.includes("#") ? "" : new URL(req.url, "http://x").search), "Cache-Control": "public, max-age=86400" }); res.end(); return true; }
   if (GONE.test(p)) { res.writeHead(410, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=86400" }); res.end("Gone"); return true; }

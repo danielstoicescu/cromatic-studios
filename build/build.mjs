@@ -862,12 +862,13 @@ const roPaths = [];
 }
 {
   const homeText = pageText(html);
-  const home = { path: "/", title: "Cromatic Studios · Branding, web & film studio in Bucharest", desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, video and content.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText, { files: ["src/content.html", "site/data.mjs"], own: false }), text: homeText };
+  // r356: the map moved to /city/ (the website is the home page now, see build/homemove.mjs)
+  const home = { path: "/city/", title: "Drive in the Cromatic City · Cromatic Studios", desc: "Our work as a 3D city of Bucharest, to drive through.", images: [`${SITE_URL}/og.jpg`], lastmod: LASTMOD.get("/", homeText, { files: ["src/content.html", "site/data.mjs"], own: false }), text: homeText };
   // r136: /onboarding, after the website's home
   const onb = ONB ? (() => { const text = pageText(ONB.html); return { ...ONB, html: undefined, text, lastmod: LASTMOD.get(ONB.path, text, { files: ["site/onboarding"], own: true }) }; })() : null;
   // r139c (N34): and its Romanian copy, with the English one's date (as every Romanian page)
   const onbRo = onb && ONB_RO ? { ...ONB_RO, html: undefined, text: pageText(ONB_RO.html), lastmod: onb.lastmod } : null;
-  const order = [home, PAGES["/site/"], ...(onb ? [onb] : []), ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p]), ...(onbRo ? [onbRo] : [])];
+  const order = [PAGES["/site/"], home, ...(onb ? [onb] : []), ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p]), ...(onbRo ? [onbRo] : [])];
   // r135d: each language pair also in the sitemap (Bing reads hreflang there more reliably than in the page head)
   const roSet = new Set(roPaths), pairs = new Map();
   if (onbRo) roSet.add(onbRo.path); // r139c
@@ -1056,6 +1057,8 @@ ${CONSENT /* r211 (Daniel: GA4 on the mini-game): the site's consent card and GA
     console.log(`[minigame] /play/gloves/ -> ${mjName} (${(mj.length / 1024).toFixed(0)} KB), ${mcName}`);
   }
 }
+// r356: the website becomes the home page, the map moves to /city/ (build/homemove.mjs), before the precompression
+{ const { moveHome } = await import("./homemove.mjs"); moveHome({ pub, SITE: SITE_URL }); }
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;
 (function walk(d) {
