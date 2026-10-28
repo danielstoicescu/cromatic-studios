@@ -19,7 +19,10 @@ const STREET_ICONS = {
   D: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c4 0 4-6 8-6s4-6 8-6"/><path d="M16 7h4v4"/><circle cx="4" cy="19" r="1.2" fill="currentColor"/></svg>`,
 };
 const STAR = `<span class="cupspin cup-btn" aria-hidden="true"></span>`;
-// r364 (Daniel: "nu arată bine"): the drive buttons are label only for now (no cup, no car) while the 3D car is designed
+// r365 (Daniel picked variant B, 28 Oct): the drive buttons are a paper pill with a thin yellow ring and a soft shadow,
+// and the city's own Dacia 1300 (rendered from the map's model, three-quarter view from above, site/media/drive-car/)
+// parked over the pill's left edge. The roll is a 10-frame strip (22 KB) moved in steps with a transform on hover; the
+// strip's first frame is the parked car (and all there is with reduced motion). A fixed 56 x 34 box: no layout shift
 
 
 // r143: `kz` (the kinetic cups bundle) no longer plays on /site/; `heroCity` is the still of the city its first fold stands on
@@ -72,6 +75,8 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // r363: Google Maps directions to the studio (the destination from STUDIO, url-encoded) and a small pin for the button
   const DIR_URL = `https://www.google.com/maps/dir/?api=1&amp;destination=${encodeURIComponent(`Cromatic Studios, ${STUDIO.street}, ${STUDIO.postalCode} ${STUDIO.city}, Romania`)}`;
   const PIN = `<svg class="ftr-pin" viewBox="0 0 16 20" width="16" height="20" aria-hidden="true"><path d="M8 19s6-6.1 6-10.6A6 6 0 0 0 2 8.4C2 12.9 8 19 8 19z" fill="#FED012" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="8.3" r="2.2" fill="currentColor"/></svg>`;
+  const DK = () => { const r = A("m:drive-car/dacia-1300-roll.webp"); return r ? `<span class="dk" aria-hidden="true"><i class="dk-roll" style="background-image:url(${r.src})"></i></span>` : ""; };
+  const DK_STILL = () => { const r = A("m:drive-car/dacia-1300-parked.webp"); return r ? `<span class="dk dk-still" aria-hidden="true"><i class="dk-roll" style="background-image:url(${r.src})"></i></span>` : ""; };
   const logo = A("logoLandscape");
   const header = (home) => `<a class="skip" href="#main">Skip to content</a>
 <header class="hdr">
@@ -80,13 +85,13 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     <nav class="nav" aria-label="Main">
       ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
     </nav>
-    <a class="drive-btn" href="/" title="Our work as a 3D city of Bucharest, to drive through"><span>Drive in the Cromatic City</span></a>
-    <a class="drive-mini" href="/" aria-label="Drive in the Cromatic City"><span>Drive</span></a>
+    <a class="drive-btn dk-host" href="/" title="Our work as a 3D city of Bucharest, to drive through">${DK()}<span>Drive in the Cromatic City</span></a>
+    <a class="drive-mini dk-host" href="/" aria-label="Drive in the Cromatic City">${DK()}<span>Drive</span></a>
     <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span></button>
   </div>
   <nav id="mnav" class="mnav" aria-label="Mobile">
     ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
-    <a class="drive-btn" href="/"><span>Drive in the Cromatic City</span></a>
+    <a class="drive-btn dk-host" href="/">${DK()}<span>Drive in the Cromatic City</span></a>
   </nav>
 </header>`;
 
@@ -240,7 +245,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
         <div class="sb-copy">
           <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span><span>${count} ${count === 1 ? "project" : "projects"}</span></p>
-          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">Take a drive in the Cromatic City</a></div>
+          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${DK_STILL()}<span>Take a drive in the Cromatic City</span></a></div>
           <p class="sb-name" aria-hidden="true">${esc(street)}</p>
         </div>
         ${video ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : ""}
@@ -360,7 +365,7 @@ ${header(true)}
       </div>
       <div class="hc-ed-r">
         <p class="hc-ed-p">Every project is a place in a city we built for it. Drive through it, or read it street by street.</p>
-        <div class="hc-ed-a"><a class="btn btn-y" href="/"><span>Drive in the Cromatic City</span></a>
+        <div class="hc-ed-a"><a class="btn btn-y dk-host" href="/">${DK()}<span>Drive in the Cromatic City</span></a>
         <a class="hc-classic" href="#streets">or continue to our works in the classic way <span aria-hidden="true">↓</span></a></div>
       </div>
     </div>
@@ -389,7 +394,7 @@ ${header(true)}
       </div>
       <div class="hc-ed-r">
         <p class="hc-ed-p">Our work, as a city you can drive through. Every brand has its street, and there is a coffee stop on the way.</p>
-        <div class="hc-ed-a"><a class="btn btn-y" href="/"><span>Drive in the Cromatic City</span></a></div>
+        <div class="hc-ed-a"><a class="btn btn-y dk-host" href="/">${DK()}<span>Drive in the Cromatic City</span></a></div>
       </div>
     </div>
    </div>
@@ -448,7 +453,7 @@ ${header(true)}
   <section class="drive-cta">
     <div class="wrap dc-in">
       <p><b>Prefer the long way round?</b> The same story is also the Cromatic City, a 3D Bucharest you can drive through, with a coffee stop and a few surprises.</p>
-      <a class="btn btn-y" href="/"><span>Drive in the Cromatic City</span></a>
+      <a class="btn btn-y dk-host" href="/">${DK()}<span>Drive in the Cromatic City</span></a>
     </div>
   </section>
 </main>
