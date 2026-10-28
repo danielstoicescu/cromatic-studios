@@ -1388,14 +1388,11 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
 .hc-classic { display: inline-block; margin-top: 18px; color: var(--paper); font-size: 18px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
 .hc-classic:hover { text-decoration-thickness: 3px; }
 .hero-city.hc-half { margin: clamp(30px, 4vw, 56px) 0 0; }
-.streets-nav { gap: 12px; transition: padding .3s var(--eoq); }
-.streets-nav a { gap: 12px; padding: 12px 24px 12px 12px; font-size: 19px; transition: padding .3s var(--eoq), font-size .3s var(--eoq), translate .45s var(--bounce), box-shadow .45s var(--bounce), background .25s var(--eoq); }
-.sn-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--dc); border: var(--line); color: var(--ink); transition: width .3s var(--eoq), height .3s var(--eoq); }
+.streets-nav { gap: 12px; }
+.streets-nav a { gap: 12px; padding: 12px 24px 12px 12px; font-size: 19px; }
+.sn-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--dc); border: var(--line); color: var(--ink); }
 .sn-ico svg { width: 60%; height: 60%; }
 .streets-nav a[aria-current] .sn-ico { background: #fff; }
-.streets-nav.stuck { padding: 8px 0; }
-.streets-nav.stuck a { padding: 5px 14px 5px 6px; font-size: 15px; gap: 8px; }
-.streets-nav.stuck .sn-ico { width: 26px; height: 26px; }
 @media (max-width: 700px) {
   .pwall.pw-first { min-height: calc(100svh - 64px); }
   .pw-h { font-size: min(11vw, 6svh); }
@@ -1403,7 +1400,38 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
   .hc-classic { font-size: 17px; }
   .streets-nav a { padding: 8px 16px 8px 8px; font-size: 16px; gap: 10px; }
   .sn-ico { width: 34px; height: 34px; }
-  .streets-nav.stuck a { padding: 4px 12px 4px 5px; font-size: 14px; }
-  .streets-nav.stuck .sn-ico { width: 24px; height: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { .streets-nav, .streets-nav a, .sn-ico { transition: none; } }
+
+/* r349b (Daniel's review): the heart stays with the last word; the drive composed like a spread (kicker, a big title on
+   the left, a short line and the two ways in grouped on the right, over a deeper gradient); the street buttons float on
+   frosted paper a little away from the edges and shrink with an eased scale (no layout jump), never with reduced motion */
+.pw-heart { display: inline-block; font-size: .8em; vertical-align: .04em; }
+.hc-half .hc-card { min-height: 58vh; min-height: 58svh; }
+.hc-half .hc-shade { background: linear-gradient(0deg, rgba(13,12,9,.9) 0%, rgba(13,12,9,.62) 34%, rgba(13,12,9,.08) 72%), linear-gradient(90deg, rgba(13,12,9,.35), transparent 55%); }
+.hc-ed { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(28px, 4vw, 72px); align-items: end; padding-top: clamp(80px, 12vh, 140px); }
+.hc-kick { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; color: rgba(251,250,245,.8); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; }
+.hc-kick::before { content: ""; width: 44px; height: 2px; background: var(--y); }
+.hero-city.hc-half .hc-h { font-size: clamp(52px, 7vw, 120px); line-height: .9; letter-spacing: -.05em; max-width: 8.4em; margin: 0; }
+.hc-ed-r { padding-bottom: .5em; border-top: 1px solid rgba(251,250,245,.28); padding-top: 22px; }
+.hc-ed-p { margin: 0 0 22px; max-width: 26em; font-size: clamp(18px, 1.45vw, 21px); line-height: 1.45; color: rgba(251,250,245,.9); }
+.hc-ed-a { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.hc-ed-a .hc-classic { margin-top: 0; font-size: 17px; }
+.hero-city.hc-half { margin-bottom: 0; padding-bottom: clamp(20px, 2.4vw, 32px); }
+#work { padding-top: clamp(28px, 3.2vw, 44px); }
+.streets-nav { position: sticky; top: 84px; width: fit-content; max-width: 100%; margin: 0 0 18px; padding: 8px; border-image: none; border-radius: 22px;
+  background: rgba(251,250,245,.74); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 1px 0 rgba(13,12,9,.06), 0 12px 34px rgba(13,12,9,.12); transform-origin: 0 0; transition: transform .5s var(--eoq), box-shadow .5s var(--eoq); }
+.streets-nav.stuck { transform: scale(.74); box-shadow: 0 1px 0 rgba(13,12,9,.06), 0 16px 40px rgba(13,12,9,.18); }
+@media (max-width: 860px) { .streets-nav { top: 74px; } .hc-ed { grid-template-columns: 1fr; gap: 22px; } }
+@media (max-width: 700px) {
+  .hc-half .hc-card { min-height: 62svh; }
+  .hero-city.hc-half .hc-h { font-size: min(14vw, 7.2svh); }
+  .hc-ed { padding-top: 120px; }
+  .hc-ed-r { padding-top: 18px; }
+  .hc-ed-p { font-size: 17px; margin-bottom: 18px; }
+  .hc-ed-a .btn { width: 100%; justify-content: center; }
+  .streets-nav { width: auto; margin-inline: 0; padding: 6px; border-radius: 18px; background: rgba(251,250,245,.9); -webkit-mask-image: none; mask-image: none; }
+  .streets-nav.stuck { transform: scale(.8); width: 125%; max-width: 125%; }
+}
+@media (prefers-reduced-motion: reduce) { .streets-nav { transition: none; } }

@@ -318,7 +318,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
       return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
     <div class="pw-rows">${[0, 1, 2].map((r) => { const l = list.slice(r * per, r * per + per); return `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`; }).join("")}</div>
-    ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We are here for the brand experiences</h1></div>` : ""}
+    ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We are here for the brand experiences <span class="pw-heart" aria-hidden="true">💛</span></h1></div>` : ""}
   </section>`;
     };
     const preload = false && hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "";
@@ -351,10 +351,16 @@ ${header(true)}
     ${heroVideo()}
     <i class="hc-shade" aria-hidden="true"></i>
     <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
-    <div class="wrap hc-in">
-      <h2 class="hc-h" id="hc-h">Drive through the portfolio</h2>
-      <div class="btns hc-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a></div>
-      <a class="hc-classic" href="#streets">or continue to our works in the classic way <span aria-hidden="true">↓</span></a>
+    <div class="wrap hc-in hc-ed">
+      <div class="hc-ed-l">
+        <p class="hc-kick mono">The 3D portfolio</p>
+        <h2 class="hc-h" id="hc-h">Drive through the portfolio</h2>
+      </div>
+      <div class="hc-ed-r">
+        <p class="hc-ed-p">Every project is a place in a city we built for it. Drive through it, or read it street by street.</p>
+        <div class="hc-ed-a"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a>
+        <a class="hc-classic" href="#streets">or continue to our works in the classic way <span aria-hidden="true">↓</span></a></div>
+      </div>
     </div>
    </div>
   </section>
