@@ -302,8 +302,12 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     // with reduced motion, Save-Data or a 2g connection. The whole card goes to the map (.hc-hit)
     const dl = (n) => A(`m:drive-loop/${n}`);
     const hp = { d: dl("poster.jpg"), m: dl("poster-m.jpg") };
-    const heroVideo = () => {
-      const dm = dl("drive-loop.mp4"), dw = dl("drive-loop.webm"), mm = dl("drive-loop-m.mp4"), mw = dl("drive-loop-m.webm");
+    // r358 (Daniel, 28 Oct): the city banner at the end plays the old hero loop (site/media/hero/, TASK-106), so the two
+    // bands on the page carry two different videos
+    const hv = (n) => A(`m:hero/${n}`);
+    const tp = { d: hv("poster.jpg"), m: hv("poster-m.jpg") };
+    const heroVideo = (alt = false) => {
+      const dm = alt ? hv("drive-d.mp4") : dl("drive-loop.mp4"), dw = alt ? hv("drive-d-av1.webm") : dl("drive-loop.webm"), mm = alt ? hv("drive-m.mp4") : dl("drive-loop-m.mp4"), mw = alt ? hv("drive-m-av1.webm") : dl("drive-loop-m.webm");
       if (!dm && !dw) return "";
       return `<video class="hc-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}${mw ? ` data-mw="${mw.src}"` : ""}></video>
     <button class="hc-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>`;
@@ -379,8 +383,8 @@ ${header(true)}
   ${/* r356 (Daniel, 28 Oct): the road band with the walking cup is gone; in its place a half-height invitation into the
      city, on the drive loop (poster first, the loop only on screen, its pause button, never with reduced motion) */ ""}<section class="hero hero-city hc-half hc-tour" aria-labelledby="hct-h">
    <div class="hc-card">
-    ${hp.d ? `<picture class="hc-pic">${hp.m ? `<source media="(max-width: 700px)" srcset="${hp.m.src}" width="${hp.m.w}" height="${hp.m.h}">` : ""}<img src="${hp.d.src}" width="${hp.d.w}" height="${hp.d.h}" alt="A vintage Dacia 1300 driving through the Cromatic City, our 3D Bucharest, at sunset" loading="lazy" decoding="async"></picture>` : ""}
-    ${heroVideo()}
+    ${tp.d ? `<picture class="hc-pic">${tp.m ? `<source media="(max-width: 700px)" srcset="${tp.m.src}" width="${tp.m.w}" height="${tp.m.h}">` : ""}<img src="${tp.d.src}" width="${tp.d.w}" height="${tp.d.h}" alt="A vintage Dacia 1300 driving through the Cromatic City, our 3D Bucharest, at sunset" loading="lazy" decoding="async"></picture>` : ""}
+    ${heroVideo(true)}
     <i class="hc-shade" aria-hidden="true"></i>
     <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
     <div class="wrap hc-in hc-ed">
