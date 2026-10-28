@@ -1491,3 +1491,10 @@ html.embed .drive-mini { display: none; }
 @media (max-width: 700px) { .pw-alt { margin-top: 14px; padding: 0 16px; } .pw-alt a { font-size: 15px; } }
 @media (max-width: 1100px) and (min-width: 701px) { .streets-nav { flex-wrap: wrap; border-radius: 30px; } }
 @media (max-width: 860px) { .hdr-in { gap: 0; } .hdr-in .brand { min-width: 0; flex: 0 1 auto; margin-right: 10px; } .menu-btn, .drive-mini, .hdr .lang-sw { flex-shrink: 0; } }
+/* r360 (Daniel, 28 Oct): no pinch or double-tap zoom on phones; a work in progress (Lapterra) spans the whole row of
+   its street with a WIP tag */
+html { touch-action: manipulation; }
+.bcard.b-full { grid-column: 1 / -1; grid-row: span 1; }
+.bc-wip { position: absolute; top: 14px; right: 14px; z-index: 3; padding: 6px 11px 5px; border-radius: 999px; background: var(--y); color: var(--ink);
+  border: 1.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); font: 600 11px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .12em; pointer-events: none; }
+.bcard.b-full .bc-media img { object-position: 50% 0; }

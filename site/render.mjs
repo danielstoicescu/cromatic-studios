@@ -37,7 +37,7 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = nul
 
   const head = ({ title, desc, path, image, ld, preload = "" }) => `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
@@ -162,12 +162,12 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const bentoCard = (p, i, covers) => {
     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
     const media = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
-    const size = SIZES[i % SIZES.length];
+    const size = p.wip ? "full" : SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
     // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
     // pill itself), the category on a chip at the top, the brief and "Read the case" on a paper note that opens under the
     // pill (site.css). One element more than before per card: the note
     const inner = `${media ? `<span class="bc-media">${media}</span>` : `<span class="bc-poster">${esc(p.poster)}</span>`}
-      <span class="bc-cat mono">${esc(p.cat)}</span>
+      <span class="bc-cat mono">${esc(p.cat)}</span>${p.wip ? `<span class="bc-wip mono" aria-label="Work in progress">WIP</span>` : ""}
       <span class="bc-body"><span class="bc-name">${esc(p.name)}</span><span class="bc-note"><span class="bc-desc">${esc(p.desc)}</span>
       ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span></span>`;
     // TASK-139 (Daniel, 29 Oct): the arrow's circle takes the brand's own colour (p.c); a dark one gets a light arrow
