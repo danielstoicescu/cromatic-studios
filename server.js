@@ -389,7 +389,7 @@ const OLD = {
 // /site/ goes home for good; an old deep link into the map (a parameter the map reads, or a campaign link from the
 // stories and QR codes, which all landed on the map) still lands in the map, its query kept. A bare click id
 // (fbclid, gclid: added by Facebook and Google to ANY link) does not: it stays on the home page
-const CITY_Q = /(?:^|&)(?:map|drive|intro|nointro|welcome|boarding|onb|world|place|stop|go|work|noreflect|nomerge|bench|utm_[a-z]+)(?:[=&]|$)/i;
+const CITY_Q = /(?:^|&)(?:map|drive|intro|nointro|welcome|boarding|onb|world|place|stop|go|work|noreflect|nomerge|bench)(?:[=&]|$)/i;
 function homeMove(pathname, search) {
   if (/^\/site(?:\/(?:index\.html)?)?$/.test(pathname)) return "/" + search;
   if (pathname === "/" && search.length > 1 && CITY_Q.test(search.slice(1))) return "/city/" + search;
