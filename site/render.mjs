@@ -19,10 +19,7 @@ const STREET_ICONS = {
   D: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c4 0 4-6 8-6s4-6 8-6"/><path d="M16 7h4v4"/><circle cx="4" cy="19" r="1.2" fill="currentColor"/></svg>`,
 };
 const STAR = `<span class="cupspin cup-btn" aria-hidden="true"></span>`;
-// r363 (Daniel, 28 Oct): the drive buttons carry a small car instead of the cup: a Dacia 1300 in profile (the city's
-// yellow car, simplified) on a dashed lane, inline and tiny (site.css .dcar: it drives in once and parks; on hover it
-// drives across, wheels turning; on press it nudges; still with reduced motion). Fixed size: no layout shift
-const CAR = `<span class="dcar" aria-hidden="true"><i class="dcar-lane"></i><svg class="dcar-car" viewBox="0 0 30 14" width="30" height="14"><path class="dcar-body" d="M1.6 9.6 2.2 6.6l6.4-.9 3-3.1h8.6l3.3 3.1 4.4.7.5 3.2z"/><path class="dcar-win" d="M10.4 5.5 12.4 3.5h3.3v2zM16.9 3.5h3.1l2 2h-5.1z"/><g transform="translate(8.2 10.4)"><g class="dcar-w"><circle r="2.6"/><path d="M-1.4 0h2.8"/></g></g><g transform="translate(22.6 10.4)"><g class="dcar-w"><circle r="2.6"/><path d="M-1.4 0h2.8"/></g></g></svg></span>`;
+// r364 (Daniel: "nu arată bine"): the drive buttons are label only for now (no cup, no car) while the 3D car is designed
 
 
 // r143: `kz` (the kinetic cups bundle) no longer plays on /site/; `heroCity` is the still of the city its first fold stands on
@@ -83,13 +80,13 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     <nav class="nav" aria-label="Main">
       ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
     </nav>
-    <a class="drive-btn" href="/" title="Our work as a 3D city of Bucharest, to drive through">${CAR}<span>Drive in the Cromatic City</span></a>
-    <a class="drive-mini" href="/" aria-label="Drive in the Cromatic City">${CAR}<span>Drive</span></a>
+    <a class="drive-btn" href="/" title="Our work as a 3D city of Bucharest, to drive through"><span>Drive in the Cromatic City</span></a>
+    <a class="drive-mini" href="/" aria-label="Drive in the Cromatic City"><span>Drive</span></a>
     <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span></button>
   </div>
   <nav id="mnav" class="mnav" aria-label="Mobile">
     ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
-    <a class="drive-btn" href="/">${CAR}<span>Drive in the Cromatic City</span></a>
+    <a class="drive-btn" href="/"><span>Drive in the Cromatic City</span></a>
   </nav>
 </header>`;
 
@@ -243,7 +240,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
         <div class="sb-copy">
           <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span><span>${count} ${count === 1 ? "project" : "projects"}</span></p>
-          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${CAR.replace('class="dcar"', 'class="dcar dcar-still"')}Take a drive in the Cromatic City</a></div>
+          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">Take a drive in the Cromatic City</a></div>
           <p class="sb-name" aria-hidden="true">${esc(street)}</p>
         </div>
         ${video ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : ""}
@@ -363,7 +360,7 @@ ${header(true)}
       </div>
       <div class="hc-ed-r">
         <p class="hc-ed-p">Every project is a place in a city we built for it. Drive through it, or read it street by street.</p>
-        <div class="hc-ed-a"><a class="btn btn-y" href="/">${CAR}<span>Drive in the Cromatic City</span></a>
+        <div class="hc-ed-a"><a class="btn btn-y" href="/"><span>Drive in the Cromatic City</span></a>
         <a class="hc-classic" href="#streets">or continue to our works in the classic way <span aria-hidden="true">↓</span></a></div>
       </div>
     </div>
@@ -392,7 +389,7 @@ ${header(true)}
       </div>
       <div class="hc-ed-r">
         <p class="hc-ed-p">Our work, as a city you can drive through. Every brand has its street, and there is a coffee stop on the way.</p>
-        <div class="hc-ed-a"><a class="btn btn-y" href="/">${CAR}<span>Drive in the Cromatic City</span></a></div>
+        <div class="hc-ed-a"><a class="btn btn-y" href="/"><span>Drive in the Cromatic City</span></a></div>
       </div>
     </div>
    </div>
@@ -451,7 +448,7 @@ ${header(true)}
   <section class="drive-cta">
     <div class="wrap dc-in">
       <p><b>Prefer the long way round?</b> The same story is also the Cromatic City, a 3D Bucharest you can drive through, with a coffee stop and a few surprises.</p>
-      <a class="btn btn-y" href="/">${CAR}<span>Drive in the Cromatic City</span></a>
+      <a class="btn btn-y" href="/"><span>Drive in the Cromatic City</span></a>
     </div>
   </section>
 </main>
