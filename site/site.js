@@ -382,6 +382,39 @@
   }
   // scroll-linked: the chapters' road fills (--rp) and each street's opening band opens and slides (--sp, 0 → 1)
   const road4 = d.querySelector("#what .chapters"), streets = [...d.querySelectorAll(".dom-street")], bands = [...d.querySelectorAll(".street-band")];
+  // r360 (Daniel, 28 Oct: "una cu cea care se misca lent, pe designul actual, pe live"): the wall's rows also drift on
+  // their own, very slowly (8 px/s, 5 on a phone; each row a little faster than the one above, alternating as the
+  // scroll does), on top of the scroll-linked offset. One rAF loop, only while the wall is on screen and the tab is
+  // visible; transforms only, no layout read per frame (the scroll part and each row's width are read on scroll and
+  // resize). A pointer on a cover or the keyboard inside a row holds that row. Nothing with reduced motion.
+  // WALL.hooks: more per-frame work on the same loop (beta: the CRT curvature and glitches)
+  const WALL = { base: 40, off: pwRows.map(() => 0), hold: pwRows.map(() => false), on: false, raf: 0, last: 0, hooks: [] };
+  window.__czWall = WALL;
+  const wallPaint = () => pwRows.forEach((row, i) => {
+    const half = row._half; if (!half) return;
+    const x = (WALL.base * (1 + i * 0.25) + WALL.off[i]) % half;
+    row.style.transform = `translate3d(${(i % 2 ? x - half : -x).toFixed(1)}px,0,0)`;
+  });
+  if (!reduced && pwRows.length && "IntersectionObserver" in window) {
+    const v = matchMedia("(max-width: 700px)").matches ? 5 : 8;
+    const loop = (t) => {
+      WALL.raf = 0;
+      if (!WALL.on || d.hidden) { WALL.last = 0; return; }
+      const dt = WALL.last ? Math.min(0.1, (t - WALL.last) / 1000) : 0; WALL.last = t;
+      pwRows.forEach((r, i) => { if (!WALL.hold[i]) WALL.off[i] += v * dt * (1 + i * 0.1); });
+      wallPaint(); WALL.hooks.forEach((f) => f(t, dt));
+      WALL.raf = requestAnimationFrame(loop);
+    };
+    WALL.go = () => { if (!WALL.raf && WALL.on && !d.hidden) WALL.raf = requestAnimationFrame(loop); };
+    new IntersectionObserver((es) => { WALL.on = es[es.length - 1].isIntersecting; WALL.go(); }).observe(pwall);
+    d.addEventListener("visibilitychange", WALL.go);
+    pwRows.forEach((row, i) => {
+      row.addEventListener("pointerover", (e) => { if (e.pointerType === "mouse" && e.target.closest(".pw-case")) WALL.hold[i] = true; });
+      row.addEventListener("pointerleave", () => { WALL.hold[i] = false; });
+      row.addEventListener("focusin", () => { WALL.hold[i] = true; });
+      row.addEventListener("focusout", () => { WALL.hold[i] = false; });
+    });
+  }
   if (!reduced && (road4 || streets.length || pwRows.length)) {
     let raf2 = 0;
     const clamp = (x) => Math.min(1, Math.max(0, x));
@@ -406,12 +439,9 @@
       if (pwRows.length) {
         const r = pwall.getBoundingClientRect();
         if (r.top < vh && r.bottom > 0) {
-          const base = (vh - r.top) * 0.35 + 40;
-          pwRows.forEach((row, i) => {
-            if (!row._half) row._half = row.scrollWidth / 2;
-            const half = row._half, x = (base * (1 + i * 0.25)) % half;
-            row.style.transform = `translate3d(${(i % 2 ? x - half : -x).toFixed(1)}px,0,0)`;
-          });
+          WALL.base = (vh - r.top) * 0.35 + 40;
+          pwRows.forEach((row) => { if (!row._half) row._half = row.scrollWidth / 2; });
+          wallPaint();
         }
       }
     };
