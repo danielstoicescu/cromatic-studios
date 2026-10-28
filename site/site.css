@@ -1479,7 +1479,7 @@ html.embed .drive-mini { display: none; }
 .sb-top { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 10px; }
 .sb-top .sb-cap { margin: 0; }
 .sb-drive { pointer-events: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 10px; padding: 13px 22px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: rgba(13,12,9,.18); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); text-decoration: none; font-weight: 800; font-size: 16px; white-space: nowrap; transition: background .15s, color .15s; }
-.sb-drive::after { content: "→"; }
+.sb-drive::after { content: "→"; } /* r363: after the parked car */
 .sb-drive:hover { background: #fff; color: var(--ink); }
 .sb-drive:focus-visible { outline: 3px solid var(--y); outline-offset: 3px; }
 @media (max-width: 700px) { .street-band { height: min(84vw, 54svh); } .sb-top { flex-wrap: wrap; gap: 10px; } .sb-drive { padding: 8px 14px; font-size: 13px; gap: 8px; } }
@@ -1498,3 +1498,46 @@ html { touch-action: manipulation; }
 .bc-wip { position: absolute; top: 14px; right: 14px; z-index: 3; padding: 6px 11px 5px; border-radius: 999px; background: var(--y); color: var(--ink);
   border: 1.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); font: 600 11px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .12em; pointer-events: none; }
 .bcard.b-full .bc-media img { object-position: 50% 0; }
+
+/* r363 (Daniel, 28 Oct): the drive buttons' little car (site/render.mjs CAR), in place of the cup. A Dacia 1300 in
+   profile on a dashed lane: it drives in once and parks; on hover or keyboard focus it drives across and back in, wheels
+   turning, the lane rushing; a press nudges it. Transforms only, a fixed 40 x 19 box (no layout shift); still with
+   reduced motion. Ink buttons: a yellow car; yellow buttons: an ink car; the street banners' outline button: a white
+   car that stays parked */
+.dcar { --cb: var(--y); --cw: #0d0c09; --ct: #fff; --cl: rgba(255,255,255,.42); position: relative; display: inline-block; flex: 0 0 40px; width: 40px; height: 19px; overflow: hidden; vertical-align: middle; margin: -4px 0; }
+.btn-y .dcar { --cb: #0d0c09; --cw: #fbfaf5; --ct: #0d0c09; --cl: rgba(13,12,9,.4); }
+.drive-cta .btn .dcar, .hdr .drive-btn .dcar, .mnav .drive-btn .dcar, .drive-mini .dcar { --cb: var(--y); --cw: #0d0c09; --ct: #fff; --cl: rgba(255,255,255,.42); }
+.sb-drive .dcar { --cb: #fff; --cw: rgba(13,12,9,.72); --ct: #fff; --cl: rgba(255,255,255,.5); }
+.sb-drive:hover .dcar { --cb: #0d0c09; --cw: #fff; --ct: #0d0c09; --cl: rgba(13,12,9,.35); }
+.dcar .dcar-car, .btn .dcar svg, .drive-btn .dcar svg, .drive-mini .dcar svg { position: absolute; left: 2px; bottom: 2px; width: 36px; height: 17px; fill: none; transform: none; transition: none; overflow: visible; }
+.dcar-body { fill: var(--cb); }
+.dcar-win { fill: var(--cw); }
+.dcar-w circle { fill: var(--cw); stroke: var(--ct); stroke-width: 1.2; }
+.dcar-w path { stroke: var(--ct); stroke-width: 1; stroke-linecap: round; }
+.dcar-w { transform-box: fill-box; transform-origin: center; }
+.dcar-lane { position: absolute; left: 0; bottom: 0; width: 80px; height: 1.5px; background: repeating-linear-gradient(90deg, var(--cl) 0 4px, transparent 4px 8px); }
+.dcar .dcar-car { animation: dcarIn 1.15s cubic-bezier(.16,.84,.3,1) .35s both; }
+.dcar .dcar-w { animation: dcarSpin .3s linear .35s 4; }
+.dcar .dcar-lane { animation: dcarLane .3s linear .35s 4; }
+:is(.drive-btn, .btn, .drive-mini):is(:hover, :focus-visible) .dcar .dcar-car { animation: dcarAcross .9s cubic-bezier(.55,0,.35,1) both; }
+:is(.drive-btn, .btn, .drive-mini):is(:hover, :focus-visible) .dcar .dcar-w { animation: dcarSpin .18s linear infinite; }
+:is(.drive-btn, .btn, .drive-mini):is(:hover, :focus-visible) .dcar .dcar-lane { animation: dcarLane .16s linear infinite; }
+:is(.drive-btn, .btn, .drive-mini, .sb-drive):active .dcar .dcar-car { translate: 2px 0; }
+.dcar-still .dcar-car, .dcar-still .dcar-w, .dcar-still .dcar-lane { animation: none !important; }
+@keyframes dcarIn { from { transform: translateX(-42px); } to { transform: none; } }
+@keyframes dcarAcross { 0% { transform: none; } 46% { transform: translateX(44px); } 46.01% { transform: translateX(-44px); } 100% { transform: none; } }
+@keyframes dcarSpin { to { transform: rotate(360deg); } }
+@keyframes dcarLane { to { transform: translateX(-8px); } }
+.drive-mini .dcar { margin-left: -2px; }
+@media (prefers-reduced-motion: reduce) { .dcar .dcar-car, .dcar .dcar-w, .dcar .dcar-lane { animation: none !important; } }
+
+/* r363 (Daniel): the footer's address, plainly, with its way there */
+.ftr .ftr-addr { display: grid; justify-items: start; gap: 2px; line-height: 1.45; }
+.ftr-k { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.ftr-street { font-weight: 900; font-size: clamp(22px, 2vw, 28px); letter-spacing: -.02em; line-height: 1.1; }
+.ftr-city { font-size: 16px; font-weight: 600; }
+.ftr-dir { display: inline-flex; align-items: center; gap: 9px; margin: 14px 0 12px; padding: 11px 18px 11px 14px; border-radius: 999px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 800; font-size: 15px; box-shadow: 0 3px 0 var(--y); transition: translate .2s, box-shadow .2s; }
+.ftr-dir .ftr-pin { color: var(--ink); flex: 0 0 auto; }
+.ftr-dir:hover { translate: 0 -2px; box-shadow: 0 5px 0 var(--y); }
+.ftr-dir:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 3px; }
+.ftr-reach { font-size: 15px; line-height: 1.8; }

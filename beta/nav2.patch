@@ -1051,14 +1051,13 @@ index 0000000..1939139
 +</body>
 +</html>
 diff --git a/site/site.css b/site/site.css
-index e469940..3e72e1d 100644
+index eb4667a..ea2a9eb 100644
 --- a/site/site.css
 +++ b/site/site.css
-@@ -1498,3 +1498,25 @@ html { touch-action: manipulation; }
- .bc-wip { position: absolute; top: 14px; right: 14px; z-index: 3; padding: 6px 11px 5px; border-radius: 999px; background: var(--y); color: var(--ink);
-   border: 1.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); font: 600 11px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .12em; pointer-events: none; }
- .bcard.b-full .bc-media img { object-position: 50% 0; }
-+
+@@ -1541,3 +1541,24 @@ html { touch-action: manipulation; }
+ .ftr-dir:hover { translate: 0 -2px; box-shadow: 0 5px 0 var(--y); }
+ .ftr-dir:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 3px; }
+ .ftr-reach { font-size: 15px; line-height: 1.8; }
 +/* BETA (r361, r362): the wall of work as a video wall of old monitors (site.js adds .crt): one perspective on the
 +   wall (its origin set by site.js to the wall's centre on screen), the rows keep 3D (preserve-3d) so every screen
 +   sits on the one curved surface; a dark bezel and small gaps like separate sets in one rig; a faint scanline and a
