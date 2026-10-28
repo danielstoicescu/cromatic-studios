@@ -985,9 +985,12 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
   // past the page's ends, on every page (Chrome/Android and Safari 16+ honour it; elsewhere it is ignored)
   if (/\.html$/.test(f) && !n2.includes('id="cz-ob"') && n2.includes("</head>")) n2 = n2.replace("</head>", `<style id="cz-ob">html,body{overscroll-behavior-y:none}</style>\n</head>`);
   // r165: the build label: a meta every page carries (the map reads it), and under the website's logo
-  if (/\.html$/.test(f) && BUILD_LABEL && !n2.includes('name="cz-build"') && n2.includes("</head>")) {
-    n2 = n2.replace("</head>", `<meta name="cz-build" content="${BUILD_LABEL}">\n<style id="cz-bl">.brand{position:relative}.cz-build{position:absolute;right:0;left:auto;text-align:right;top:100%;margin-top:3px;font:500 9px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;opacity:.38;color:currentColor;white-space:nowrap;pointer-events:none;mix-blend-mode:normal}</style>\n</head>`);
-    n2 = n2.replace(/(<a class="brand" href="\/(?:site\/|ro\/(?:site\/)?)"[^>]*>[\s\S]*?)(<\/a>)/, `$1<span class="cz-build" translate="no">${BUILD_LABEL} build</span>$2`);
+  // r348 (live fixes): the label stays in a meta and an HTML comment on every page, but it is only SHOWN on beta / local
+  // hosts (or with ?build in the address, e.g. locally): never under the logo of the public site, the map or a case page
+  if (/\.html$/.test(f) && BUILD_LABEL && n2.includes("</head>")) {
+    if (!n2.includes('name="cz-build"')) n2 = n2.replace("</head>", `<meta name="cz-build" content="${BUILD_LABEL}">\n</head>`);
+    if (!n2.includes('id="cz-bl"')) n2 = n2.replace("</head>", `<!-- build: ${BUILD_LABEL} -->\n<style id="cz-bl">.brand{position:relative}.cz-build{display:none!important;position:absolute;right:0;left:auto;text-align:right;top:100%;margin-top:3px;font:500 9px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;opacity:.38;color:currentColor;white-space:nowrap;pointer-events:none;mix-blend-mode:normal}html.cz-b .cz-build{display:block!important}</style>\n<script>/beta/.test(location.hostname)||/^\\/beta/.test(location.pathname)||/[?&]build\\b/.test(location.search)?document.documentElement.classList.add("cz-b"):0</script>\n</head>`);
+    if (!n2.includes('class="cz-build"')) n2 = n2.replace(/(<a class="brand" href="\/(?:site\/|ro\/(?:site\/)?)"[^>]*>[\s\S]*?)(<\/a>)/, `$1<span class="cz-build" translate="no" aria-hidden="true">${BUILD_LABEL} build</span>$2`);
   }
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema
   if (/\.html$/.test(f)) n2 = n2.replace(/<title>([^<]*?) · Cromatic Studios<\/title>/, (m, t0) => (t0.length + 19 > 66 ? `<title>${t0}</title>` : m));

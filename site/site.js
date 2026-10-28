@@ -278,10 +278,10 @@
   // TASK-106: the hero's loop of the city. The still stays the poster (and the LCP): the video gets its sources only
   // after load, once the hero is on screen; never with reduced motion, Save-Data or a 2g connection. Paused off
   // screen, in a background tab, or by its button; it fades in over the still once it plays.
-  const hv = d.querySelector(".hc-vid");
-  if (hv) {
+  // r348: the same loop also sits behind the portfolio's "place → facade → brand" fold; each one runs on its own
+  d.querySelectorAll(".hc-vid").forEach((hv) => {
     const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
-    const pp = d.querySelector(".hc-pp"), card = hv.closest(".hc-card"), mq = matchMedia("(max-width: 700px)");
+    const card = hv.closest(".hc-card, .city-band"), pp = card && card.querySelector(".hc-pp"), mq = matchMedia("(max-width: 700px)");
     if (!reduced && !slow && pp && card && "IntersectionObserver" in window) {
       let seen = false, loaded = false, paused = false;
       const set = () => {
@@ -297,7 +297,7 @@
       mq.addEventListener?.("change", () => { if (loaded) { set(); sync(); } });
       pp.addEventListener("click", () => { paused = !paused; pp.setAttribute("aria-pressed", String(paused)); pp.setAttribute("aria-label", paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(); });
     }
-  }
+  });
   // ---- TASK-139 ----
   // the streets' bands (r346): each clip gets its sources once the page has loaded and the band is near the screen,
   // never with reduced motion, Save-Data or 2g (the poster stays the band). A phone takes the phone cut. Each one plays

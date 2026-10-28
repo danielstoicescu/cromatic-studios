@@ -330,8 +330,6 @@ ${header(true)}
    </div>
   </section>
 
-  ${wall()}
-
   <section id="what" class="sec">
     <div class="wrap">
       <p class="eyebrow mono">What we bring to the table</p>
@@ -349,17 +347,20 @@ ${header(true)}
     </div>
   </section>
 
+  ${/* r348 (Daniel): the page no longer opens into the sliding wall; a calm first fold, what we bring, then the wall (it moves with the normal scroll, never pins it) */ ""}${wall()}
+
   <section id="work" class="sec sec-alt">
     <div class="wrap">
       ${/* TASK-139 (Daniel, 29 Oct): the city's still and the drive's opening words open the portfolio (they were the first
          fold): one moment, "Every place on the map". The word turns place → facade → brand once, then rests */ ""}<div class="city-band">
-        ${hc ? `<picture class="cb-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" loading="lazy" decoding="async"></picture>` : ""}
+        ${/* r348 (Daniel): the drive's loop is this fold's background too (its poster first, the video on screen only, site.js) */ ""}${hp.d ? `<picture class="cb-pic">${hp.m ? `<source media="(max-width: 700px)" srcset="${hp.m.src}" width="${hp.m.w}" height="${hp.m.h}">` : ""}<img src="${hp.d.src}" width="${hp.d.w}" height="${hp.d.h}" alt="The 3D city of Bucharest, a vintage Dacia 1300 on the road" loading="lazy" decoding="async"></picture>` : hc ? `<picture class="cb-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" loading="lazy" decoding="async"></picture>` : ""}
+        ${heroVideo()}
         <i class="cb-shade" aria-hidden="true"></i>
         <div class="cb-in">
           <p class="eyebrow mono">Every place on the map</p>
-          <h2 class="cb-h"><span class="cb-k">Nobody remembers a thumbnail.</span> <span class="cb-big">But someone could remember a <span class="cb-morph"><span>place.</span><span aria-hidden="true">facade.</span><span aria-hidden="true">brand.</span></span></span></h2>
+          <h2 class="cb-h"><span class="cb-k">Nobody remembers a thumbnail.</span> <span class="cb-big">But someone could remember a ${pill("place", "#FED012", -2)} <span class="cb-ar" aria-hidden="true">→</span> ${pill("facade", "#28C840", 1.5)} <span class="cb-ar" aria-hidden="true">→</span> ${pill("brand", "#119BFE", -1)}.</span></h2>
           <p class="cb-sub">Nine worlds over the same streets. One will feel like yours. That’s how the right brand feels.</p>
-          <p class="cb-lead">The same work as the 3D map, street by street: every street is an industry we know from the inside.</p>
+          <div class="btns cb-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a></div>
         </div>
       </div>
       <nav class="streets-nav" aria-label="Industries">${Object.entries(STREETS).map(([k, [street, col]]) => PROJECTS.some((p) => p.street === k && !p.small) ? `<a href="#street-${k.toLowerCase()}" style="--dc:${col}"><span class="dom-sw"></span>${esc(street)}</a>` : "").join("")}</nav>

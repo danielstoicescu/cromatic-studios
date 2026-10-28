@@ -32,5 +32,6 @@
  "A Journey Around The World by Two Minutes": "the film's own title (YouTube)",
  "Beauty &amp; Supplement Park": "TASK-074 (Daniel, 21 Oct): the Zdrovit park's descriptor stays in English on the Romanian site",
  "But someone could remember a <span class=\"cb-morph\"><span>place.</span><span aria-hidden=\"true\">facade.</span><span aria-hidden=\"true\">brand.</span></span>": "r144 / r346: the opening's lines stay in English (now opening the portfolio)",
- "Nine worlds over the same streets. One will feel like yours. That’s how the right brand feels.": "r144 / r346"
+ "Nine worlds over the same streets. One will feel like yours. That’s how the right brand feels.": "r144 / r346",
+ "But someone could remember a <span class=\"pill\" style=\"--pc:#FED012;--rot:-2deg\">place</span> <span class=\"cb-ar\" aria-hidden=\"true\">→</span> <span class=\"pill\" style=\"--pc:#28C840;--rot:1.5deg\">facade</span> <span class=\"cb-ar\" aria-hidden=\"true\">→</span> <span class=\"pill\" style=\"--pc:#119BFE;--rot:-1deg\">brand</span>.": "r348: the opening's lines stay in English on the Romanian pages (r144), now with the three words as pills"
 }

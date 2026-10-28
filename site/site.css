@@ -1182,6 +1182,8 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 #what .chap { transition: translate .55s var(--bounce), box-shadow .55s var(--bounce), opacity .8s var(--eoq), transform 1s var(--bounce); }
 #what .chap:is(:hover, :focus-within) { box-shadow: 0 10px 0 var(--ink); translate: 0 -6px; }
 #what .chap:is(:hover, :focus-within) .chap-k { opacity: .9; color: #fff; translate: 0 -4px; }
+/* r348: white on the brand blue is 2.9:1; the blue chapter keeps ink (6.6:1) */
+#what .chap[style*="#119BFE"]:is(:hover, :focus-within) .chap-k { color: var(--ink); opacity: 1; }
 #what .chap:is(:hover, :focus-within) h3::before { width: 92px; background: #fff; }
 #what .chap:is(:hover, :focus-within) .tags li { background: #fff; translate: 0 -4px; }
 #what .chap:is(:hover, :focus-within) .tags li:nth-child(odd) { rotate: -2deg; }
@@ -1244,7 +1246,7 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
    screen, site.js): the picture slower than the page and settling from a slight zoom, the name faster than it */
 .dom-street { margin-top: 120px; }
 .dom-street:first-of-type { margin-top: 56px; }
-.street-band { --bp: .5; position: relative; margin: 0 calc(50% - 50vw); height: clamp(380px, 68vh, 700px); color: #fff; isolation: isolate; contain: layout paint; }
+.street-band { --bp: .5; position: relative; margin: 0 calc(50% - 50vw); height: clamp(230px, 40vh, 410px); /* r348 (Daniel): about 58% of the old clamp(380px, 68vh, 700px) */ color: #fff; isolation: isolate; contain: layout paint; }
 .sb-stage { position: absolute; inset: 0; overflow: hidden; background: color-mix(in srgb, var(--dc) 55%, var(--ink)); }
 .sb-media { position: absolute; inset: -9% 0; transform: translate3d(0, calc((var(--bp) - .5) * 15%), 0) scale(calc(1.08 - var(--bp) * .08)); transform-origin: 50% 40%; will-change: transform; }
 .sb-pic, .sb-pic img, .sb-vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -1271,7 +1273,7 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 .street-band + .street-head { margin-top: -96px; z-index: 2; }
 .dom-street .street-head { scale: calc(.96 + var(--sp, 1) * .04); transform-origin: 50% 0; }
 @media (max-width: 700px) {
-  .street-band { height: min(118vw, 80svh); }
+  .street-band { height: min(68vw, 46svh); }
   .sb-copy { bottom: calc(76px + 13%); width: calc(100% - 36px); }
   .sb-name { font-size: clamp(44px, 13.4vw, 72px); }
   .sb-cap { font-size: 11px; margin-bottom: 10px; }
@@ -1361,3 +1363,15 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
   .street-band + .street-head .sh-count { position: static; grid-auto-flow: column; justify-content: start; align-items: center; gap: 10px; margin-top: 18px; }
   .street-band + .street-head .sh-count b { width: 52px; height: 52px; font-size: 22px; }
 }
+
+/* r348 (Daniel): the drive's loop behind "place → facade → brand", the three words as pills, a button for the last line, more room before the street buttons */
+.city-band { margin-bottom: clamp(56px, 6vw, 88px); }
+.city-band .hc-vid { z-index: -2; }
+.city-band:has(.hc-vid.on) .cb-shade { background-color: rgba(13,12,9,.22); transition: background-color .9s var(--eoq); }
+.city-band .hc-pp { top: 20px; right: 20px; }
+.cb-big .pill { font-size: .8em; padding: 0 .32em .1em; border-width: .035em; box-shadow: .05em .06em 0 var(--ink); text-shadow: none; vertical-align: .06em; }
+.cb-ar { font-size: .6em; vertical-align: .2em; color: rgba(251,250,245,.8); }
+.cb-btns { margin-top: 22px; }
+@media (max-width: 700px) { .city-band .hc-pp { top: 14px; right: 14px; } .cb-big .pill { font-size: .78em; } }
+.city-band .cb-big { line-height: 1.1; }
+.cb-big .pill { margin: .04em 0; }
