@@ -60,6 +60,7 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = nul
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="${fonts}" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="${fonts}"></noscript>
+<script>document.documentElement.classList.add("js")</script>${/* r356b: before the first paint (site.js set it, deferred): the wall of work was laid out without it first, a 0.78 CLS on desktop */ ""}
 <link rel="stylesheet" href="${cssHref}">
 <script src="${jsHref}" defer></script>
 ${preload}
