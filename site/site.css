@@ -1375,3 +1375,35 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
 @media (max-width: 700px) { .city-band .hc-pp { top: 14px; right: 14px; } .cb-big .pill { font-size: .78em; } }
 .city-band .cb-big { line-height: 1.1; }
 .cb-big .pill { margin: .04em 0; }
+
+/* 13 · r349 (Daniel, new order). The wall of work is the first fold, one line over it; the drive is half a screen
+   where the "place, facade, brand" fold was; the street buttons are bigger, each with its glyph, and shrink once stuck */
+.pwall.pw-first { position: relative; min-height: calc(100vh - 72px); min-height: calc(100svh - 72px); display: grid; align-content: center; padding: 14px 0; }
+.pw-over { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 0 20px; pointer-events: none; }
+.pw-h { position: relative; margin: 0; max-width: 11.5em; text-align: center; color: #fff; font-size: clamp(42px, 6.2vw, 104px); font-weight: 900; line-height: .98; letter-spacing: -.045em; text-wrap: balance; }
+.pw-h::before { content: ""; position: absolute; z-index: -1; inset: -42% -16%; border-radius: 50%; background: radial-gradient(closest-side, rgba(13,12,9,.8), rgba(13,12,9,.66) 52%, rgba(13,12,9,0)); filter: blur(8px); }
+.hc-half .hc-card { min-height: 56vh; min-height: 56svh; display: flex; align-items: flex-end; }
+.hc-half .hc-in { padding: clamp(48px, 8vh, 90px) 0 clamp(32px, 5vh, 56px); }
+.hero-city.hc-half .hc-h { font-size: clamp(40px, 5.4vw, 88px); margin-bottom: 0; max-width: 11em; }
+.hc-classic { display: inline-block; margin-top: 18px; color: var(--paper); font-size: 18px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.hc-classic:hover { text-decoration-thickness: 3px; }
+.hero-city.hc-half { margin: clamp(30px, 4vw, 56px) 0 0; }
+.streets-nav { gap: 12px; transition: padding .3s var(--eoq); }
+.streets-nav a { gap: 12px; padding: 12px 24px 12px 12px; font-size: 19px; transition: padding .3s var(--eoq), font-size .3s var(--eoq), translate .45s var(--bounce), box-shadow .45s var(--bounce), background .25s var(--eoq); }
+.sn-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--dc); border: var(--line); color: var(--ink); transition: width .3s var(--eoq), height .3s var(--eoq); }
+.sn-ico svg { width: 60%; height: 60%; }
+.streets-nav a[aria-current] .sn-ico { background: #fff; }
+.streets-nav.stuck { padding: 8px 0; }
+.streets-nav.stuck a { padding: 5px 14px 5px 6px; font-size: 15px; gap: 8px; }
+.streets-nav.stuck .sn-ico { width: 26px; height: 26px; }
+@media (max-width: 700px) {
+  .pwall.pw-first { min-height: calc(100svh - 64px); }
+  .pw-h { font-size: min(11vw, 6svh); }
+  .hc-half .hc-card { min-height: 60svh; }
+  .hc-classic { font-size: 17px; }
+  .streets-nav a { padding: 8px 16px 8px 8px; font-size: 16px; gap: 10px; }
+  .sn-ico { width: 34px; height: 34px; }
+  .streets-nav.stuck a { padding: 4px 12px 4px 5px; font-size: 14px; }
+  .streets-nav.stuck .sn-ico { width: 24px; height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .streets-nav, .streets-nav a, .sn-ico { transition: none; } }

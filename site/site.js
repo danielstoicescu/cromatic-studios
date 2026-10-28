@@ -216,6 +216,12 @@
     }), { rootMargin: "-38% 0px -58% 0px" });
     links.forEach((a, id) => { const el = d.getElementById(id); if (el) io4.observe(el); });
   }
+  // r349: once the street buttons reach their sticky place under the header they shrink (.stuck), and grow back above it
+  if (snav) {
+    let rq = 0;
+    const st = () => { rq = 0; const top = parseFloat(getComputedStyle(snav).top) || 0; snav.classList.toggle("stuck", snav.getBoundingClientRect().top <= top + 1 && scrollY > 200); };
+    addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(st); }, { passive: true }); st();
+  }
 
   // ---- TASK-067: the coffee stop, drawn. The still (an SVG picture) is the page's; the Lottie (the map's player, in a worker) draws
   // over it from the same frame once the section is near and the page has loaded, and plays while the section is on screen

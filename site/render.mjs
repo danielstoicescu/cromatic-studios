@@ -11,6 +11,13 @@ const INDUSTRIES = HUBS.INDUSTRIES || [], SERVICE_PAGES = HUBS.SERVICE_PAGES || 
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const strip = (h) => String(h).replace(/<[^>]+>/g, "");
 // r133: the star left the visual language: buttons carry the spinning yellow cup instead
+// r349: one small glyph per street for the street buttons (24px grid, 2px ink line): a cup, a rising line, a cross, a short cut
+const STREET_ICONS = {
+  A: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3"/></svg>`,
+  B: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M7 15l4-4 3 3 5-6"/><path d="M15 8h4v4"/></svg>`,
+  C: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z"/></svg>`,
+  D: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c4 0 4-6 8-6s4-6 8-6"/><path d="M16 7h4v4"/><circle cx="4" cy="19" r="1.2" fill="currentColor"/></svg>`,
+};
 const STAR = `<span class="cupspin cup-btn" aria-hidden="true"></span>`;
 
 // r143: `kz` (the kinetic cups bundle) no longer plays on /site/; `heroCity` is the still of the city its first fold stands on
@@ -302,33 +309,24 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     // directions with the scroll, site.js), the covers /onboarding/ uses, every case page of PROJECTS once. The picture
     // alone at rest; the name comes up on hover or focus (a first tap shows it on a touch screen, the second opens it)
     const WALL_DIR = new URL("./onboarding/media/covers/", import.meta.url).pathname;
-    const wall = () => {
+    // r349: wall(true) is the first fold: the line over it (white on a soft dark scrim behind the words only), the
+    // first covers load at once (they are the first paint now); the rows still only follow the normal scroll
+    const wall = (first = false) => {
       const seen = new Set(), list = PROJECTS.filter((x) => x.page && !seen.has(x.page) && seen.add(x.page) && existsSync(WALL_DIR + x.page + ".webp"));
       if (list.length < 6) return "";
       const per = Math.ceil(list.length / 3);
-      const card = (x, hid) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="lazy" decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
-      return `<section class="pwall" aria-label="Selected work">
-    <div class="pw-rows">${[0, 1, 2].map((r) => { const l = list.slice(r * per, r * per + per); return `<div class="pw-row">${l.map((x) => card(x, false)).join("")}${l.map((x) => card(x, true)).join("")}</div>`; }).join("")}</div>
+      const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
+      return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
+    <div class="pw-rows">${[0, 1, 2].map((r) => { const l = list.slice(r * per, r * per + per); return `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`; }).join("")}</div>
+    ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We are here for the brand experiences</h1></div>` : ""}
   </section>`;
     };
-    const preload = hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "";
+    const preload = false && hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "";
     return `${head({ title: SITE_TITLE, desc: "Independent creative studio in Bucharest: brand strategy, identity, websites and apps, film and content for indie brands, startups and established firms.", path: "/site/", ld, preload })}
 ${header(true)}
 <main id="main">
-  <section class="hero hero-city" aria-labelledby="hc-h">
-   <div class="hc-card">
-    ${hp.d ? `<picture class="hc-pic">${hp.m ? `<source media="(max-width: 700px)" srcset="${hp.m.src}" width="${hp.m.w}" height="${hp.m.h}">` : ""}<img src="${hp.d.src}" width="${hp.d.w}" height="${hp.d.h}" alt="The 3D city of Bucharest at sunset, a vintage Dacia 1300 on the road" fetchpriority="high" decoding="async"></picture>` : ""}
-    ${heroVideo()}
-    <i class="hc-shade" aria-hidden="true"></i>
-    <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
-    <div class="wrap hc-in">
-      <p class="eyebrow mono">Cromatic Studios · Bucharest · Since 2014</p>
-      <h1 class="hc-h" id="hc-h">A portfolio you can drive.</h1>
-      <p class="hc-what">An independent studio for brand strategy, identity, websites, film and content.</p>
-      <div class="btns hc-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a><a class="btn hc-ghost" href="#work">See the work <span aria-hidden="true">↓</span></a></div>
-    </div>
-   </div>
-  </section>
+  ${/* r349 (Daniel, new order): the wall of work is the first fold, under one line; then the four chapters; then the
+     drive (half a screen) where the "place, facade, brand" fold was; then the streets */ ""}${wall(true)}
 
   <section id="what" class="sec">
     <div class="wrap">
@@ -347,23 +345,23 @@ ${header(true)}
     </div>
   </section>
 
-  ${/* r348 (Daniel): the page no longer opens into the sliding wall; a calm first fold, what we bring, then the wall (it moves with the normal scroll, never pins it) */ ""}${wall()}
+  <section class="hero hero-city hc-half" aria-labelledby="hc-h">
+   <div class="hc-card">
+    ${hp.d ? `<picture class="hc-pic">${hp.m ? `<source media="(max-width: 700px)" srcset="${hp.m.src}" width="${hp.m.w}" height="${hp.m.h}">` : ""}<img src="${hp.d.src}" width="${hp.d.w}" height="${hp.d.h}" alt="The 3D city of Bucharest at sunset, a vintage Dacia 1300 on the road" loading="lazy" decoding="async"></picture>` : ""}
+    ${heroVideo()}
+    <i class="hc-shade" aria-hidden="true"></i>
+    <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
+    <div class="wrap hc-in">
+      <h2 class="hc-h" id="hc-h">Drive through the portfolio</h2>
+      <div class="btns hc-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a></div>
+      <a class="hc-classic" href="#streets">or continue to our works in the classic way <span aria-hidden="true">↓</span></a>
+    </div>
+   </div>
+  </section>
 
   <section id="work" class="sec sec-alt">
     <div class="wrap">
-      ${/* TASK-139 (Daniel, 29 Oct): the city's still and the drive's opening words open the portfolio (they were the first
-         fold): one moment, "Every place on the map". The word turns place → facade → brand once, then rests */ ""}<div class="city-band">
-        ${/* r348 (Daniel): the drive's loop is this fold's background too (its poster first, the video on screen only, site.js) */ ""}${hp.d ? `<picture class="cb-pic">${hp.m ? `<source media="(max-width: 700px)" srcset="${hp.m.src}" width="${hp.m.w}" height="${hp.m.h}">` : ""}<img src="${hp.d.src}" width="${hp.d.w}" height="${hp.d.h}" alt="The 3D city of Bucharest, a vintage Dacia 1300 on the road" loading="lazy" decoding="async"></picture>` : hc ? `<picture class="cb-pic"><source media="(max-width: 700px)" srcset="${hc.m.src}" width="${hc.m.w}" height="${hc.m.h}"><img src="${hc.d.src}" width="${hc.d.w}" height="${hc.d.h}" alt="Coffee Street in the 3D city of Bucharest, the vintage yellow ride outside Two Min Lab" loading="lazy" decoding="async"></picture>` : ""}
-        ${heroVideo()}
-        <i class="cb-shade" aria-hidden="true"></i>
-        <div class="cb-in">
-          <p class="eyebrow mono">Every place on the map</p>
-          <h2 class="cb-h"><span class="cb-k">Nobody remembers a thumbnail.</span> <span class="cb-big">But someone could remember a ${pill("place", "#FED012", -2)} <span class="cb-ar" aria-hidden="true">→</span> ${pill("facade", "#28C840", 1.5)} <span class="cb-ar" aria-hidden="true">→</span> ${pill("brand", "#119BFE", -1)}.</span></h2>
-          <p class="cb-sub">Nine worlds over the same streets. One will feel like yours. That’s how the right brand feels.</p>
-          <div class="btns cb-btns"><a class="btn btn-y" href="/">${STAR}<span>Take the 3D drive</span></a></div>
-        </div>
-      </div>
-      <nav class="streets-nav" aria-label="Industries">${Object.entries(STREETS).map(([k, [street, col]]) => PROJECTS.some((p) => p.street === k && !p.small) ? `<a href="#street-${k.toLowerCase()}" style="--dc:${col}"><span class="dom-sw"></span>${esc(street)}</a>` : "").join("")}</nav>
+      <nav class="streets-nav" id="streets" aria-label="Industries">${Object.entries(STREETS).map(([k, [street, col]]) => PROJECTS.some((p) => p.street === k && !p.small) ? `<a href="#street-${k.toLowerCase()}" style="--dc:${col}"><span class="sn-ico" aria-hidden="true">${STREET_ICONS[k] || ""}</span>${esc(street)}</a>` : "").join("")}</nav>
       ${workByStreet(covers)}
       <p class="friends"><span class="mono">Friends we made along the way</span> ${FRIENDS.map((f) => `<span class="fpill">${esc(f)}</span>`).join("")}</p>
     </div>
