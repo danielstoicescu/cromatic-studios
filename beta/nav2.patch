@@ -1051,13 +1051,13 @@ index 0000000..1939139
 +</body>
 +</html>
 diff --git a/site/site.css b/site/site.css
-index eb3f1c0..433d8f0 100644
+index d20f856..0b45fef 100644
 --- a/site/site.css
 +++ b/site/site.css
-@@ -1534,3 +1534,24 @@ html { touch-action: manipulation; }
- .sb-drive .dk-roll { width: 46px; height: 28px; background-size: 46px 28px; }
- html.embed .dk { display: none; }
- @media (prefers-reduced-motion: reduce) { .dk, .dk-host { transition: none; } .dk-host .dk-roll { animation: none !important; } .dk-host:hover .dk, .dk-host:active .dk { translate: none; } }
+@@ -1587,3 +1587,24 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
+   .zd small { font-size: 13px; }
+ }
+ @media (max-width: 340px) { .zd-list { grid-template-columns: 1fr; } }
 +/* BETA (r361, r362): the wall of work as a video wall of old monitors (site.js adds .crt): one perspective on the
 +   wall (its origin set by site.js to the wall's centre on screen), the rows keep 3D (preserve-3d) so every screen
 +   sits on the one curved surface; a dark bezel and small gaps like separate sets in one rig; a faint scanline and a
@@ -1080,10 +1080,10 @@ index eb3f1c0..433d8f0 100644
 +@media (prefers-reduced-motion: reduce) { .pwall.crt::before { display: none; } .pw-case .gl { display: none; } }
 +.pw-case.gl-on { background: #0d0c09; }
 diff --git a/site/site.js b/site/site.js
-index 1a7c153..03468fc 100644
+index 57b4c76..d1526e8 100644
 --- a/site/site.js
 +++ b/site/site.js
-@@ -392,8 +392,9 @@
+@@ -397,8 +397,9 @@
    window.__czWall = WALL;
    const wallPaint = () => pwRows.forEach((row, i) => {
      const half = row._half; if (!half) return;
@@ -1095,7 +1095,7 @@ index 1a7c153..03468fc 100644
    });
    if (!reduced && pwRows.length && "IntersectionObserver" in window) {
      const v = matchMedia("(max-width: 700px)").matches ? 3.5 : 5.6; // r362 (Daniel: "poate fi mai lent"): 0.7x of r360
-@@ -463,3 +464,126 @@
+@@ -468,3 +469,126 @@
  
    // r359: the boarding pass has its own script now (build/boarding.mjs)
  })();

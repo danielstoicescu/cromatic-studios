@@ -1534,3 +1534,56 @@ html { touch-action: manipulation; }
 .sb-drive .dk-roll { width: 46px; height: 28px; background-size: 46px 28px; }
 html.embed .dk { display: none; }
 @media (prefers-reduced-motion: reduce) { .dk, .dk-host { transition: none; } .dk-host .dk-roll { animation: none !important; } .dk-host:hover .dk, .dk-host:active .dk { translate: none; } }
+/* r366 (Daniel, 28 Oct, on a Pixel 9 Pro XL): the page never scrolls sideways; on a phone the street switch stays inside
+   the gutters and scrolls in itself, its edges fading where there is more; the portfolio breathes (one card a row,
+   now and then a pair of portrait ones, never a mosaic); the Zdrovit brands are one tidy block, not a stack of cards */
+.zd-park { margin-top: 40px; padding-top: 22px; border-top: 1.5px solid var(--ink); }
+.zd-h { margin: 0 0 22px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; opacity: .62; }
+.zd-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 22px 32px; }
+.zd-list li { min-width: 0; }
+.zd { position: relative; display: grid; gap: 4px; padding-left: 22px; color: var(--ink); text-decoration: none; }
+.zd::before { content: ""; position: absolute; left: 0; top: .5em; width: 10px; height: 10px; border-radius: 50%; background: #e30613; }
+.zd b { justify-self: start; font-weight: 800; font-size: 18px; line-height: 1.25; letter-spacing: -.01em; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; text-decoration-color: rgba(227,6,19,.55); transition: text-decoration-color .15s, color .15s; }
+.zd small { font-size: 14px; line-height: 1.4; color: var(--muted, #6b665c); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+a.zd:hover b { color: #c10510; text-decoration-color: currentColor; }
+a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
+.zd-off::before { background: #cfcdc8; }
+.zd-off b { text-decoration: none; }
+
+@media (max-width: 700px) {
+  body > main { overflow-x: clip; }
+  /* the switch: gutter to gutter, no scaling when it sticks (the scale was what pushed it past the screen's edge) */
+  .streets-nav, .streets-nav.stuck { transform: none; width: auto; max-width: 100%; margin-inline: 0; }
+  .streets-nav { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .streets-nav::before, .streets-nav::after { content: ""; position: sticky; z-index: 1; flex: 0 0 28px; align-self: stretch; margin-block: -4px; pointer-events: none; opacity: 0; transition: opacity .2s var(--eoq); }
+  .streets-nav::before { left: -4px; margin-right: -28px; background: linear-gradient(90deg, #fff 25%, rgba(255,255,255,0)); }
+  .streets-nav::after { right: -4px; margin-left: -28px; background: linear-gradient(270deg, #fff 25%, rgba(255,255,255,0)); }
+  .streets-nav.sn-l::before, .streets-nav.sn-r::after { opacity: 1; }
+
+  /* the portfolio: one card a row (4:3, every fifth a square), cards 3 and 4 of every six side by side as portraits */
+  .dom-street { margin-top: 104px; }
+  .dom-street .bento, .bento { grid-template-columns: 1fr 1fr; grid-auto-rows: auto; grid-auto-flow: row; gap: 28px 16px; margin-top: 32px; }
+  .bento > .bcard, .bento > .bcard:is(.b-xl, .b-t, .b-w, .b-m, .b-s, .b-full) { grid-column: 1 / -1; grid-row: auto; aspect-ratio: 4 / 3; }
+  .bento > .bcard:nth-child(6n+5) { aspect-ratio: 1; }
+  .bento > .bcard:is(:nth-child(6n+3), :nth-child(6n+4)):not(.b-full) { grid-column: span 1; aspect-ratio: 3 / 4; }
+  /* a portrait left without its partner (the last card, or one beside a full-width work in progress) takes the row */
+  .bento > .bcard:nth-child(6n+3):is(:last-child, :has(+ .b-full)), .bento > .b-full + .bcard:nth-child(6n+4) { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
+  .bento > .bcard.b-full { aspect-ratio: 16 / 10; }
+  .bcard { border-radius: 24px; }
+  /* the name: a little away from the corner, readable */
+  .bcard .bc-body { padding: 16px; }
+  .bcard .bc-name { font-size: 15px; padding: 9px 42px 9px 14px; box-shadow: 0 2px 0 var(--ink); }
+  a.bcard .bc-name::after { width: 26px; height: 26px; margin-top: -13px; right: 6px; background-size: 12px 12px, auto; }
+  .bcard:is(:nth-child(6n+3), :nth-child(6n+4)) .bc-body { padding: 12px; }
+  .bcard:is(:nth-child(6n+3), :nth-child(6n+4)) .bc-name { font-size: 14px; padding: 8px 38px 8px 12px; }
+  .bc-poster { font-size: 24px; inset: 20px 20px auto; }
+  .bc-wip { top: 16px; right: 16px; }
+
+  .zd-park { margin-top: 44px; }
+  .zd-list { grid-template-columns: 1fr 1fr; gap: 22px 18px; }
+  .zd { padding-left: 18px; }
+  .zd::before { width: 8px; height: 8px; top: .55em; }
+  .zd b { font-size: 16px; }
+  .zd small { font-size: 13px; }
+}
+@media (max-width: 340px) { .zd-list { grid-template-columns: 1fr; } }

@@ -165,8 +165,10 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const zdRow = () => {
     const list = zdSorted();
     if (!list.length) return "";
-    const st = "--bc:#cfcdc8;--bt:#3d3c39", stp = "--bc:#e30613;--bt:#ffffff;text-decoration:none";
-    return `<div class="psmall"><span class="mono ps-h">In Zdrovit · Beauty &amp; Supplement Park</span>${list.map((b) => b.page ? `<a class="ps" href="/work/${b.page}/" style="${stp}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i><i class="mono">Case study →</i></a>` : `<span class="ps" style="${st}"><b>${esc(b.name)}</b><i class="mono">${esc(b.line)}</i></span>`).join("")}</div>`;
+    // r366 (Daniel, 28 Oct, on a phone: "puncte roșii și numele brandului subliniat... să se alinieze mult mai bine unele
+    // sub altele"): one tidy block instead of a stack of red cards: a grid of the brands, each a red dot, its name
+    // underlined as the link to its case, the category as a quiet second line; a brand without a case is plain
+    return `<div class="zd-park"><p class="mono zd-h">In Zdrovit · Beauty &amp; Supplement Park</p><ul class="zd-list">${list.map((b) => `<li>${b.page ? `<a class="zd" href="/work/${b.page}/"><b>${esc(b.name)}</b><small>${esc(b.line)}</small></a>` : `<span class="zd zd-off"><b>${esc(b.name)}</b><small>${esc(b.line)}</small></span>`}</li>`).join("")}</ul></div>`;
   };
   const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
   const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;

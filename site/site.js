@@ -235,6 +235,11 @@
     let rq = 0;
     const st = () => { rq = 0; const top = parseFloat(getComputedStyle(snav).top) || 0; snav.classList.toggle("stuck", snav.getBoundingClientRect().top <= top + 1 && scrollY > 200); };
     addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(st); }, { passive: true }); st();
+    // r366: on a phone the switch scrolls inside itself; its edges fade where there is more to see (.sn-l, .sn-r)
+    let rq2 = 0;
+    const ed = () => { rq2 = 0; const x = snav.scrollLeft, m = snav.scrollWidth - snav.clientWidth; snav.classList.toggle("sn-l", x > 2); snav.classList.toggle("sn-r", m - x > 2); };
+    const edq = () => { if (!rq2) rq2 = requestAnimationFrame(ed); };
+    snav.addEventListener("scroll", edq, { passive: true }); addEventListener("resize", edq, { passive: true }); ed();
   }
 
   // ---- TASK-067: the coffee stop, drawn. The still (an SVG picture) is the page's; the Lottie (the map's player, in a worker) draws

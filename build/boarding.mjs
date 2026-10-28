@@ -174,10 +174,10 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-end b{font-size:38px}.czp-end em{font-size:12px}
 .czp-row{grid-template-columns:1fr}
 .czp-go{width:100%;justify-content:center}
-.czp-stamp{right:16px;bottom:18px}.czp.done .czp-main{padding-bottom:104px;border-bottom:2px solid var(--ink);border-radius:22px;-webkit-mask:none;mask:none}
+.czp-stamp{right:16px;bottom:18px;transform-origin:100% 100%;scale:1.15}.czp.done .czp-main{padding-bottom:104px;border-bottom:2px solid var(--ink);border-radius:22px;-webkit-mask:none;mask:none}
 }
 @media (prefers-reduced-motion:reduce){.czp *,.czp.done .czp-stamp{transition:none!important;animation:none!important}.czp.done .czp-stub{opacity:.35}.czp:focus-within .czp-plane{left:46%}}
-.czp-sec{--ink:#0d0c09;background:#0d0c09;color:#fbfaf5;padding:clamp(56px,8vw,110px) 0;font-family:var(--f,CromaticSans,"Google Sans",system-ui,-apple-system,"Segoe UI",sans-serif);line-height:1.5}
+.czp-sec{overflow-x:clip;--ink:#0d0c09;background:#0d0c09;color:#fbfaf5;padding:clamp(56px,8vw,110px) 0;font-family:var(--f,CromaticSans,"Google Sans",system-ui,-apple-system,"Segoe UI",sans-serif);line-height:1.5}
 .czp-wrap{width:min(1180px,100% - 40px);margin:0 auto;display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:clamp(28px,4vw,64px);align-items:start}
 .czp-eb{margin:0 0 14px;font:700 12px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(251,250,245,.72)}
 .czp-intro h2{margin:0 0 18px;font-weight:900;font-size:clamp(40px,5vw,72px);line-height:.95;letter-spacing:-.045em;color:#fbfaf5}
