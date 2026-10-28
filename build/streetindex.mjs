@@ -34,7 +34,7 @@ const T = {
     desc: "Every project of Cromatic Studios on the street it lives on: Coffee Street, Fintech Boulevard, Medical Avenue and The Shortest Shortcut.",
     nav: [["#index", "Work"], ["/site/#studio", "Studio"], ["/site/#services", "Services"], ["/site/#contact", "Contact"]],
     wheel: "Take the wheel", eyebrow: "Cromatic Studios · Bucharest · since 2014",
-    h1a: "Nobody remembers a thumbnail.", h1b: "Everyone remembers an", h1w: "address", h1c: ".",
+    morph: "Someone could remember a", words: ["place", "facade", "brand"], h1a: "Nobody remembers a thumbnail.", h1b: "Everyone remembers an", h1w: "address", h1c: ".",
     sub: (n) => `An independent studio for brand strategy, identity, websites, film and content. ${n} case studies on 4 streets of a city we built for them.`,
     read: "Read the work", drive: "Take the 3D drive", pause: "Pause the film", play: "Play the film",
     show: "Show me", on: "on", all: "all the work", every: "every street",
@@ -55,7 +55,7 @@ const T = {
     desc: "Fiecare proiect Cromatic Studios pe strada lui: Coffee Street, Fintech Boulevard, Medical Avenue și The Shortest Shortcut.",
     nav: [["#index", "Proiecte"], ["/ro/#studio", "Studio"], ["/ro/#services", "Servicii"], ["/ro/#contact", "Contact"]],
     wheel: "Ia volanul", eyebrow: "Cromatic Studios · București · din 2014",
-    h1a: "Nimeni nu ține minte o miniatură.", h1b: "Toată lumea ține minte o", h1w: "adresă", h1c: ".",
+    morph: "Cineva ar putea ține minte", words: ["locul", "fațada", "brandul"], h1a: "Nimeni nu ține minte o miniatură.", h1b: "Toată lumea ține minte o", h1w: "adresă", h1c: ".",
     sub: (n) => `Un studio independent de strategie de brand, identitate, website-uri, film și conținut. ${n} studii de caz pe 4 străzi ale unui oraș construit pentru ele.`,
     read: "Citește proiectele", drive: "Ia-o pe drumul 3D", pause: "Oprește filmul", play: "Pornește filmul",
     show: "Arată-mi", on: "de pe", all: "toate proiectele", every: "toate străzile",
@@ -185,7 +185,8 @@ ${fontPre}
 <button class="si-pause" type="button" aria-label="${t.pause}" data-pause="${t.pause}" data-play="${t.play}" hidden><i></i></button>
 <div class="si-fold-t">
 <p class="mono si-eyebrow">${t.eyebrow}</p>
-<h1 id="h1">${t.h1a}<br>${t.h1b} <mark>${t.h1w}</mark>${t.h1c}</h1>
+<h1 id="h1">${t.h1a}<br class="si-br"> ${t.h1b} <mark>${t.h1w}</mark>${t.h1c}</h1>
+<p class="si-morph"><span>${t.morph}</span> <span class="si-pills" role="img" aria-label="${t.words.join(", ")}">${t.words.map((w, j) => `${j ? '<i class="si-ar" aria-hidden="true">→</i>' : ""}<span class="pill${j ? "" : " on"}" style="--pc:${["#FED012", "#28C840", "#119BFE"][j]};--rot:${[-2, 1.5, -1][j]}deg" aria-hidden="true">${w}</span>`).join("")}</span></p>
 <p class="si-sub">${t.sub(cases)}</p>
 <p class="si-acts"><a class="si-btn si-btn-y" href="#index">${t.read} <span aria-hidden="true">↓</span></a><a class="si-link" href="/">${t.drive} <span aria-hidden="true">→</span></a></p>
 </div>

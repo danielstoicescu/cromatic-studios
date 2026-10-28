@@ -20,6 +20,14 @@
   }, 300), { once: true });
   pb?.addEventListener("click", () => { const p = !v.paused; p ? v.pause() : v.play(); pb.classList.toggle("paused", p); pb.setAttribute("aria-label", p ? pb.dataset.play : pb.dataset.pause); });
 
+  // place → facade → brand: one pill turns through the words while the fold is on screen (never with reduced motion)
+  const morph = $(".si-morph");
+  if (morph && !RM.matches) {
+    morph.classList.add("turn");
+    const ps = $$(".pill", morph); let k = 0, tm = 0;
+    const tick = () => { ps[k].classList.remove("on"); k = (k + 1) % ps.length; ps[k].classList.add("on"); };
+    new IntersectionObserver(([e]) => { clearInterval(tm); if (e.isIntersecting) tm = setInterval(tick, 1700); }).observe(morph);
+  }
   // header: solid over the paper, and the street you are on with a progress line
   const where = $(".si-where-s"), whereN = $(".si-where-n"), prog = $(".si-prog");
   const fold = $(".si-fold");

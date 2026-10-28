@@ -52,7 +52,17 @@ button,select,input{font:inherit;color:inherit}
 .si-eyebrow{margin:0 0 18px;opacity:.85}
 .si-fold h1{margin:0;font-weight:800;font-size:clamp(44px,5.8vw,88px);line-height:.95;letter-spacing:-.04em;text-wrap:balance}
 .si-fold mark{background:linear-gradient(var(--y),var(--y)) no-repeat 0 0/var(--mk,100%) 100%;color:var(--ink);padding:0 .08em;margin:0 -.02em}
-.si-sub{max-width:600px;margin:28px 0 30px;font-size:20px;line-height:1.6;opacity:.92}
+/* place → facade → brand: the studio's pills (Daniel, 28 Oct, his ask over "pills only on controls"); one pill turns
+   through the three words while the fold is on screen; with reduced motion (or no script) the three sit in a row */
+.si-morph{margin:22px 0 0;font-weight:700;font-size:clamp(20px,1.9vw,28px);line-height:1.2;display:flex;flex-wrap:wrap;align-items:center;gap:.3em}
+.si-pills{display:inline-flex;align-items:center;gap:.35em}
+.pill{display:inline-block;padding:.06em .5em .14em;border:1px solid var(--ink);border-radius:999px;background:var(--pc);color:var(--ink);font-weight:900;line-height:1.05;white-space:nowrap;transform:rotate(var(--rot));box-shadow:.06em .07em 0 var(--ink)}
+.si-ar{font-style:normal;opacity:.8}
+.si-morph.turn .si-pills{display:inline-grid;gap:0}
+.si-morph.turn .si-ar{display:none}
+.si-morph.turn .pill{grid-area:1/1;justify-self:start;opacity:0;transform:rotate(var(--rot)) translateY(.4em);transition:opacity .32s var(--eoq),transform .42s cubic-bezier(.34,1.56,.64,1)}
+.si-morph.turn .pill.on{opacity:1;transform:rotate(var(--rot))}
+.si-sub{max-width:600px;margin:22px 0 30px;font-size:20px;line-height:1.6;opacity:.92}
 .si-acts{display:flex;gap:34px;align-items:center;margin:0;flex-wrap:wrap}
 .si-streets{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);list-style:none;margin:0;padding:0;border-top:1px solid rgba(255,255,255,.18);background:rgba(13,12,9,.55)}
 .si-streets li+li{border-left:1px solid rgba(255,255,255,.18)}
@@ -206,9 +216,14 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
   .si-wheel{margin-left:auto;height:38px;padding:0 16px;font-size:15px}
   .si-top.instreet .si-where{display:none}
   .si-fold{min-height:92svh}
-  .si-fold-t{padding:0 16px 28px}
-  .si-fold h1{font-size:clamp(38px,11vw,54px)}
-  .si-sub{font-size:18px;margin:18px 0 22px}
+  .si-fold-t{padding:0 16px 24px}
+  .si-eyebrow{display:none}
+  .si-br{display:none}
+  .si-fold h1{font-size:clamp(26px,7.4vw,32px);line-height:1.04;letter-spacing:-.03em;max-width:22ch}
+  .si-morph{font-size:17px;margin-top:14px}
+  .si-sub{font-size:16px;line-height:1.5;margin:12px 0 18px}
+  .si-btn{height:44px;font-size:16px;padding:0 20px}
+  .si-link{font-size:16px}
   .si-acts{gap:22px}
   .si-pause{right:16px;top:72px}
   .si-streets{grid-template-columns:1fr 1fr}
@@ -221,7 +236,7 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
   .si-search{width:100%}
   .si-count{font-size:16px}
   .si-street{padding:0 0 16px}
-  .si-strip{display:block;position:sticky;top:var(--top);z-index:5;height:172px;margin:0}
+  .si-strip{display:block;position:sticky;top:var(--top);z-index:5;height:112px;margin:0}
   .si-strip .si-still{position:absolute;inset:0}
   .si-strip .si-still::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,12,9,0) 50%,rgba(13,12,9,.55))}
   .si-strip-l{position:absolute;left:16px;bottom:12px;color:#fff;z-index:2}
@@ -233,17 +248,25 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
   .si-sh-lead{grid-column:1/3;font-size:17px}
   .si-split{display:block;padding:0 16px}
   .si-stage{display:none}
-  .si-a{grid-template-columns:38px auto 1fr auto;min-height:64px}
+  /* every row leads with the brand's picture (Daniel: "you can't see a project's picture until you tap it"): a big
+     cover, then the number, the name and one category line; the description only once the row is opened */
+  .si-a,.si-index.filtering .si-a{grid-template-columns:34px 1fr auto;min-height:0;padding:18px 0 14px;row-gap:12px}
+  .si-thumb,.si-index.filtering .si-thumb{display:block;grid-column:1/-1;grid-row:1;width:100%;height:auto;aspect-ratio:16/10;margin:0}
+  .si-thumb:empty{display:none!important}
+  .si-n{grid-row:2;align-self:start;padding-top:9px}
+  .si-txt{grid-column:2;grid-row:2}
+  .si-map{grid-column:3;grid-row:2}
+  .si-name,.si-index:not(.filtering) .si-list:not(:hover):not(:focus-within) .si-row:first-child .si-name{color:var(--ink)}
+  .si-cat{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .si-more img,.si-more .mono{display:none}
   .si-index.filtering{display:block;padding:0}
   .si-index.filtering .si-filter{margin:0}
   .si-index.filtering .si-street{padding:8px 0 0}
   .si-index.filtering .si-sh{border:0;padding:16px 16px 0}
   .si-view{margin-left:0!important}
-  .si-thumb{width:64px;height:48px;margin-right:12px}
   .si-name{font-size:24px}
   .si-go{display:none}
   .si-row.open .si-name,.si-row.on .si-name{color:var(--ink)}
-  .si-index:not(.filtering) .si-list:not(:hover):not(:focus-within) .si-row:first-child .si-name{color:var(--soft)}
   .si-row.open::after{width:100%}
   .si-more{padding:0 0 20px 0}
   .si-more img{aspect-ratio:16/9}
