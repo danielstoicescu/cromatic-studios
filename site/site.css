@@ -1512,25 +1512,31 @@ html { touch-action: manipulation; }
 .ftr-reach { font-size: 15px; line-height: 1.8; }
 
 /* r365 (Daniel picked variant B): the drive buttons, a paper pill with a thin yellow ring and a soft shadow, the city's
-   Dacia 1300 parked over the left edge (site/render.mjs DK). Hover or keyboard focus: it rolls a few px, wheels turning
-   (a 10-frame strip, stepped with a transform); a press nudges it on. Still with reduced motion */
-.dk-host { position: relative; overflow: visible; padding-left: 60px !important; background: #fff !important; color: var(--ink) !important; border: 0 !important;
-  box-shadow: 0 0 0 2.5px var(--y), 0 8px 18px rgba(13,12,9,.14) !important; transition: translate .3s var(--bounce), box-shadow .3s var(--eoq); }
+   Dacia 1300 parked over the left edge (site/render.mjs DK). r366 (Ilinca): the car drawn at 3x (crisp on a 3x phone); at
+   rest only the still loads (7 KB), the 10-frame roll strip on the first hover or focus. Hover or keyboard focus: it rolls
+   5 px once, the wheels turning with it, and stops (no wheelspin in place); a press nudges it on. Still with reduced motion */
+.dk-host { position: relative; overflow: visible; padding-left: 60px !important; background: #fff !important; color: var(--ink) !important; border: 0 !important; white-space: nowrap;
+  box-shadow: 0 0 0 2.5px var(--y), 0 8px 18px rgba(13,12,9,.14) !important; transition: translate .2s var(--eoq), box-shadow .2s var(--eoq); }
 .dk-host:hover { translate: 0 -2px; box-shadow: 0 0 0 2.5px var(--y), 0 12px 24px rgba(13,12,9,.18) !important; }
 .dk-host:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 4px; }
 .dk-host > span:not(.dk) { color: var(--ink); }
 .hc-card .dk-host, .street-band .dk-host { box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38) !important; }
 .drive-cta .dk-host { box-shadow: 0 0 0 2.5px var(--ink), 0 6px 0 rgba(13,12,9,.18) !important; }
-.dk { position: absolute; left: -16px; bottom: 2px; width: 56px; height: 34px; overflow: hidden; pointer-events: none; filter: drop-shadow(0 3px 2px rgba(13,12,9,.3)); transition: translate .5s cubic-bezier(.3,1.4,.5,1); }
-.dk-roll { display: block; width: 560px; height: 34px; background: 0 0 / 560px 34px no-repeat; }
+.dk { position: absolute; left: -16px; bottom: 2px; width: 56px; height: 34px; overflow: hidden; pointer-events: none; filter: drop-shadow(0 3px 2px rgba(13,12,9,.3)); transition: translate .4s cubic-bezier(.3,1.3,.5,1); }
+.dk-roll { display: block; width: 560px; height: 34px; background: var(--dk-s) 0 0 / 56px 34px no-repeat; }
 .dk-host:is(:hover, :focus-visible) .dk { translate: 5px 0; }
-.dk-host:is(:hover, :focus-visible) .dk-roll { animation: dkRoll .5s steps(10) infinite; }
+.dk-host:is(:hover, :focus-visible) .dk-roll { background-image: var(--dk-r, var(--dk-s)); background-size: 560px 34px; animation: dkRoll .4s steps(10); }
 .dk-host:active .dk { translate: 8px 0; transition-duration: .12s; }
 @keyframes dkRoll { to { transform: translateX(-560px); } }
 .btn.dk-host .dk { bottom: 6px; }
-.drive-mini.dk-host { padding-left: 48px !important; margin-left: 12px; }
-.drive-mini .dk { left: -12px; bottom: 1px; transform: scale(.86); transform-origin: 0 100%; }
+.drive-mini.dk-host { height: 44px; padding-left: 42px !important; padding-right: 14px; margin-left: 14px; }
+.drive-mini .dk { left: -18px; bottom: 3px; transform: scale(.86); transform-origin: 0 100%; }
 .sb-drive .dk { position: relative; left: auto; bottom: auto; display: inline-block; flex: 0 0 46px; width: 46px; height: 28px; margin: -8px 0 -8px -6px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+@media (max-width: 700px) { .sb-drive:has(.dk) { padding-block: 10px; } }
+/* a full-width pill on a phone: the label centred in the paper the car leaves free, on one line in Romanian at 360 too */
+@media (max-width: 700px) { .hc-ed-a .btn.dk-host { padding-left: 46px !important; padding-right: 16px; } }
+@media (max-width: 380px) { .hc-ed-a .btn.dk-host { font-size: 15px; min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .dk-host .dk-roll { background-image: var(--dk-s) !important; background-size: 56px 34px !important; } .dk-host:is(:hover, :focus-visible, :active) .dk { translate: none; } }
 .sb-drive .dk-roll { width: 46px; height: 28px; background-size: 46px 28px; }
 html.embed .dk { display: none; }
 @media (prefers-reduced-motion: reduce) { .dk, .dk-host { transition: none; } .dk-host .dk-roll { animation: none !important; } .dk-host:hover .dk, .dk-host:active .dk { translate: none; } }

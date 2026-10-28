@@ -75,8 +75,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // r363: Google Maps directions to the studio (the destination from STUDIO, url-encoded) and a small pin for the button
   const DIR_URL = `https://www.google.com/maps/dir/?api=1&amp;destination=${encodeURIComponent(`Cromatic Studios, ${STUDIO.street}, ${STUDIO.postalCode} ${STUDIO.city}, Romania`)}`;
   const PIN = `<svg class="ftr-pin" viewBox="0 0 16 20" width="16" height="20" aria-hidden="true"><path d="M8 19s6-6.1 6-10.6A6 6 0 0 0 2 8.4C2 12.9 8 19 8 19z" fill="#FED012" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="8.3" r="2.2" fill="currentColor"/></svg>`;
-  const DK = () => { const r = A("m:drive-car/dacia-1300-roll.webp"); return r ? `<span class="dk" aria-hidden="true"><i class="dk-roll" style="background-image:url(${r.src})"></i></span>` : ""; };
-  const DK_STILL = () => { const r = A("m:drive-car/dacia-1300-parked.webp"); return r ? `<span class="dk dk-still" aria-hidden="true"><i class="dk-roll" style="background-image:url(${r.src})"></i></span>` : ""; };
+  // r366 (Ilinca): drawn at 3x for the phones; the still is what loads, the roll strip only on the first hover or focus
+  const DK = () => { const r = A("m:drive-car/dacia-1300-roll.webp"), s = A("m:drive-car/dacia-1300-parked.webp"); return r && s ? `<span class="dk" aria-hidden="true"><i class="dk-roll" style="--dk-s:url(${s.src});--dk-r:url(${r.src})"></i></span>` : ""; };
+  const DK_STILL = () => { const r = A("m:drive-car/dacia-1300-parked.webp"); return r ? `<span class="dk dk-still" aria-hidden="true"><i class="dk-roll" style="--dk-s:url(${r.src})"></i></span>` : ""; };
   const logo = A("logoLandscape");
   const header = (home) => `<a class="skip" href="#main">Skip to content</a>
 <header class="hdr">
