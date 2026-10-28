@@ -1,6 +1,6 @@
 /* r351 · The Street Index (beta only). Paper, ink, one yellow per screen; the brands' pictures lead, the street is a hint. */
 :root{--paper:#fbfaf5;--ink:#0d0c09;--y:#FED012;--mute:#77746b;--soft:#a9a69d;--line:rgba(13,12,9,.12);--eoq:cubic-bezier(.22,1,.36,1);
-  --sans:CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;--mono:"JetBrains Mono","JetBrains Mono Fallback",ui-monospace,monospace;--top:64px;--fh:0px}
+  --sans:CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;--mono:"JetBrains Mono","JetBrains Mono Fallback",ui-monospace,monospace;--top:76px;--fh:0px}
 *{box-sizing:border-box}
 html{scroll-padding-top:calc(var(--top) + var(--fh) + 8px)}
 body{margin:0;background:var(--paper);color:var(--ink);font:400 19px/1.55 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -9,8 +9,6 @@ a{color:inherit}
 button,select,input{font:inherit;color:inherit}
 .mono{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
 .si-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.si-skip{position:fixed;left:16px;top:-60px;z-index:50;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;text-decoration:none}
-.si-skip:focus{top:12px}
 :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
 /* buttons: pills only on real controls */
@@ -21,25 +19,9 @@ button,select,input{font:inherit;color:inherit}
 .si-link{font-weight:700;font-size:18px;text-decoration:none;border-bottom:2px solid currentColor;padding-bottom:4px}
 
 /* header */
-.si-top{position:fixed;inset:0 0 auto;z-index:20;height:var(--top);display:flex;align-items:center;gap:32px;padding:0 48px;color:#fff;transition:background .25s,color .25s}
-.si-top.solid{background:rgba(251,250,245,.94);color:var(--ink);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 1px 0 var(--line)}
-.si-logo{font-weight:800;font-size:26px;letter-spacing:-.02em;text-decoration:none;white-space:nowrap}
-.si-top nav{margin-left:auto;display:flex;align-items:center;gap:40px}
-.si-top nav ul{display:flex;gap:30px;list-style:none;margin:0;padding:0}
-.si-top nav a{text-decoration:none;font-weight:500;font-size:17px}
-.si-top nav a:hover{text-decoration:underline;text-underline-offset:4px}
-.si-lang{margin:0;font-size:14px;opacity:.75}
-.si-lang a[aria-current]{font-weight:700;opacity:1}
-.si-wheel{height:42px;padding:0 20px;font-size:16px}
-.si-top:not(.solid) .si-wheel{background:#fff}
-.si-where{display:none;position:absolute;left:50%;transform:translateX(-50%);margin:0;white-space:nowrap}
-.si-where-n{color:var(--mute)}
-.si-prog{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:var(--sc,var(--ink));transition:width .3s var(--eoq)}
-.si-top.instreet .si-where{display:block}
-.si-top.instreet nav{visibility:hidden}
 
 /* first fold */
-.si-fold{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;color:#fff;overflow:hidden;background:#2a1d14}
+.si-fold{position:relative;min-height:calc(100svh - var(--top));display:flex;flex-direction:column;justify-content:flex-end;color:#fff;overflow:hidden;background:#2a1d14}
 .si-fold-bg,.si-fold-v{position:absolute;inset:0;width:100%;height:100%}
 .si-fold-bg img,.si-fold-v{width:100%;height:100%;object-fit:cover}
 .si-fold-v{opacity:0;transition:opacity .6s}
@@ -50,11 +32,12 @@ button,select,input{font:inherit;color:inherit}
 .si-pause.paused i{border:0;border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;width:0;height:0;margin-left:3px}
 .si-fold-t{position:relative;z-index:2;padding:0 48px 48px;max-width:1440px}
 .si-eyebrow{margin:0 0 18px;opacity:.85}
-.si-fold h1{margin:0;font-weight:800;font-size:clamp(44px,5.8vw,88px);line-height:.95;letter-spacing:-.04em;text-wrap:balance}
+/* r355 (Daniel): the two lines as a pair, the pill line a touch bigger */
+.si-fold h1{margin:0;font-weight:800;font-size:clamp(36px,4.3vw,64px);line-height:1;letter-spacing:-.035em;text-wrap:balance;color:#fff}
 .si-fold mark{background:linear-gradient(var(--y),var(--y)) no-repeat 0 0/var(--mk,100%) 100%;color:var(--ink);padding:0 .08em;margin:0 -.02em}
 /* place → facade → brand: the studio's pills (Daniel, 28 Oct, his ask over "pills only on controls"); one pill turns
    through the three words while the fold is on screen; with reduced motion (or no script) the three sit in a row */
-.si-morph{margin:22px 0 0;font-weight:700;font-size:clamp(20px,1.9vw,28px);line-height:1.2;display:flex;flex-wrap:wrap;align-items:center;gap:.3em}
+.si-morph{margin:10px 0 0;font-weight:800;font-size:clamp(38px,4.7vw,70px);line-height:1.08;letter-spacing:-.035em;display:flex;flex-wrap:wrap;align-items:center;gap:.3em}
 .si-pills{display:inline-flex;align-items:center;gap:.35em}
 .pill{display:inline-block;padding:.06em .5em .14em;border:1px solid var(--ink);border-radius:999px;background:var(--pc);color:var(--ink);font-weight:900;line-height:1.05;white-space:nowrap;transform:rotate(var(--rot));box-shadow:.06em .07em 0 var(--ink)}
 .si-ar{font-style:normal;opacity:.8}
@@ -73,7 +56,7 @@ button,select,input{font:inherit;color:inherit}
 
 /* filter: a sentence */
 .si-index{position:relative}
-.si-filter{position:relative;background:var(--paper);padding:28px 48px 18px;border-bottom:1px solid var(--ink);display:grid;grid-template-columns:1fr;gap:18px;align-items:end;grid-column:1/-1}
+.si-filter{position:relative;background:var(--paper);padding:96px 48px 72px;display:grid;grid-template-columns:1fr;gap:18px;align-items:end;grid-column:1/-1}
 .si-sentence{margin:0;font-weight:800;font-size:clamp(34px,4.4vw,64px);line-height:1.05;letter-spacing:-.035em;white-space:nowrap}
 .si-dim{color:var(--soft)}
 .si-sel{position:relative;display:inline-block}
@@ -100,7 +83,6 @@ button,select,input{font:inherit;color:inherit}
 .si-sh-c{margin:0;color:var(--mute);grid-column:3;grid-row:1}
 .si-sh-lead{grid-column:2/4;margin:0;color:var(--mute);font-size:19px}
 .si-sh h2::after{content:"";display:inline-block;width:12px;height:12px;background:var(--sc);margin-left:16px;vertical-align:.35em}
-.si-strip{display:none}
 .si-split{display:grid;grid-template-columns:5fr 7fr;gap:48px;align-items:start}
 .si-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 .si-row{position:relative;border-bottom:1px solid var(--line)}
@@ -113,7 +95,7 @@ button,select,input{font:inherit;color:inherit}
 .si-thumb{grid-column:2;display:none;width:84px;height:62px;margin-right:18px;background:#ebe8df;overflow:hidden}
 .si-thumb img{width:100%;height:100%;object-fit:cover}
 .si-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
-.si-name{font-weight:700;font-size:clamp(24px,2.1vw,31px);line-height:1.1;letter-spacing:-.02em;color:var(--soft);transition:color .2s}
+.si-name{margin:0;font-weight:700;font-size:clamp(24px,2.1vw,31px);line-height:1.1;letter-spacing:-.02em;color:var(--soft);transition:color .2s}
 .si-cat{color:var(--mute);font-size:11px}
 .si-go{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:20px;color:var(--mute);transition:background .22s var(--eoq),color .22s}
 .si-map{color:var(--mute);font-size:11px}
@@ -140,25 +122,14 @@ button,select,input{font:inherit;color:inherit}
 .si-gal button{flex:1;padding:0;border:0;background:#ebe8df;aspect-ratio:4/3;max-height:84px;overflow:hidden;cursor:pointer;opacity:.6;transition:opacity .2s}
 .si-gal button.on,.si-gal button:hover{opacity:1}
 .si-gal img{width:100%;height:100%;object-fit:cover}
-.si-cap{display:grid;grid-template-columns:1fr 210px;gap:24px;margin-top:16px;align-items:start}
+.si-cap{display:grid;grid-template-columns:1fr;gap:24px;margin-top:16px;align-items:start}
 .si-cap p{margin:0}
 .si-cap-cat{color:var(--mute)}
 .si-cap-name{font-weight:800;font-size:30px;letter-spacing:-.025em;line-height:1.1;margin:4px 0 6px!important}
 .si-cap-d{color:#47443d;font-size:17px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.si-hint{margin:14px 0 0!important;color:var(--soft);font-size:11px}
 
 /* the street still and its focus pull (CSS v1: a blurred print, a sharp circle that racks to the place) */
-@property --fx{syntax:"<percentage>";inherits:true;initial-value:50%}
-@property --fy{syntax:"<percentage>";inherits:true;initial-value:50%}
-.si-still{position:relative;overflow:hidden;background:#2b3240;transition:--fx .38s var(--eoq),--fy .38s var(--eoq)}
-.si-still img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.si-still-b{filter:blur(5px) brightness(.82) saturate(.9);transform:scale(1.06)}
-.si-still-s{-webkit-mask:radial-gradient(circle at var(--fx) var(--fy),#000 0,#000 14%,transparent 30%);mask:radial-gradient(circle at var(--fx) var(--fy),#000 0,#000 14%,transparent 30%)}
-.si-dot{position:absolute;left:var(--fx);top:var(--fy);width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--y);box-shadow:0 0 0 3px rgba(13,12,9,.35)}
-.si-still-sm{aspect-ratio:16/10;width:210px}
-.si-still-sm .mono{position:absolute;left:8px;right:8px;bottom:6px;color:#fff;font-size:9px;letter-spacing:.1em;text-shadow:0 1px 4px rgba(0,0,0,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .si-stage.leave .si-cover img{transform:scale(1.04)}
-.si-stage.leave .si-still-sm{transform:scale(1.15);transition:transform .24s var(--eoq)}
 
 /* covers view */
 .si-covers{display:none;list-style:none;margin:0;padding:0;grid-template-columns:repeat(3,1fr);gap:40px 24px}
@@ -192,15 +163,11 @@ button,select,input{font:inherit;color:inherit}
 .si-index.filtering .si-sh-lead{display:none}
 mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
 .si-empty{max-width:1536px;margin:0 auto;padding:40px 48px;display:flex;justify-content:space-between;gap:24px;color:var(--mute)}
-.si-footer{display:flex;justify-content:space-between;align-items:center;padding:56px 48px;border-top:1px solid var(--line);margin-top:72px}
-.si-footer a{font-weight:700;text-decoration:none}
-.si-footer .mono{color:var(--mute)}
 
 @view-transition{navigation:auto}
 ::view-transition-group(case-hero){animation-duration:.42s;animation-timing-function:var(--eoq)}
 
 @media (max-width:1180px){
-  .si-top nav ul{display:none}
   .si-filter{grid-template-columns:1fr}
   .si-tools{justify-content:flex-start}
   .si-streets a{padding:0 24px}
@@ -210,17 +177,11 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
   :root{--top:56px;--fh:0px}
   html{scroll-padding-top:calc(var(--top) + 120px)}
   body{font-size:18px}
-  .si-top{padding:0 16px;gap:12px}
-  .si-logo{font-size:21px}
-  .si-top nav{display:none}
-  .si-wheel{margin-left:auto;height:38px;padding:0 16px;font-size:15px}
-  .si-top.instreet .si-where{display:none}
   .si-fold{min-height:92svh}
   .si-fold-t{padding:0 16px 24px}
   .si-eyebrow{display:none}
-  .si-br{display:none}
-  .si-fold h1{font-size:clamp(26px,7.4vw,32px);line-height:1.04;letter-spacing:-.03em;max-width:22ch}
-  .si-morph{font-size:17px;margin-top:14px}
+  .si-fold h1{font-size:clamp(23px,6.6vw,27px);line-height:1.04;letter-spacing:-.03em;max-width:22ch}
+  .si-morph{font-size:clamp(24px,7.2vw,29px);margin-top:6px}
   .si-sub{font-size:16px;line-height:1.5;margin:12px 0 18px}
   .si-btn{height:44px;font-size:16px;padding:0 20px}
   .si-link{font-size:16px}
@@ -230,17 +191,12 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
   .si-streets li:nth-child(3){border-left:0}
   .si-streets li:nth-child(n+3){border-top:1px solid rgba(255,255,255,.18)}
   .si-streets a{height:54px;padding:0 14px;font-size:14px;line-height:1.15;gap:10px}
-  .si-filter{position:relative;top:auto;padding:24px 16px 16px;gap:14px}
+  .si-filter{position:relative;top:auto;padding:64px 16px 44px;gap:16px}
   .si-sentence{font-size:clamp(28px,8.4vw,40px);white-space:normal;line-height:1.2}
   .si-tools{flex-wrap:wrap;gap:12px 20px}
   .si-search{width:100%}
   .si-count{font-size:16px}
   .si-street{padding:0 0 16px}
-  .si-strip{display:block;position:sticky;top:var(--top);z-index:5;height:112px;margin:0}
-  .si-strip .si-still{position:absolute;inset:0}
-  .si-strip .si-still::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,12,9,0) 50%,rgba(13,12,9,.55))}
-  .si-strip-l{position:absolute;left:16px;bottom:12px;color:#fff;z-index:2}
-  .si-strip-p{position:absolute;left:0;bottom:0;height:3px;width:var(--p,0%);background:var(--sc);z-index:2;transition:width .3s var(--eoq)}
   .si-sh{padding:24px 16px 0;margin-bottom:14px;grid-template-columns:1fr auto}
   .si-sh-n{display:none}
   .si-sh h2{font-size:32px}
@@ -274,7 +230,6 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
   .si-covers{grid-template-columns:1fr;padding:0 16px;gap:32px}
   .si-foot{padding:0 16px}
   .si-empty{padding:24px 16px;flex-direction:column}
-  .si-footer{padding:40px 16px}
 }
 @media (min-width:821px){.si-more{display:none!important}}
 @media (prefers-reduced-motion:reduce){

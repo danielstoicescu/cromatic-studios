@@ -7,7 +7,7 @@
   const RM = matchMedia("(prefers-reduced-motion: reduce)");
   const PHONE = matchMedia("(max-width: 820px)");
   const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => [...el.querySelectorAll(s)];
-  const top = $(".si-top"), idx = $(".si-index");
+  const idx = $(".si-index");
 
   // the first fold's film: poster first (the LCP), the loop only after load, never with reduced motion / Save-Data / 2g
   const v = $(".si-fold-v"), pb = $(".si-pause");
@@ -28,11 +28,6 @@
     const tick = () => { ps[k].classList.remove("on"); k = (k + 1) % ps.length; ps[k].classList.add("on"); };
     new IntersectionObserver(([e]) => { clearInterval(tm); if (e.isIntersecting) tm = setInterval(tick, 1700); }).observe(morph);
   }
-  // header: solid over the paper, and the street you are on with a progress line
-  const where = $(".si-where-s"), whereN = $(".si-where-n"), prog = $(".si-prog");
-  const fold = $(".si-fold");
-  const onScroll = () => top.classList.toggle("solid", fold.getBoundingClientRect().bottom < 110);
-  addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
   // the stage of a street: big cover, mini gallery, caption, the street still racking focus
   const setStage = (row) => {
@@ -45,7 +40,6 @@
     const n = $(".si-strip-n", sec); if (n) n.textContent = r.n;
     const k = $$(".si-row:not(.si-yard)", sec).indexOf(row) + 1, all = $$(".si-row:not(.si-yard)", sec).length;
     $(".si-strip", sec)?.style.setProperty("--p", (k / all) * 100 + "%");
-    if (top.classList.contains("instreet")) { whereN.textContent = `${r.n} / ${r.of}`; prog.style.width = (k / all) * 100 + "%"; }
     if (!st || st.dataset.cur === r.id) return;
     st.dataset.cur = r.id;
     const cov = $(".si-cover", st), img = $("img", cov);
@@ -55,7 +49,6 @@
     $(".si-gal", st).innerHTML = r.pics.map((u, j) => `<button type="button" tabindex="-1" class="${j ? "" : "on"}"><img src="${u}" alt="" loading="lazy" decoding="async"></button>`).join("");
     $$(".si-gal button", st).forEach((b, j) => { const go = () => { show(r.pics[j]); $$(".si-gal button", st).forEach((x) => x.classList.toggle("on", x === b)); }; b.addEventListener("mouseenter", go); b.addEventListener("click", go); });
     $(".si-cap-cat", st).textContent = r.cat; $(".si-cap-name", st).textContent = r.name; $(".si-cap-d", st).textContent = r.desc;
-    $(".si-still-n", st).textContent = r.n;
   };
   for (const row of $$(".si-row:not(.si-yard)")) {
     const a = $(".si-a", row);
@@ -65,7 +58,7 @@
       const r = byId.get(row.dataset.id);
       // phone: the first tap opens the row in place (cover, fields, two lines, "Open the case")
       if (PHONE.matches) { e.preventDefault(); const more = $(".si-more", row), open = more.hidden; $$(".si-row.open").forEach((x) => { x.classList.remove("open"); $(".si-more", x).hidden = true; $(".si-a", x).setAttribute("aria-expanded", "false"); }); if (open) { more.hidden = false; row.classList.add("open"); a.setAttribute("aria-expanded", "true"); setStage(row); } return; }
-      if (!r.href) { setStage(row); return; }
+      if (!r.href) { e.preventDefault(); setStage(row); return; }
       enter(e, row, r);
     });
   }
@@ -97,11 +90,9 @@
   const streets = $$(".si-street");
   const so = new IntersectionObserver((es) => {
     for (const en of es) if (en.isIntersecting) {
-      const s = en.target; top.style.setProperty("--sc", getComputedStyle(s).getPropertyValue("--sc"));
-      where.textContent = s.dataset.name; top.classList.add("instreet");
+      const s = en.target;
       const on = $(".si-row.on", s) || $(".si-row:not([hidden]):not(.si-yard)", s); if (on) setStage(on);
     }
-    if (!streets.some((s) => { const b = s.getBoundingClientRect(); return b.top < innerHeight * 0.5 && b.bottom > innerHeight * 0.5; })) top.classList.remove("instreet");
   }, { rootMargin: "-50% 0px -50% 0px" });
   streets.forEach((s) => so.observe(s));
   const ro = new IntersectionObserver((es) => { if (!PHONE.matches) return; for (const en of es) if (en.isIntersecting) setStage(en.target); }, { rootMargin: "-48% 0px -48% 0px" });
