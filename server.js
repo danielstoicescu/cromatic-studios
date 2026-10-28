@@ -256,7 +256,7 @@ function serve(req, res) {
   };
   // r140: private client reports: never indexed, never cached by Cloudflare, no referrer leaving the page
   // r322: and the internal process deck (/prezentare/proces-<code>/), the same way
-  if (path.startsWith("/rapoarte/") || path.startsWith("/prezentare/")) { headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"; headers["Cache-Control"] = "private, no-store"; headers["Referrer-Policy"] = "no-referrer"; }
+  if (path.startsWith("/rapoarte/") || path.startsWith("/prezentare/") || /^\/(?:ro\/)?streetindex\//.test(path)) { headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"; headers["Cache-Control"] = "private, no-store"; headers["Referrer-Policy"] = "no-referrer"; }
   if (status === 404) headers["Cache-Control"] = "no-store";
   else if (req.headers["if-none-match"] === f.etag) { res.writeHead(304, headers); return res.end(); }
   if (f.disk) {
@@ -618,6 +618,9 @@ http.createServer((req, res) => {
     if (!statOr(join(BETA_ROOT, "index.html"))) { const wh = res.writeHead.bind(res); res.writeHead = (c, h) => wh(c, { ...(h || {}), "X-Robots-Tag": "noindex, nofollow" }); return serve(req, res); }
     return serveBeta(req, res);
   }
+  // r351: The Street Index (/streetindex/, /ro/streetindex/) is a beta page (Daniel, 28 Oct): built into every release
+  // (build/streetindex.mjs) but answered only on the beta hosts above; here, on live and every other host, a plain 404
+  if (/^\/(?:ro\/)?streetindex(?:[/?#]|$)/i.test(req.url)) { req.url = "/404-streetindex-beta-only/"; return serve(req, res); }
   const otherHost = PRIMARY_HOST && host !== PRIMARY_HOST && /(^|\.)cromaticstudios\.com$/.test(host);
   // behind Cloudflare: visitors who came in over plain http get sent to https; another host of ours (drive., www.)
   // to the main one. r136 (N39): both straight to the final address (old WordPress page, slash), in one 301

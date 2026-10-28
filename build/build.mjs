@@ -1005,6 +1005,9 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
 // site/prezentare/). Private like /rapoarte/: written after the pass above (no footer, no cookie card, no GA4), never
 // in PAGES (no sitemap, no llms.txt), noindex in the page and in server.js's headers, linked from nowhere
 try { const { buildPrezentare } = await import("./prezentare.mjs"); await buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R }); } catch (e) { console.warn("[build] prezentare skipped:", e.message); }
+// r351 (Daniel, 28 Oct): /streetindex/ and /ro/streetindex/, direction A of the /site/ rebuild (build/streetindex.mjs). BETA ONLY:
+// server.js answers 404 for these paths on every non-beta host; written after the pass (no GA4), never in PAGES, linked from nowhere
+try { const { buildStreetIndex } = await import("./streetindex.mjs"); await buildStreetIndex({ root, pub, mediaMap, COVERS, R }); } catch (e) { console.warn("[build] streetindex skipped:", e.message); }
 // beta 3.1 (Daniel): "at the gloves with I O N", the Two Min Lab mini-game: its own page, /play/gloves/, with its own
 // script and styles (src/minigame.js + .css, minified, hashed), so the map's bundle does not carry it: the map opens
 // the page in its case frame only when the game is asked for. Written after the pass above: no footer, no cookie card
