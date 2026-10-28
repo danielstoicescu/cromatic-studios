@@ -383,7 +383,7 @@
   // scroll-linked: the chapters' road fills (--rp) and each street's opening band opens and slides (--sp, 0 → 1)
   const road4 = d.querySelector("#what .chapters"), streets = [...d.querySelectorAll(".dom-street")], bands = [...d.querySelectorAll(".street-band")];
   // r360 (Daniel, 28 Oct: "una cu cea care se misca lent, pe designul actual, pe live"): the wall's rows also drift on
-  // their own, very slowly (8 px/s, 5 on a phone; each row a little faster than the one above, alternating as the
+  // their own, very slowly (5.6 px/s, 3.5 on a phone since r362; each row a little faster than the one above, alternating as the
   // scroll does), on top of the scroll-linked offset. One rAF loop, only while the wall is on screen and the tab is
   // visible; transforms only, no layout read per frame (the scroll part and each row's width are read on scroll and
   // resize). A pointer on a cover or the keyboard inside a row holds that row. Nothing with reduced motion.
@@ -396,7 +396,7 @@
     row.style.transform = `translate3d(${(i % 2 ? x - half : -x).toFixed(1)}px,0,0)`;
   });
   if (!reduced && pwRows.length && "IntersectionObserver" in window) {
-    const v = matchMedia("(max-width: 700px)").matches ? 5 : 8;
+    const v = matchMedia("(max-width: 700px)").matches ? 3.5 : 5.6; // r362 (Daniel: "poate fi mai lent"): 0.7x of r360
     const loop = (t) => {
       WALL.raf = 0;
       if (!WALL.on || d.hidden) { WALL.last = 0; return; }
