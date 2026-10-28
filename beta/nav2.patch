@@ -34,6 +34,38 @@ index 4fad8e5..c75efb5 100644
  const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/", "/privacy/"];
  const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`).sort();
  // r133: the Romanian website, from the English pages and site/i18n/ro.json
+diff --git a/build/i18n.mjs b/build/i18n.mjs
+index 3063bbd..f67a65a 100644
+--- a/build/i18n.mjs
++++ b/build/i18n.mjs
+@@ -174,6 +174,18 @@ export function makeI18n(root) {
+     return out;
+   }
+ 
++  // r373 (Daniel, 28 Oct: "de rezolvat butoanele de pe telefon"): on the pages without the site's header (the case
++  // pages and Steam; Slow Coffee Festival keeps its own menu bar) "← Cromatic Studios" and the language pill no longer float over the words.
++  // They sit on a slim paper bar (the 64 px the pages already keep free at the top); the bar slides away as you read
++  // down, comes back as soon as you scroll up, and stays away while the boarding pass is on screen. 180 ms, transform
++  // only; no motion with reduced motion; nothing inside the map's frame (html.embed)
++  const CASE_BAR = `<style>.cs-bar{position:fixed;left:0;right:0;top:0;z-index:9998;height:calc(64px + env(safe-area-inset-top,0px));background:#fbfaf5;border-bottom:1px solid rgba(13,12,9,.14);pointer-events:none}
++.cs-bar,.cs-back,.lang-fixed{transition:transform .18s cubic-bezier(.2,.7,.2,1),visibility 0s}
++html.cb-up .cs-bar,html.cb-up .cs-back,html.cb-up .lang-fixed{transform:translateY(calc(-100% - 20px - env(safe-area-inset-top,0px)));visibility:hidden;transition:transform .18s cubic-bezier(.4,0,1,1),visibility 0s .18s}
++.cs-back:focus-visible,.lang-fixed:focus-visible{outline:2px solid #0d0c09;outline-offset:3px}
++html.cb-up .cs-back:focus-visible,html.cb-up .lang-fixed:focus-visible{transform:none;visibility:visible}
++html.embed .cs-bar{display:none}
++@media (prefers-reduced-motion:reduce){.cs-bar,.cs-back,.lang-fixed{transition:none!important}}</style><div class="cs-bar" aria-hidden="true"></div><script>(function(){var h=document.documentElement;if(h.classList.contains("embed"))return;var y=scrollY,q=0,pass=false;function f(){q=0;var n=scrollY,d=n-y;if(n<90){h.classList.toggle("cb-up",pass);y=n;return}if(Math.abs(d)>8){h.classList.toggle("cb-up",pass||d>0);y=n}}addEventListener("scroll",function(){if(!q)q=requestAnimationFrame(f)},{passive:true});function w(){var s=document.querySelector(".czp-sec");if(!s||!("IntersectionObserver" in window))return;new IntersectionObserver(function(es){pass=es[0].isIntersecting;h.classList.toggle("cb-up",pass||(scrollY>90&&h.classList.contains("cb-up")))},{rootMargin:"0px 0px -35% 0px"}).observe(s)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",w):w()})();</script>`;
+   // both languages point at each other (hreflang), and the header gets a language switch
+   function alternates(html, enPath, SITE, lang) {
+     const ro = roPath(enPath);
+@@ -182,7 +194,7 @@ export function makeI18n(root) {
+     const other = lang === "ro" ? enPath : ro, label = lang === "ro" ? "EN" : "RO", name = lang === "ro" ? "English" : "Română";
+     const sw = `<a class="lang-sw" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}">${label}</a>`;
+     if (/<a class="drive-btn[ "]/.test(html)) html = html.replace(/<a class="drive-btn(?=[ "])/, `${sw}<a class="drive-btn`); // r365: the class may carry more (dk-host)
+-    else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style><a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
++    else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style>${/class="cs-back"/.test(html) ? CASE_BAR : ""}<a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
+     return html;
+   }
+ 
 diff --git a/build/megamenu.mjs b/build/megamenu.mjs
 new file mode 100644
 index 0000000..2fda7ff
@@ -226,6 +258,46 @@ index 5928447..2f04fa1 100644
  }
 +// the sentence filter's words, for the header's mega menu (build/megamenu.mjs; its Romanian comes from site/i18n/ro.json)
 +export const SI_WORDS = T;
+diff --git a/site/hubs.mjs b/site/hubs.mjs
+index bc1498a..2cc08be 100644
+--- a/site/hubs.mjs
++++ b/site/hubs.mjs
+@@ -9,7 +9,7 @@ export const INDUSTRIES = [
+     streetName: "Coffee Street",
+     title: "Specialty coffee, food & drink branding in Bucharest",
+     desc: "Branding, packaging, webshops and content for coffee shops, bakeries and food brands. Two Minutes, Steam, Craft Coffee and Slow Coffee Festival.", // r136: under 155 characters
+-    eyebrow: "Coffee Street · 15 case studies",
++    eyebrow: "Coffee Street", // r373: no count (Daniel: "de scos bulina cu numărul de proiecte")
+     h1: "Coffee, food and drink brands, made by regulars.",
+     lead: "Cromatic Studios is a Bucharest branding studio for specialty coffee, food and drink. We design the brand, the box, the shop and the feed for the places people come back to.",
+     intro: [
+@@ -43,7 +43,7 @@ export const INDUSTRIES = [
+     streetName: "Fintech Boulevard",
+     title: "Fintech, banking & investment branding in Bucharest",
+     desc: "Brand strategy, identity, websites and apps for banks, brokers and fintech. Investimental, Techventures Bank and Unchain Festival, from Bucharest.",
+-    eyebrow: "Fintech Boulevard · 8 case studies",
++    eyebrow: "Fintech Boulevard",
+     h1: "Finance brands with a human face.",
+     lead: "Cromatic Studios designs brand strategy, identities, websites and apps for banks, brokers, investment groups, fintech startups and energy companies in Romania. Clear for the regulator, warm for the customer.",
+     intro: [
+@@ -76,7 +76,7 @@ export const INDUSTRIES = [
+     streetName: "Medical Avenue",
+     title: "Healthcare, clinic & pharma branding in Bucharest",
+     desc: "Brand strategy, websites, TV ads and content for clinics, pharma and aesthetic medicine. Elithia, Clinica Sante, Toskani MED and Help4Brain.", // r136: under 155 characters
+-    eyebrow: "Medical Avenue · 12 case studies", // TASK-064: was still 9 (TASK-026 added two, Maximag one); TASK-074: 8 cards + the 4 Zdrovit brands' pages (the work section counts them the same way)
++    eyebrow: "Medical Avenue",
+     h1: "Healthcare brands that feel like care.",
+     lead: "Cromatic Studios builds brands, websites, films and content for clinics, laboratories, pharma and aesthetic medicine, in Romania and abroad. Precise for the doctor. Calm for the patient.",
+     intro: [
+@@ -109,7 +109,7 @@ export const INDUSTRIES = [
+     streetName: "The Shortest Shortcut",
+     title: "Content for print, sticker & merch brands in Bucharest",
+     desc: "Instagram reels, carousels and social content for print-on-demand and sticker brands. Printoteca and Sticker Republic, by Cromatic Studios in Bucharest.",
+-    eyebrow: "The Shortest Shortcut · 2 case studies",
++    eyebrow: "The Shortest Shortcut",
+     h1: "Print and merch brands, made to be followed.",
+     lead: "Cromatic Studios makes social content for print-on-demand, sticker and merch brands. Reels, carousels and series that show the people and the machines behind every order.",
+     intro: [
 diff --git a/site/i18n/ro.json b/site/i18n/ro.json
 index d852e9f..e2822ff 100644
 --- a/site/i18n/ro.json
@@ -717,6 +789,22 @@ index 0000000..ba24ab1
 +  addEventListener("resize", () => open && fitAll());
 +  run();
 +})();
+diff --git a/site/onboarding/onb.css b/site/onboarding/onb.css
+index 75d75e0..c7cd8b3 100644
+--- a/site/onboarding/onb.css
++++ b/site/onboarding/onb.css
+@@ -980,3 +980,11 @@ html:not(.czl-on) .czl-x { display: none; }
+   /* the worlds' zone is full on a phone: its explainer stays on laptops and tablets */
+   .z-worlds .czl-worlds { display: none; }
+ }
++/* r373 (Daniel, 28 Oct: "de rezolvat butoanele de pe telefon"): on a 360-400 px phone the bar's "Cromatic City" was cut
++   behind the menu button (the bar is overflow: hidden). Under 400 px the spinning cup steps out of the bar (it is on the
++   page below) and the way in loses its arrow, so the name, RO, "Cromatic City" and the menu all fit whole */
++@media (max-width: 400px) {
++  .nav .brand .cup { display: none; }
++  .nav .nav-cta { flex: 0 0 auto; padding: 10px 11px; font-size: 13.5px; }
++  .nav .nav-cta [aria-hidden="true"] { display: none; }
++}
 diff --git a/site/rapoarte/longevity-names-50c84c5bc5/index.html b/site/rapoarte/longevity-names-50c84c5bc5/index.html
 new file mode 100644
 index 0000000..1939139
@@ -1756,11 +1844,201 @@ index 0000000..1939139
 +</script>
 +</body>
 +</html>
+diff --git a/site/render.mjs b/site/render.mjs
+index 4db61d9..ea769a0 100644
+--- a/site/render.mjs
++++ b/site/render.mjs
+@@ -173,10 +173,33 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+   };
+   const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
+   const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;
+-  const bentoCard = (p, i, covers) => {
++  // r373 (Daniel, 28 Oct: "desktop mai aerisit"): on a desktop the portfolio reads in calm rows of one or two, never a
++  // mosaic: a feature beside a companion (7 + 5 of 12 columns), a pair of equals, one wide card; then the same rows with
++  // the feature on the other side. A work in progress (Lapterra) keeps its whole row. The last row never leaves a hole:
++  // one card left takes the row, two make a pair. Every card carries its desktop row in a class (b-d7, b-d5, b-d6, b-d12);
++  // the phone layout (site.css, 700 px and under) keeps its own rhythm by position
++  const ROWS = [[7, 5], [6, 6], [12], [5, 7], [6, 6], [12]];
++  const bentoPlan = (list) => {
++    const out = [];
++    let r = 0;
++    for (let i = 0; i < list.length;) {
++      if (list[i].wip) { out.push("full"); i++; continue; }
++      let row = ROWS[r % ROWS.length];
++      r++;
++      // the cards before the next full-width work (or the end) decide whether this row fits
++      let left = 0;
++      for (let j = i; j < list.length && !list[j].wip; j++) left++;
++      if (left === 1) row = [12];
++      else if (left < row.length) row = [6, 6];
++      for (const c of row) { out.push("d" + c); i++; }
++    }
++    return out;
++  };
++  const bentoGrid = (list, covers, attrs = "") => { const plan = bentoPlan(list); return `<div class="bento bento-air"${attrs}>${list.map((p, i) => bentoCard(p, i, covers, plan[i])).join("")}</div>`; };
++  const bentoCard = (p, i, covers, plan) => {
+     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
+     const media = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
+-    const size = p.wip ? "full" : SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
++    const size = p.wip ? "full" : plan || SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
+     // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
+     // pill itself), the category on a chip at the top, the brief and "Read the case" on a paper note that opens under the
+     // pill (site.css). One element more than before per card: the note
+@@ -239,7 +262,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+   // band crosses the screen): the picture moves slower than the page and settles from a slight zoom, the street's name
+   // in solid CromaticSans moves faster than it; the band fades into the paper the street's cards stand on
+   const SB_GO = { A: "tm", B: "invest", C: "tac" }; // r359: a place on each street of the map (src/app.js MAP_PLACES)
+-  const streetBand = (k, street, i, count) => {
++  const streetBand = (k, street, i) => {
+     const slug = street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), m = (n) => A(`m:streets/${slug}/${n}`);
+     const pd = m("poster.jpg"), pm = m("poster-m.jpg"), dm = m(`${slug}.mp4`), dw = m(`${slug}.webm`), mm = m(`${slug}-m.mp4`);
+     const media = pd ? `<picture class="sb-pic">${pm ? `<source media="(max-width: 700px)" srcset="${pm.src}" width="${pm.w}" height="${pm.h}">` : ""}<img src="${pd.src}" width="${pd.w}" height="${pd.h}" alt="" loading="lazy" decoding="async"></picture>` : "";
+@@ -247,7 +270,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+     return `<div class="street-band${pd ? " has-media" : ""}">
+         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
+         <div class="sb-copy">
+-          <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span><span>${count} ${count === 1 ? "project" : "projects"}</span></p>
++          <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span></p>
+           ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${DK_STILL()}<span>Take a drive in the Cromatic City</span></a></div>
+           <p class="sb-name" aria-hidden="true">${esc(street)}</p>
+         </div>
+@@ -259,20 +282,19 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+     if (!list.length) return "";
+     const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
+     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
+-    const n = new Set([...list.filter((p) => p.page).map((p) => p.page), ...(small ? zdPages() : [])]).size; // TASK-074: + the Zdrovit brands' case pages (reached from the Zdrovit row)
++    // r373 (Daniel, 28 Oct: "de scos bulina cu numărul de proiecte pe fiecare stradă"): no count on the band or the card
+     // TASK-139 (Daniel, 28 Oct: "next level, să simți că treci dintr-o categorie în alta"): each street opens on its band
+     // (streetBand above), then the street's card and sign land on it (site.js sets --sp, 0 → 1)
+     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
+-      ${streetBand(k, street, si, list.length)}
++      ${streetBand(k, street, si)}
+       <div class="street-head">
+         <div class="sh-main">
+           <h3 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h3>
+           <p class="sh-lead">${esc(info.lead)}</p>
+           ${ind ? `<a class="sh-more" href="/industries/${ind.slug}/" aria-label="${esc(info.t)}: the whole street"><span>The whole street</span> <i aria-hidden="true">→</i></a>` : ""}
+         </div>
+-        <p class="sh-count"><b>${n}</b> <span class="mono">case ${n === 1 ? "study" : "studies"}</span></p>
+       </div>
+-      <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
++      ${bentoGrid(list, covers)}
+       ${small ? zdRow() : ""}
+     </div>`;
+   }).join("");
+@@ -632,7 +654,7 @@ ${footer}`;
+   const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || ZDROVIT_BRANDS.find((b) => b.page === sl)?.name || sl })) });
+   // TASK-074: a Zdrovit brand's case page has no portfolio entry; a service page that names it still shows its card
+   const zdProj = (slug) => { const b = ZDROVIT_BRANDS.find((x) => x.page === slug); return b ? { name: b.name, cat: b.cat || "Zdrovit · Beauty & Supplement Park", desc: b.desc || b.line, page: b.page, c: b.c || "#e30613", t: b.t || "#ffffff", poster: b.poster || b.name, img: b.img } : null; };
+-  const hubCases = (slugs, covers, col) => `<div class="bento"${col ? ` style="--dc:${col}"` : ""}>${slugs.map((sl) => byPage(sl) || zdProj(sl)).filter(Boolean).map((p, i) => bentoCard(p, i, covers)).join("")}</div>`;
++  const hubCases = (slugs, covers, col) => bentoGrid(slugs.map((sl) => byPage(sl) || zdProj(sl)).filter(Boolean), covers, col ? ` style="--dc:${col}"` : "");
+   const hubFaq = (faq) => `<section class="sec" id="faq"><div class="wrap faq"><div><p class="eyebrow mono">Good questions</p><h2 class="ptitle">${pill("Before", "#FED012", -1.5)} ${pill("the coffee", "#F65342", 1)}</h2></div>
+       <div class="qa">${faq.map(([q, a], i) => `<details${i === 0 ? " open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("")}</div></div></section>`;
+   const hubEnd = `<section class="c-end"><div class="wrap">
+@@ -664,7 +686,7 @@ ${header(false)}
+   ${hubHero(d.eyebrow, d.h1, d.lead, col)}
+   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
+   <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What we do on ${esc(street)}</h2>${cards(d.offer, col)}</div></section>
+-  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length + (d.street === "C" ? zdPages().length : 0)} case studies</p>
++  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)}</p>
+     <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers, col)}
+     ${(() => { const more = PROJECTS.filter((p) => p.street === d.street && !p.page); return more.length ? `<p class="friends"><span class="mono">Also on ${esc(street)}</span> ${more.map((p) => `<span class="fpill">${esc(p.name)}</span>`).join("")}</p>` : ""; })()}
+     ${d.street === "C" ? zdRow() : "" /* TASK-074: the brands in the Zdrovit park (they were pills above as yard kiosks) */}
+@@ -869,7 +891,7 @@ ${footer}`;
+     <div class="hub-cards">${L.benefits.map((x, i) => `<article class="hub-card" data-rv style="--sc:${col};--i:${i}"><span class="mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p></article>`).join("")}</div>
+     ${nudge("benefits")}</div></section>
+   <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.casesEyebrow)}</p>${title2(L.casesTitle)}
+-    <div class="bento" style="--dc:${col}">${projects.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
++    ${bentoGrid(projects, covers, ` style="--dc:${col}"`)}
+     ${nudge("cases")}</div></section>
+   ${drive}
+   <section class="sec"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.servicesEyebrow)}</p>${title2(L.servicesTitle)}
 diff --git a/site/site.css b/site/site.css
-index 9b248e2..0fdc165 100644
+index 9b248e2..4833610 100644
 --- a/site/site.css
 +++ b/site/site.css
-@@ -1605,3 +1605,17 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
+@@ -1037,14 +1037,9 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
+ .sh-more:is(:hover, :focus-visible) i { translate: 4px 0; }
+ .sh-more:active { translate: 0 1px; box-shadow: 0 1px 0 var(--ink); transition-duration: .1s; }
+ .sh-more:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+-.sh-count { display: grid; justify-items: center; gap: 10px; margin: 0; }
+-.sh-count b { display: grid; place-items: center; width: 104px; height: 104px; border-radius: 50%; background: var(--dc); color: var(--dt); border: var(--line); box-shadow: 0 4px 0 var(--ink);
+-  font: 900 44px/1 var(--f); letter-spacing: -.04em; transition: rotate .6s var(--bounce); }
+-.sh-count .mono { font-size: 10.5px; letter-spacing: .18em; color: var(--muted); }
+ @media (hover: hover) and (pointer: fine) {
+   .street-head .street-sign { transition: rotate .7s var(--bounce); }
+   .street-head:hover .street-sign { rotate: -.8deg; }
+-  .street-head:hover .sh-count b { rotate: -10deg; }
+ }
+ /* coming into view (site.js adds .in): the sign swings in from its top corner, the words rise, the disc pops */
+ .js .dom-street .street-sign { transition: opacity .45s var(--eoq), transform .95s var(--bounce), rotate .7s var(--bounce); }
+@@ -1052,8 +1047,6 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
+ .js .dom-street :is(.sh-sub, .sh-lead, .sh-more) { transition: opacity .6s var(--eoq) var(--d, .1s), transform .8s var(--eoq) var(--d, .1s), translate .45s var(--bounce), box-shadow .45s var(--bounce); }
+ .js .dom-street .sh-lead { --d: .16s; } .js .dom-street .sh-more { --d: .22s; }
+ .js .dom-street:not(.in) :is(.sh-sub, .sh-lead, .sh-more) { opacity: 0; transform: translateY(10px); }
+-.js .dom-street .sh-count b { transition: transform .8s var(--bounce) .28s, opacity .3s var(--eoq) .28s, rotate .6s var(--bounce); }
+-.js .dom-street:not(.in) .sh-count b { opacity: 0; transform: scale(.4); }
+ @media (max-width: 700px) {
+   .dom-street { margin-top: 76px; scroll-margin-top: 170px; }
+   .street-head { grid-template-columns: 1fr; padding: 50px 22px 24px; border-radius: 26px; gap: 0; }
+@@ -1063,11 +1056,8 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
+   .sh-sub { margin-top: 4px; padding-right: 76px; min-height: 64px; display: flex; align-items: center; font-size: 21px; }
+   .sh-lead { font-size: 17px; }
+   .sh-more { margin-top: 18px; font-size: 14.5px; padding: 12px 18px 13px; }
+-  .sh-count { position: absolute; right: 18px; top: 40px; gap: 6px; }
+-  .sh-count b { width: 64px; height: 64px; font-size: 28px; box-shadow: 0 3px 0 var(--ink); }
+-  .sh-count .mono { font-size: 9px; letter-spacing: .14em; }
+ }
+-@media (prefers-reduced-motion: reduce) { .js .dom-street :is(.street-sign, .sh-sub, .sh-lead, .sh-more, .sh-count b) { opacity: 1 !important; transform: none !important; } }
++@media (prefers-reduced-motion: reduce) { .js .dom-street :is(.street-sign, .sh-sub, .sh-lead, .sh-more) { opacity: 1 !important; transform: none !important; } }
+ 
+ /* ---- TASK-071: the arcade cabinet in front of Two Minutes opens the game ("2 Minutes 2 Fight w/ I O N", /play/gloves/).
+    A link over the cabinet (its place in each cut of the scene), with a tag above it (on a laptop it reaches left, off the
+@@ -1359,10 +1349,6 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
+ /* (the street's name is the band's now: the road sign on its card stays for screen readers only, no name twice) */
+ .street-band + .street-head { padding-top: clamp(28px, 3vw, 40px); }
+ .street-band + .street-head .street-sign { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; box-shadow: none; }
+-@media (max-width: 700px) {
+-  .street-band + .street-head .sh-count { position: static; grid-auto-flow: column; justify-content: start; align-items: center; gap: 10px; margin-top: 18px; }
+-  .street-band + .street-head .sh-count b { width: 52px; height: 52px; font-size: 22px; }
+-}
+ 
+ /* r348 (Daniel): the drive's loop behind "place → facade → brand", the three words as pills, a button for the last line, more room before the street buttons */
+ .city-band { margin-bottom: clamp(56px, 6vw, 88px); }
+@@ -1556,6 +1542,32 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
+ .zd-off::before { background: #cfcdc8; }
+ .zd-off b { text-decoration: none; }
+ 
++/* r373 (Daniel, 28 Oct: "desktop mai aerisit"): the portfolio on a desktop, three or four works in view at 1440 x 900,
++   not eight. Calm rows on twelve columns (site/render.mjs bentoPlan): a feature beside a companion (7 + 5, the
++   companion takes the feature's height), a pair of equals (6 + 6), one wide card; 40 to 56 px between them. More air
++   around each street's card, and the Zdrovit park breathes too (four columns, wider gaps) */
++@media (min-width: 701px) {
++  .bento.bento-air { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: auto; grid-auto-flow: row; gap: clamp(40px, 3.6vw, 56px) clamp(32px, 3vw, 44px); }
++  .bento-air > .bcard { grid-row: auto; min-height: 0; }
++  .bento-air > .b-d7 { grid-column: span 7; aspect-ratio: 4 / 3; }
++  .bento-air > .b-d5 { grid-column: span 5; }
++  .bento-air > .b-d6 { grid-column: span 6; aspect-ratio: 4 / 3; }
++  .bento-air > .b-d12, .bento-air > .b-full { grid-column: 1 / -1; aspect-ratio: 12 / 5; }
++  .bento-air > .bcard .bc-poster { font-size: clamp(30px, 3.2vw, 52px); inset: 32px 34px auto; }
++  .dom-street { margin-top: clamp(140px, 12vw, 184px); }
++  .dom-street:first-of-type { margin-top: 72px; }
++  .street-band + .street-head { padding: clamp(40px, 3.6vw, 56px) clamp(36px, 4.4vw, 64px); margin-bottom: clamp(48px, 4.4vw, 72px); }
++  .dom-street .bento { margin-top: 0; }
++  .sh-lead { margin-top: 18px; }
++  .sh-more { margin-top: 30px; }
++  .zd-park { margin-top: clamp(64px, 6vw, 96px); padding-top: 40px; }
++  .zd-h { margin-bottom: 36px; }
++  .zd-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 36px clamp(32px, 3.6vw, 56px); }
++  .zd { gap: 6px; }
++}
++@media (min-width: 701px) and (max-width: 1000px) { .zd-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
++@media (min-width: 701px) and (max-width: 900px) { .bento-air > :is(.b-d7, .b-d5) { grid-column: span 6; aspect-ratio: 4 / 3; } }
++
+ @media (max-width: 700px) {
+   body > main { overflow-x: clip; }
+   /* the switch: gutter to gutter, no scaling when it sticks (the scale was what pushed it past the screen's edge) */
+@@ -1605,3 +1617,17 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
    a.bcard:is(:nth-child(6n+3), :nth-child(6n+4)) .bc-name::after { width: 24px; height: 24px; margin-top: -12px; right: 5px; }
  }
  @media (max-width: 340px) { .zd-list { grid-template-columns: 1fr; } }
