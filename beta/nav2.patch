@@ -1694,8 +1694,8 @@ diff --git a/site/site.css b/site/site.css
 index d20f856..0b45fef 100644
 --- a/site/site.css
 +++ b/site/site.css
-@@ -1587,3 +1587,24 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
-   .zd small { font-size: 13px; }
+@@ -1599,3 +1599,24 @@
+   a.bcard:is(:nth-child(6n+3), :nth-child(6n+4)) .bc-name::after { width: 24px; height: 24px; margin-top: -12px; right: 5px; }
  }
  @media (max-width: 340px) { .zd-list { grid-template-columns: 1fr; } }
 +/* BETA (r361, r362): the wall of work as a video wall of old monitors (site.js adds .crt): one perspective on the
