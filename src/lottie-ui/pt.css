@@ -7,12 +7,12 @@
 .czpt-body { background: #fff; box-shadow: inset -10px -12px 18px -10px rgba(0,0,0,.06); }
 .czpt-ring { box-sizing: border-box; border: 6px solid transparent; background: conic-gradient(from 210deg, #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012) border-box;
   -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-.czpt-leave i { animation: czptClose .42s cubic-bezier(.22,1,.36,1) both; }
-.czpt-leave .czpt-body { animation: czptClose .42s cubic-bezier(.22,1,.36,1) both, czptBodyIn .42s ease both; }
-.czpt-leave .czpt-ring { animation: czptClose .42s cubic-bezier(.22,1,.36,1) both, czptRingIn .42s ease both; }
-.czpt-arrive i { animation: czptOpen .6s cubic-bezier(.72,0,.18,1) .2s both; }
-.czpt-arrive .czpt-body { animation: czptBodyOut .2s ease both; }
-.czpt-arrive .czpt-ring { animation: czptOpen .6s cubic-bezier(.72,0,.18,1) .2s both, czptRingOut .32s ease .2s both; }
+.czpt-leave i { animation: czptClose .2s cubic-bezier(.22,1,.36,1) both; }
+.czpt-leave .czpt-body { animation: czptClose .2s cubic-bezier(.22,1,.36,1) both, czptBodyIn .2s ease both; }
+.czpt-leave .czpt-ring { animation: czptClose .2s cubic-bezier(.22,1,.36,1) both, czptRingIn .2s ease both; }
+.czpt-arrive i { animation: czptOpen .2s cubic-bezier(.72,0,.18,1) both; } /* r359: <= 200 ms, no delay */
+.czpt-arrive .czpt-body { animation: czptBodyOut .12s ease both; }
+.czpt-arrive .czpt-ring { animation: czptOpen .2s cubic-bezier(.72,0,.18,1) both, czptRingOut .2s ease both; }
 @keyframes czptClose { from { transform: scale(14, 36); } to { transform: none; } }
 @keyframes czptOpen { from { transform: none; } to { transform: scale(14, 36); } }
 @keyframes czptRingIn { 0%, 40% { opacity: 0; } 100% { opacity: 1; } }

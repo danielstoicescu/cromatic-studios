@@ -165,7 +165,7 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
 .si-empty{max-width:1536px;margin:0 auto;padding:40px 48px;display:flex;justify-content:space-between;gap:24px;color:var(--mute)}
 
 @view-transition{navigation:auto}
-::view-transition-group(case-hero){animation-duration:.42s;animation-timing-function:var(--eoq)}
+::view-transition-group(case-hero){animation-duration:.2s;animation-timing-function:var(--eoq)}
 
 @media (max-width:1180px){
   .si-filter{grid-template-columns:1fr}

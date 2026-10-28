@@ -216,6 +216,20 @@
     }), { rootMargin: "-38% 0px -58% 0px" });
     links.forEach((a, id) => { const el = d.getElementById(id); if (el) io4.observe(el); });
   }
+  // r359 (Daniel: "it takes too long before it opens"): a street button scrolls straight to its street (the browser's own
+  // smooth scroll, starting on the click; instant with reduced motion), stopping under the header and the switch, and
+  // the street's sign and cards are shown at once instead of being dealt as they come into view
+  if (snav) snav.addEventListener("click", (e) => {
+    const a = e.target.closest && e.target.closest('a[href^="#street-"]');
+    if (!a || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const el = d.getElementById(a.getAttribute("href").slice(1));
+    if (!el) return;
+    e.preventDefault();
+    const hdr = d.querySelector(".hdr"), off = (hdr ? hdr.offsetHeight : 72) + snav.offsetHeight * 0.8 + 12;
+    scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - off), behavior: reduced ? "auto" : "smooth" });
+    // after the scroll has started: the reveal is style work, it must not hold the first frame
+    setTimeout(() => { el.classList.add("in"); el.querySelectorAll(".bento, .dom-street").forEach((x) => x.classList.add("in")); el.style.setProperty("--sp", "1"); try { history.replaceState(null, "", a.getAttribute("href")); } catch {} }, 120);
+  });
   // r349: once the street buttons reach their sticky place under the header they shrink (.stuck), and grow back above it
   if (snav) {
     let rq = 0;
@@ -385,6 +399,9 @@
         const r = el.getBoundingClientRect();
         if (r.top > vh || r.bottom < 0) continue;
         el.style.setProperty("--bp", clamp((vh - r.top) / (vh + r.height)).toFixed(4));
+        // r359: the street's name fades before it reaches the header and the street switch (+32 px), never under them
+        const c = el._cp || (el._cp = el.querySelector(".sb-copy"));
+        if (c) { const hd = d.querySelector(".hdr"), sv = d.querySelector(".streets-nav"), sr = sv && sv.getBoundingClientRect(); const safe = Math.max(hd ? hd.getBoundingClientRect().bottom : 72, sr && sr.top < vh * 0.4 ? sr.bottom : 0) + 32; el.style.setProperty("--cf", clamp((c.getBoundingClientRect().top - safe) / 72).toFixed(3)); }
       }
       if (pwRows.length) {
         const r = pwall.getBoundingClientRect();
@@ -414,91 +431,5 @@
     y.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${y.dataset.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="${RO ? "Filmul Two Minutes" : "Two Minutes film"}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
   }));
 
-  // the boarding pass
-  const f = d.getElementById("bform");
-  if (!f) return;
-  const pick = {};
-  f.querySelectorAll(".chips").forEach((g) => {
-    const name = g.dataset.name, multi = g.dataset.multi === "1";
-    pick[name] = multi ? [] : "";
-    g.addEventListener("click", (e) => {
-      const b = e.target.closest(".chip");
-      if (!b) return;
-      const v = b.dataset.v || b.textContent.trim(), on = b.getAttribute("aria-pressed") !== "true"; // beta 3.46 r215 (Daniel, QA pass): data-v = the English chip, so the Romanian page's pass maps to the same codes (it got TBD, "Open Class", "When you are ready")
-      if (multi) { b.setAttribute("aria-pressed", String(on)); pick[name] = on ? [...pick[name], v] : pick[name].filter((x) => x !== v); }
-      else { g.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", String(on)); pick[name] = on ? v : ""; }
-    });
-  });
-  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-  const CODES = { "Branding": ["BRD", "Branding"], "Website / App": ["WEB", "Website / App"], "Video": ["VID", "Video"], "Growth & Social": ["GRW", "Growth & Social"], "Not sure yet": ["TBD", "Open route"] };
-  const CLASS = { "Indie / local": "Indie Class", "Startup": "Startup Class", "Scale-up": "Growth Class", "Established": "First Class" };
-  const BOARD = { "Yesterday :)": "Now boarding", "1 - 3 months": "In 1–3 months", "Just exploring": "Open ticket" };
-  const MON = RO ? ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOI", "DEC"] : ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  const status = f.querySelector(".bf-status");
-  // beta 3.46 r215 (Daniel, QA pass): the form's messages in Romanian on the Romanian pages; beta 3.48 r217: and the pass
-  const T = RO
-    ? { name: "Ne-ar plăcea să știm cum te cheamă.", mail: "Adresa de email nu pare corectă.", phone: "Lasă-ne și un număr de telefon.", printing: "Îți tipărim boarding pass-ul…", busy: "Prea multe boarding pass-uri de aici, deocamdată. Scrie-ne la hi@cromaticstudios.com și îți răspundem.", hello: "Bine ai venit la bord,", sent: "Boarding pass-ul e deja în inboxul tău și îți răspundem într-o zi lucrătoare.", mailto: "Aplicația ta de email ar trebui să se deschidă cu detaliile; trimite-le și îți răspundem într-o zi lucrătoare.",
-        pass: "Carte de îmbarcare", booking: "Rezervare", passenger: "PASAGER", flight: "ZBOR", klass: "CLASĂ", boarding: "ÎMBARCARE", to: "Spre · Str. Olari 9", gate: "Poarta", seat: "Loc" }
-    : { name: "We'd love to know your name.", mail: "That email doesn't look right.", phone: "Leave us a phone number too.", printing: "Printing your boarding pass…", busy: "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer.", hello: "Welcome aboard,", sent: "Your pass is in your inbox, and we'll answer within one working day.", mailto: "Your email app should open with the details; send it and we'll answer within one working day.",
-        pass: "Boarding pass", booking: "Booking", passenger: "PASSENGER", flight: "FLIGHT", klass: "CLASS", boarding: "BOARDING", to: "To · Str. Olari 9", gate: "Gate", seat: "Seat" };
-  // the values sent are the English ones (the studio reads them, the codes map from them); the Romanian pass shows them in Romanian
-  const RO_VAL = { "Website / App": "Site / Aplicație", "Growth & Social": "Creștere și social media", "Open route": "Rută deschisă", "Indie Class": "Clasa Indie", "Startup Class": "Clasa Startup", "Growth Class": "Clasa Growth", "First Class": "Clasa întâi", "Open Class": "Clasă deschisă", "Now boarding": "Îmbarcare acum", "In 1–3 months": "În 1–3 luni", "Open ticket": "Bilet deschis", "When you are ready": "Când ești gata" };
-  const val = (x) => (RO && RO_VAL[x]) || x;
-  const bars = (ref) => { let x = 0, s = ""; for (let i = 0; i < 44; i++) { const c = ref.charCodeAt(i % ref.length) * (i + 3), w = 1 + (c % 3); s += `<rect x="${x}" y="0" width="${w}" height="40"/>`; x += w + 1 + ((c >> 2) % 2); } return `<svg viewBox="0 0 ${x} 40" preserveAspectRatio="none" aria-hidden="true">${s}</svg>`; };
-
-  f.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const v = (n) => (f.elements[n]?.value || "").trim();
-    const name = v("name"), email = v("email");
-    f.elements.name.setAttribute("aria-invalid", String(!name));
-    const okMail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-    f.elements.email.setAttribute("aria-invalid", String(!okMail));
-    if (!name || !okMail) { status.textContent = !name ? T.name : T.mail; (!name ? f.elements.name : f.elements.email).focus(); return; }
-    const okPhone = v("phone").replace(/\D/g, "").length >= 6; // r309 (Daniel, 26 Oct): the phone is required
-    f.elements.phone.setAttribute("aria-invalid", String(!okPhone));
-    if (!okPhone) { status.textContent = T.phone; f.elements.phone.focus(); return; }
-    const now = new Date();
-    let h = 2166136261;
-    for (const ch of `${name}|${email}|${now.getTime()}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
-    const t = {
-      ref: "CS" + h.toString(36).toUpperCase().slice(0, 5).padStart(5, "0"),
-      name, first: name.split(/\s+/)[0], email, phone: v("phone"), msg: v("msg"),
-      date: `${String(now.getDate()).padStart(2, "0")} ${MON[now.getMonth()]} ${now.getFullYear()}`,
-      time: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
-      flight: `CS ${String(99 + pick.dreams.length).padStart(3, "0")}`,
-      stops: pick.dreams.map((x) => CODES[x] || ["TBD", x]), dreams: pick.dreams, biz: pick.biz, when: pick.when,
-      klass: CLASS[pick.biz] || "Open Class", boarding: BOARD[pick.when] || "When you are ready",
-      company_site: v("company_site"), lang: RO ? "ro" : "en"
-    };
-    // TASK-122: an ads landing adds its name, headline variant and UTM parameters (hidden inputs marked data-lead).
-    // server.js clean() keeps them with the lead from r285
-    f.querySelectorAll("input[data-lead]").forEach((i) => { if (i.value) t[i.name] = i.value.slice(0, 120); });
-    const btn = f.querySelector("button[type=submit]");
-    btn.disabled = true; status.textContent = T.printing;
-    let sent = false;
-    try {
-      const r = await fetch("/api/boarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(t) });
-      sent = r.ok;
-      if (r.status === 429) { status.textContent = T.busy; btn.disabled = false; return; }
-    } catch {}
-    if (!sent) {
-      // no server (or it failed): hand it to the visitor's email app instead
-      const body = `${t.msg}\n\n${t.name} · ${t.email}${t.phone ? " · " + t.phone : ""}\nDreaming about: ${t.dreams.join(", ") || "-"}\nBusiness: ${t.biz || "-"} · When: ${t.when || "-"}`;
-      location.href = `mailto:hi@cromaticstudios.com?subject=${encodeURIComponent("Boarding pass " + t.ref + " · " + t.name)}&body=${encodeURIComponent(body)}`;
-    }
-    const legs = [["DRM", "The Dream"], ...t.stops, ["OLR", "Olari 9"]];
-    const pass = d.createElement("div");
-    pass.className = "pass"; pass.setAttribute("role", "status"); pass.tabIndex = -1;
-    pass.innerHTML = `<div class="pass-main">
-      <div class="pass-head mono"><span>✳ Cromatic Air</span><b>${T.pass}</b><span>${T.booking} ${esc(t.ref)}</span></div>
-      <p class="pass-hello">${T.hello} <b>${esc(t.first)}</b>. ${sent ? T.sent : T.mailto}</p>
-      <div class="pass-route">${legs.map(([c, n], i) => `<span class="${i === 0 || i === legs.length - 1 ? "end" : ""}"><b>${esc(c)}</b><i>${esc(val(n))}</i></span>`).join('<span class="hop">· · ✈ · ·</span>')}</div>
-      <div class="pass-grid">
-        <span><small>${T.passenger}</small>${esc(t.name)}</span><span><small>${T.flight}</small>${esc(t.flight)}</span>
-        <span><small>${T.klass}</small>${esc(val(t.klass))}</span><span><small>${T.boarding}</small>${esc(val(t.boarding))}</span>
-      </div></div>
-      <div class="pass-stub"><span class="mono">${T.to}</span><span><small class="mono">${T.gate}</small> <span class="big">9</span> · <small class="mono">${T.seat}</small> <span class="big">1A</span></span>${bars(t.ref)}<span class="mono">${esc(t.ref)}</span></div>`;
-    f.replaceWith(pass);
-    pass.focus();
-  });
+  // r359: the boarding pass has its own script now (build/boarding.mjs)
 })();

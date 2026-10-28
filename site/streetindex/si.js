@@ -76,7 +76,7 @@
     $$("[style*=case-hero]").forEach((x) => (x.style.viewTransitionName = ""));
     $(".si-cover img", st).style.viewTransitionName = "case-hero";
     st.classList.add("leave");
-    setTimeout(() => (location.href = r.href), 240);
+    location.href = r.href; // r359: navigation starts at once (it waited 240 ms for the lean-in)
   }
   // back from a case: the row is focused again where you left it
   addEventListener("pageshow", () => {

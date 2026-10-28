@@ -34,8 +34,8 @@ identity, websites and apps, film, content) into Romanian. The output becomes th
   Barcelona", "Tomorrow's craft. Today's partnership.", "Two minutes to fall for it", deck titles quoted from a
   client): keep them in English, inside the sentence.
 - Text that is already Romanian (song titles, Romanian slogans like „Oprește producția!”): keep it.
-- "There is always a coffee." becomes „Cafeaua e mereu pe masă.” (the studio's motto in Romanian), and "Take the 3D
-  drive" becomes „Ia-o pe drumul 3D”.
+- "There is always a coffee." becomes „Cafeaua e mereu pe masă.” (the studio's motto in Romanian), and "Drive in the
+  Cromatic City" becomes „Condu prin orașul Cromatic” (r356; it was "Take the 3D drive").
 
 ## SEO (titles, descriptions)
 - Blocks that end in " · Cromatic Studios" are page titles: keep that suffix exactly; make the Romanian part rich in

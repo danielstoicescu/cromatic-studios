@@ -44673,6 +44673,8 @@ void main(){
       window.__site = (on) => setSiteMode(on);
       window.__map = (on = true) => setMapMode(on);
       window.__mapGo = (id) => mapGo(MAP_PLACES.find((p) => p.id === id));
+      // r359: /city/?map&go=<place> (the website's street banners): once the drive is up, the map flies to that place
+      try { const g0 = new URLSearchParams(location.search).get("go"), pl = g0 && MAP_PLACES.find((p) => p.id === g0); if (pl) { let n0 = 0; const w0 = () => { if (window.__nav2?.D?.ready) setTimeout(() => mapGo(pl), 600); else if (++n0 < 120) setTimeout(w0, 250); }; w0(); } } catch {}
       window.__mapIds = () => MAP_PLACES.filter((p) => !p.unmarked).map((p) => p.id);
       window.__takeoff = () => mapTakeoff();
       window.__cityDbg = () => ({ zones: buildKeepOut().map((z) => [z.x, z.y, z.r]), extra: EXTRA_KEEPOUT.map((z) => [z.x, z.y, z.r]), routes: Object.fromEntries(["A", "B", "C"].map((b) => [b, roundedPolyline(branchPoints(b)).map(([x, z]) => [Math.round(x), Math.round(z)])])), parks: PARKS, stops: STOPS, places: MAP_PLACES.map((p) => [p.name, p.px ?? p.x, p.pz ?? p.z, p.id, !!p.find]) });

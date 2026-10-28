@@ -250,7 +250,7 @@
     var a = e.target && e.target.closest && e.target.closest("a[href]");
     if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
     var u; try { u = new URL(a.href, location.href); } catch (er) { return; }
-    if (u.origin !== location.origin || !/^\/(site|ro)\/$/.test(u.pathname)) return;
+    if (u.origin !== location.origin || !/^\/(ro\/)?$/.test(u.pathname)) return;
     leave();
   }, true);
   window.czPill = { open: open, close: close, leave: leave };

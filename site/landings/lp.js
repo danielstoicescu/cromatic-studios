@@ -27,7 +27,7 @@
     ev("lp_cta_click", { position: pos, target: free ? "core_lite" : "freebie_block" });
     if (free) ev("lp_freebie_start", { position: pos });
   }, true);
-  var f = d.getElementById("bform");
+  var f = d.getElementById("czp-form") || d.getElementById("bform"); // r359: the new boarding pass
   if (f) f.addEventListener("submit", function () { var n = (f.elements.name || {}).value, m = (f.elements.email || {}).value; if (n && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((m || "").trim())) ev("lp_form_submit", { form: "boarding_pass" }); });
   var talk = d.querySelector(".lp-talk details");
   if (talk) talk.addEventListener("toggle", function () { if (talk.open) { ev("lp_talk_open"); var i = talk.querySelector("input[name=name]"); if (i && fine) i.focus({ preventScroll: true }); } });

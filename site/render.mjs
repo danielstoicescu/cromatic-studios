@@ -76,6 +76,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
     </nav>
     <a class="drive-btn" href="/" title="Our work as a 3D city of Bucharest, to drive through">${STAR}<span>Drive in the Cromatic City</span></a>
+    <a class="drive-mini" href="/" aria-label="Drive in the Cromatic City"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M3.4 10.6c3.2-1.4 13.9-1.4 17.2 0M12 14.6v6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span>Drive</span></a>
     <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span></button>
   </div>
   <nav id="mnav" class="mnav" aria-label="Mobile">
@@ -124,24 +125,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       : `<article class="pcard">${inner}</article>`;
   };
 
-  const contactForm = () => `
-  <form class="bform" id="bform" novalidate>
-    <div class="bf-strip mono"><span>Cromatic Air</span><span>Flight CS-99</span><span>Olari 9 → your brand</span><span>Seat 1A</span></div>
-    <fieldset><legend>What do you dream of?</legend><div class="chips" data-name="dreams" data-multi="1">${FORM.dreams.map((d) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(d)}">${esc(d)}</button>`).join("")}</div></fieldset>
-    <fieldset><legend>What kind of business are you?</legend><div class="chips" data-name="biz">${FORM.biz.map((d) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(d)}">${esc(d)}</button>`).join("")}</div></fieldset>
-    <fieldset><legend>When do you want to take off?</legend><div class="chips" data-name="when">${FORM.when.map((d) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(d)}">${esc(d)}</button>`).join("")}</div></fieldset>
-    <div class="bf-row">
-      <label><span>Your name</span><input name="name" autocomplete="name" required></label>
-      <label><span>Email</span><input name="email" type="email" autocomplete="email" required></label>
-      <label><span>Phone</span><input name="phone" type="tel" autocomplete="tel" required minlength="6"></label>
-    </div>
-    <label class="bf-msg"><span>Tell us a bit about it</span><textarea name="msg" rows="4"></textarea></label>
-    <input class="hp" name="company_site" tabindex="-1" autocomplete="off" aria-hidden="true">
-    <div class="bf-end">
-      <button class="btn btn-y" type="submit">${STAR}<span>Pour the coffee</span></button>
-      <p class="bf-status" role="status" aria-live="polite"></p>
-    </div>
-  </form>`;
+  // r359: the boarding pass is build/boarding.mjs (filled in per language after the Romanian pages are made); `hidden`
+  // = extra hidden inputs (the landings' data-lead fields)
+  const contactForm = (hidden = "") => `<div data-czp-slot>${hidden}</div>`;
 
   // r130j: the portfolio on the lo-fi site is the map's, organised by what we do (3 + 1 domains), in a bento grid
   // of mixed sizes. Every card has a picture: its own media, else the map card's cover (case page og image or the
@@ -238,6 +224,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // only near the screen, never with reduced motion, Save-Data or 2g. Scroll parallax (site.js, --bp 0 → 1 while the
   // band crosses the screen): the picture moves slower than the page and settles from a slight zoom, the street's name
   // in solid CromaticSans moves faster than it; the band fades into the paper the street's cards stand on
+  const SB_GO = { A: "tm", B: "invest", C: "tac" }; // r359: a place on each street of the map (src/app.js MAP_PLACES)
   const streetBand = (k, street, i, count) => {
     const slug = street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), m = (n) => A(`m:streets/${slug}/${n}`);
     const pd = m("poster.jpg"), pm = m("poster-m.jpg"), dm = m(`${slug}.mp4`), dw = m(`${slug}.webm`), mm = m(`${slug}-m.mp4`);
@@ -245,9 +232,10 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const video = pd && (dm || dw) ? `<video class="sb-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}></video>` : "";
     return `<div class="street-band${pd ? " has-media" : ""}">
         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
-        <div class="sb-copy" aria-hidden="true">
-          <p class="sb-cap mono"><span>${String(i + 1).padStart(2, "0")}</span><span>${count} ${count === 1 ? "project" : "projects"}</span></p>
-          <p class="sb-name">${esc(street)}</p>
+        <div class="sb-copy">
+          <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span><span>${count} ${count === 1 ? "project" : "projects"}</span></p>
+          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">Take a drive in the Cromatic City</a></div>
+          <p class="sb-name" aria-hidden="true">${esc(street)}</p>
         </div>
         ${video ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : ""}
       </div>`;
@@ -325,7 +313,8 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
       return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
     <div class="pw-rows">${[0, 1, 2].map((r) => { const l = list.slice(r * per, r * per + per); return `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`; }).join("")}</div>
-    ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We’re here for the brand experiences <span class="pw-heart" aria-hidden="true">💛</span></h1></div>` : ""}
+    ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We’re here for the brand experiences <span class="pw-heart" aria-hidden="true">💛</span></h1></div>
+    <p class="pw-alt"><a href="/">Or take the scenic route through the Cromatic City <span aria-hidden="true">→</span></a></p>` : ""}
   </section>`;
     };
     const preload = false && hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "";
@@ -360,7 +349,7 @@ ${header(true)}
     <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
     <div class="wrap hc-in hc-ed">
       <div class="hc-ed-l">
-        <p class="hc-kick mono">The 3D portfolio</p>
+        <p class="hc-kick mono">The Cromatic City</p>
         <h2 class="hc-h" id="hc-h">Drive through the portfolio</h2>
       </div>
       <div class="hc-ed-r">
@@ -389,7 +378,7 @@ ${header(true)}
     <a class="hc-hit" href="/" tabindex="-1" aria-hidden="true"></a>
     <div class="wrap hc-in hc-ed">
       <div class="hc-ed-l">
-        <p class="hc-kick mono">The Cromatic City</p>
+        <p class="hc-kick mono">A tour of the city</p>
         <h2 class="hc-h" id="hct-h">Come for a drive</h2>
       </div>
       <div class="hc-ed-r">
@@ -807,7 +796,7 @@ ${footer}`;
     const projects = L.cases.map((sl) => byPage(sl)).filter(Boolean);
     const svcs = L.services.map((k) => SERVICE_PAGES.find((x) => x.slug === k)).filter(Boolean);
     const hidden = ["lp", "lp_v", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].map((n) => `<input type="hidden" name="${n}" data-lead${n === "lp" ? ` value="${esc(L.slug)}"` : ""}>`).join("");
-    const form = contactForm().replace('<input class="hp"', `${hidden}\n    <input class="hp"`);
+    const form = contactForm(hidden);
     const fig = (x, i) => { const num = /^\d+$/.test(x.n) ? ` data-count="${x.n}"${x.from ? ` data-from="${esc(x.from)}"` : ""}` : ""; return `<p class="lp-fig" data-rv style="--i:${i}"><b${num}>${esc(x.n)}</b><span>${esc(x.t)}</span></p>`; };
     const proof = (L.proof || []).length ? `<section class="sec sec-alt lp-proof" id="proof"><div class="wrap">
       <p class="eyebrow mono" data-rv>${esc(L.proofEyebrow)}</p>${title2(L.proofTitle)}

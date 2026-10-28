@@ -242,7 +242,7 @@ ${ch.js}
 
   // the case pages: a dormant opt-in to the cross-document View Transition (cover -> case hero), live only after a
   // click on a row here (the index writes the case's path to sessionStorage "si-vt"), and never with reduced motion
-  const VT = `<script>try{if(sessionStorage.getItem("si-vt")===location.pathname&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var s=document.createElement("style");s.textContent="@view-transition{navigation:auto}img[fetchpriority=high]{view-transition-name:case-hero}";document.head.appendChild(s)}}catch(e){}</script>`;
+  const VT = `<script>try{if(sessionStorage.getItem("si-vt")===location.pathname&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var s=document.createElement("style");s.textContent="@view-transition{navigation:auto}img[fetchpriority=high]{view-transition-name:case-hero}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:.2s}";document.head.appendChild(s)}}catch(e){}</script>`;
   let nvt = 0;
   for (const base of [join(pub, "work"), join(pub, "ro", "proiecte")]) {
     let ds = []; try { ds = readdirSync(base); } catch {}

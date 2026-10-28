@@ -11,6 +11,7 @@ import { jsonLd, llmsTxt, llmsFull, robotsTxt, sitemapXml, manifest, icoFromPng,
 import { seoPage, pageText, lastmodStore, SAME_AS, CLIPPED } from "./seo-pages.mjs";
 import { consentSnippet } from "./consent.mjs";
 import { withFooter } from "./footer.mjs"; // r139c
+import { withPass } from "./boarding.mjs"; // r359
 import { videoLd } from "./videos.mjs"; // r139c
 import { BOARD_HTML, BOARD_CSS, BOARD_JS } from "./board.mjs";
 import { FILM_AUTO, ytFacade } from "./film.mjs";
@@ -635,7 +636,7 @@ const hubLinks = (slug, hasRelated) => {
   const cards = same.length ? `<div class="czs-rail" data-czs tabindex="0" role="region" aria-labelledby="czs-h">${same.map((x, k) => `<a class="czs-card" href="/work/${x.page}/" style="--i:${k}"><span class="czs-pic"><img src="%%COVER:${x.page}%%" alt="${escH(x.name)}" loading="lazy" decoding="async" width="800" height="500"></span>${stTag(x)}<b>${escH(x.name)}</b><span class="czs-cat">${escH(x.cat || "")}</span><i class="czs-go" aria-hidden="true"></i></a>`).join("")}</div>` : "";
   const indL = (d) => `<a href="/industries/${d.slug}/">${escH(d.title.replace(/ in Bucharest$/, ""))} <span aria-hidden="true">→</span></a>`;
   const links = [...(ind ? [ind] : svcs.length ? [] : HUBS_DATA.INDUSTRIES || []).map(indL), ...svcs.map((x) => `<a href="/services/${x.slug}/">${escH(x.name)} <span aria-hidden="true">→</span></a>`)].join("");
-  const board = BOARD_HTML;
+  const board = ""; // r359: the case pages end with the boarding pass itself now (build/boarding.mjs), not the ticket that led to the map (build/board.mjs)
   if (!cards && !links && !board) return "";
   return `${STREET_CSS}${board ? BOARD_CSS : ""}<section class="cz-street" aria-label="More from the studio" style="--czs:${street ? street[1] : "#FED012"}">${cards ? `<p class="czs-eb">${escH(street ? street[0] : "")}</p><h2 id="czs-h"><span>On the same street</span></h2>${cards}` : ""}${links ? `<div class="czs-links">${links}</div>` : ""}${board}</section>${cards ? STREET_JS : ""}${board ? BOARD_JS : ""}`;
 };
@@ -980,6 +981,8 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
   }
   // r139c (N49): the small footer (Privacy, Cookies, the other language) on every page of the website and every case page
   if (/\.html$/.test(f)) n2 = withFooter(n2, relative(pub, p2), SITE_URL);
+  // r359 (Daniel): the boarding pass, redesigned (build/boarding.mjs), at the end of every content page, EN and RO
+  if (/\.html$/.test(f)) n2 = withPass(n2, relative(pub, p2));
   // r134h: GA4 behind the cookie card, on every page (Daniel: G-BRW5QJTJ77, stream "Cromatic Studios COM - GA4")
   if (/\.html$/.test(f) && CONSENT && !n2.includes('id="cz-ck-css"') && n2.includes("</body>")) n2 = n2.replace(/<\/body>(?![\s\S]*<\/body>)/, `${CONSENT}\n</body>`);
   // r139q (Daniel: "avoid swipe-to-refresh on mobile as much as possible"): no pull-to-refresh and no scroll chaining
@@ -1009,6 +1012,8 @@ try { const { buildPrezentare } = await import("./prezentare.mjs"); await buildP
 // r351 (Daniel, 28 Oct): /streetindex/ and /ro/streetindex/, direction A of the /site/ rebuild (build/streetindex.mjs). BETA ONLY:
 // server.js answers 404 for these paths on every non-beta host; written after the pass (no GA4), never in PAGES, linked from nowhere
 try { const { buildStreetIndex } = await import("./streetindex.mjs"); await buildStreetIndex({ root, pub, mediaMap, COVERS, R }); } catch (e) { console.warn("[build] streetindex skipped:", e.message); }
+// r359: the Street Index copies the closing boarding pass from the built home pages: it gets the pass's styles and script too
+for (const f of ["streetindex/index.html", "ro/streetindex/index.html"]) { try { const fp = join(pub, f); writeFileSync(fp, withPass(readFileSync(fp, "utf8"), f)); } catch {} }
 // beta 3.1 (Daniel): "at the gloves with I O N", the Two Min Lab mini-game: its own page, /play/gloves/, with its own
 // script and styles (src/minigame.js + .css, minified, hashed), so the map's bundle does not carry it: the map opens
 // the page in its case frame only when the game is asked for. Written after the pass above: no footer, no cookie card
