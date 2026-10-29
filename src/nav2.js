@@ -2253,6 +2253,7 @@
         st = { id: p.id, x: p.x, y: p.y };
         stickEl.classList.add("on", "live"); stickEl.style.transform = `translate(${p.x}px, ${p.y}px)`; stickSet(p.last || { clientX: p.x, clientY: p.y });
         if (D.auto) { D.auto = null; render(true); }
+        if (D.ready) H.follow(); // r392: the stick drives, so the map follows the car again, as the keys do (press); r307 left it out
         if (D.firstDrive) firstDrive();
       };
       cv.addEventListener("pointerdown", (e) => {
