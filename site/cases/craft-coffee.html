@@ -369,13 +369,17 @@ html:not(.embed) .page{padding-top:64px}
 .statement span{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:700;max-width:28em;opacity:.85}
 @media (max-width:640px){.field-inner--multi{flex-direction:column;align-items:center}.field-inner--multi .field-card{flex:none;width:100%}}
 /* editorial spreads: people and products in one grid (r137) */
-.mix{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:var(--gutter);aspect-ratio:12/var(--rows)}
+.mix{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:var(--gutter);aspect-ratio:12/var(--arr,var(--rows))}
 .mix-cell{grid-column:var(--c);grid-row:var(--rw);position:relative;min-width:0;min-height:0;margin:0}
 .mix-cell .frame{height:100%;aspect-ratio:auto}
 .mix-cell .frame>img{object-position:var(--op,50% 50%);transition:transform .6s cubic-bezier(.2,.75,.2,1)}
 .mix-prod .frame>img{object-fit:contain;padding:clamp(14px,9%,56px);transform:rotate(var(--tilt,0deg));mix-blend-mode:multiply}
 .mix-prod:hover .frame>img{transform:rotate(0deg) scale(1.04)}
 .mix-card .frame{display:grid;place-items:center}
+.mix-edge{align-self:end}
+.mix-edge .frame{height:auto;aspect-ratio:var(--ar);border-radius:var(--er);background:var(--frame-bg,#fff)}
+.mix-edge .frame::after{display:none}
+.mix-edge .frame>img,.mix-edge:hover .frame>img{object-fit:fill;transform:none}
 .mix-card .frame>img{width:auto;height:auto;max-width:76%;max-height:72%;padding:0;object-fit:fill;mix-blend-mode:normal;border-radius:0;box-shadow:none}
 .mix-cell:not(.mix-prod):hover .frame>img{transform:scale(1.03)}
 .mix-tag{position:absolute;left:12px;top:12px;padding:3px 12px 5px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;transform:rotate(-4deg);pointer-events:none}
@@ -496,20 +500,20 @@ html:not(.embed) .page{padding-top:64px}
     </div>
     <div class="chapter-media">
 <div class="stack">
-<div class="mix" style="--rows:8">
-  <figure class="mix-cell" style="--c:1/6;--rw:1/9;--sm:2;--smr:0.8;--op:50% 40%">
+<div class="mix" style="--rows:16;--arr:8">
+  <figure class="mix-cell" style="--c:1/6;--rw:1/17;--sm:1;--smr:0.8;--op:50% 40%">
     <div class="frame"><img src="m:craft-coffee/event-54" alt="Two team members brewing coffee" width="1067" height="1600" loading="lazy" decoding="async"></div>
   </figure>
-  <figure class="mix-cell mix-prod" style="--c:6/10;--rw:1/5;--sm:1;--smr:1;--frame-bg:#dcebfa;--tilt:-5deg">
-    <div class="frame"><img src="m:craft-coffee/patch" alt="Embroidered Craft Coffee patch: The finest equipment" width="340" height="340" loading="lazy" decoding="async"></div><span class="mix-tag">Badge system</span>
-  </figure>
-  <figure class="mix-cell" style="--c:10/13;--rw:1/6;--sm:1;--smr:1;--op:50% 30%">
+  <figure class="mix-cell" style="--c:10/13;--rw:1/11;--sm:1;--smr:0.8;--op:50% 30%">
     <div class="frame"><img src="m:craft-coffee/event-12" alt="A team member at the brew bar" width="1067" height="1600" loading="lazy" decoding="async"></div>
   </figure>
-  <figure class="mix-cell mix-prod" style="--c:6/10;--rw:5/9;--sm:1;--smr:1;--frame-bg:#ffffff">
-    <div class="frame"><img src="m:craft-coffee/logo-white" alt="The Craft Coffee logo in blue, on white" width="1060" height="676" loading="lazy" decoding="async"></div><span class="mix-tag">Logo</span>
+  <figure class="mix-cell mix-edge" style="--c:6/10;--rw:12/17;--sm:2;--smr:1.5963;--frame-bg:#ffffff;--ar:1028/644;--er:6.4% / 10.2%">
+    <div class="frame"><img src="m:craft-coffee/logo-white" alt="The Craft Coffee logo in blue, on white" width="1028" height="644" loading="lazy" decoding="async"></div>
   </figure>
-  <figure class="mix-cell" style="--c:10/13;--rw:6/9;--sm:1;--smr:1;--frame-bg:#ffffff">
+  <figure class="mix-cell mix-prod" style="--c:6/10;--rw:1/12;--sm:1;--smr:1;--frame-bg:#dcebfa;--tilt:-5deg">
+    <div class="frame"><img src="m:craft-coffee/patch" alt="Embroidered Craft Coffee patch: The finest equipment" width="340" height="340" loading="lazy" decoding="async"></div><span class="mix-tag">Badge system</span>
+  </figure>
+  <figure class="mix-cell" style="--c:10/13;--rw:11/17;--sm:1;--smr:1;--frame-bg:#ffffff">
     <div class="frame"><img src="m:craft-coffee/stamp" alt="The Craft Coffee stamp: the finest equipment" width="1400" height="1400" loading="lazy" decoding="async"></div>
   </figure>
 </div>

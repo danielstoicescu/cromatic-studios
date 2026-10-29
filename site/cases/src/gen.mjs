@@ -106,6 +106,9 @@ function row(items, cap, wrap = false) {
 // (tilt; white backgrounds melt into the card), with an optional pill label (tag); a piece with its own background
 // lies on the card as a printed card (card: true); a text tile (text) can take a cell too. On phones the items flow two
 // by two in source order (sm: 1 or 2 columns, smr: the frame's ratio there).
+// r394: a piece whose own rounded outline is its edge (edge: [ratio, radius]): the card takes the artwork's ratio, its
+// corners and nothing else (no ring, no padding, no zoom), sitting on the bottom of its cell (it may take a few px of the
+// gap above, never more than the ratio needs). b.arr keeps a spread's shape (12/arr) when it counts in finer rows (rows: 16).
 function mix(b) {
   const rows = b.rows || 8;
   const cells = b.mix.map((it) => {
@@ -113,11 +116,12 @@ function mix(b) {
     const st = `--c:${c1}/${c2};--rw:${r1}/${r2};--sm:${it.sm || 2};--smr:${r4(it.smr || (it.text ? 0 : ratio(it)))}`;
     if (it.text) return `  <div class="mix-cell mix-text" style="${st};--field:${it.bg || "var(--accent)"};--field-fg:${it.fg || "var(--ink)"}"><p>${it.text}</p></div>`;
     const v = [st, it.bg ? `--frame-bg:${it.bg}` : "", it.tilt ? `--tilt:${it.tilt}deg` : "", it.pos ? `--op:${it.pos}` : ""].filter(Boolean).join(";");
-    return `  <figure class="mix-cell${it.contain ? " mix-prod" : ""}${it.card ? " mix-card" : ""}" style="${v}">
+    const ve = it.edge ? `${v};--ar:${it.edge[0]};--er:${it.edge[1]}` : v;
+    return `  <figure class="mix-cell${it.contain ? " mix-prod" : ""}${it.card ? " mix-card" : ""}${it.edge ? " mix-edge" : ""}" style="${ve}">
     <div class="frame">${inner(it)}</div>${it.tag ? `<span class="mix-tag">${it.tag}</span>` : ""}
   </figure>`;
   });
-  const body = `<div class="mix" style="--rows:${rows}">\n${cells.join("\n")}\n</div>`;
+  const body = `<div class="mix" style="--rows:${rows}${b.arr ? `;--arr:${b.arr}` : ""}">\n${cells.join("\n")}\n</div>`;
   return b.cap ? `<div class="stack">\n${body}\n<figcaption>${b.cap}</figcaption>\n</div>` : body;
 }
 function block(b) {
@@ -271,13 +275,17 @@ figure.only-sm{display:none}
 .statement span{font-size:var(--fs-lead);line-height:var(--lh-lead);font-weight:700;max-width:28em;opacity:.85}
 @media (max-width:640px){.field-inner--multi{flex-direction:column;align-items:center}.field-inner--multi .field-card{flex:none;width:100%}}
 /* editorial spreads: people and products in one grid (r137) */
-.mix{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:var(--gutter);aspect-ratio:12/var(--rows)}
+.mix{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:var(--gutter);aspect-ratio:12/var(--arr,var(--rows))}
 .mix-cell{grid-column:var(--c);grid-row:var(--rw);position:relative;min-width:0;min-height:0;margin:0}
 .mix-cell .frame{height:100%;aspect-ratio:auto}
 .mix-cell .frame>img{object-position:var(--op,50% 50%);transition:transform .6s cubic-bezier(.2,.75,.2,1)}
 .mix-prod .frame>img{object-fit:contain;padding:clamp(14px,9%,56px);transform:rotate(var(--tilt,0deg));mix-blend-mode:multiply}
 .mix-prod:hover .frame>img{transform:rotate(0deg) scale(1.04)}
 .mix-card .frame{display:grid;place-items:center}
+.mix-edge{align-self:end}
+.mix-edge .frame{height:auto;aspect-ratio:var(--ar);border-radius:var(--er);background:var(--frame-bg,#fff)}
+.mix-edge .frame::after{display:none}
+.mix-edge .frame>img,.mix-edge:hover .frame>img{object-fit:fill;transform:none}
 .mix-card .frame>img{width:auto;height:auto;max-width:76%;max-height:72%;padding:0;object-fit:fill;mix-blend-mode:normal;border-radius:0;box-shadow:none}
 .mix-cell:not(.mix-prod):hover .frame>img{transform:scale(1.03)}
 .mix-tag{position:absolute;left:12px;top:12px;padding:3px 12px 5px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;transform:rotate(-4deg);pointer-events:none}

@@ -48,12 +48,17 @@ export const CRAFT = {
       // the uniform and the bag (the event photos moved here from the Coffeeast chapter)
       media: [
         {
+          // r394 (Daniel: the logo's own blue outline becomes the card's edge): logo-white.jpg is cropped to the outline
+          // (1028x644) and its card takes that ratio and those corners (edge); the spread counts in 16 half rows so the
+          // card's cell is that shape (4 columns x 5 half rows). On phones: the two photos side by side, the logo across
+          // the width, the patch and the stamp side by side
+          rows: 16, arr: 8,
           mix: [
-            { img: m("event-54"), alt: "Two team members brewing coffee", at: [1, 6, 1, 9], pos: "50% 40%", sm: 2, smr: 0.8 },
-            { img: m("patch"), alt: "Embroidered Craft Coffee patch: The finest equipment", contain: true, bg: "#dcebfa", tilt: -5, tag: "Badge system", at: [6, 10, 1, 5], sm: 1, smr: 1 },
-            { img: m("event-12"), alt: "A team member at the brew bar", at: [10, 13, 1, 6], pos: "50% 30%", sm: 1, smr: 1 },
-            { img: m("logo-white"), alt: "The Craft Coffee logo in blue, on white", contain: true, bg: "#ffffff", tag: "Logo", at: [6, 10, 5, 9], sm: 1, smr: 1 },
-            { img: m("stamp"), alt: "The Craft Coffee stamp: the finest equipment", bg: "#ffffff", at: [10, 13, 6, 9], sm: 1, smr: 1 }
+            { img: m("event-54"), alt: "Two team members brewing coffee", at: [1, 6, 1, 17], pos: "50% 40%", sm: 1, smr: 0.8 },
+            { img: m("event-12"), alt: "A team member at the brew bar", at: [10, 13, 1, 11], pos: "50% 30%", sm: 1, smr: 0.8 },
+            { img: m("logo-white"), alt: "The Craft Coffee logo in blue, on white", edge: ["1028/644", "6.4% / 10.2%"], bg: "#ffffff", at: [6, 10, 12, 17], sm: 2, smr: 1.5963 },
+            { img: m("patch"), alt: "Embroidered Craft Coffee patch: The finest equipment", contain: true, bg: "#dcebfa", tilt: -5, tag: "Badge system", at: [6, 10, 1, 12], sm: 1, smr: 1 },
+            { img: m("stamp"), alt: "The Craft Coffee stamp: the finest equipment", bg: "#ffffff", at: [10, 13, 11, 17], sm: 1, smr: 1 }
           ],
           cap: "The badge and the wordmark, with the team behind the bar"
         },
