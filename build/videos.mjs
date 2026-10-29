@@ -3,7 +3,10 @@
 // (<video controls>). The silent loops (muted, autoplay, no controls) are pictures that move, not films: none.
 // thumbnailUrl is always a picture on this domain (the facade's poster, the film's poster, else the page's picture).
 // Dates are never guessed: the YouTube ones come from the films' YouTube pages (read 13 Oct 2026); our own files carry
-// none (no creation time in the WebM/MP4 headers), so they go without uploadDate.
+// r382 (Mira's audit: Bepco and Routine Paris had a VideoObject without uploadDate): our own films take their date from
+// the data: OWN below when it says, else the creation time in the file's own MP4 header (Bepco's reel: 16 Jun 2025),
+// else the month of the WordPress upload folder the file lives in (/wp-content/uploads/2025/06/: 2025-06-01, the
+// day not known; Routine Paris' WebM carries no date of its own).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -45,6 +48,18 @@ function fileDuration(file) {
   return null;
 }
 
+// r382: an MP4's creation time (mvhd, seconds since 1904), when the file has one; null otherwise
+function fileCreated(file) {
+  let b;
+  try { b = readFileSync(file); } catch { return null; }
+  const m = b.indexOf("mvhd");
+  if (m < 4 || b[0] === 0x1a) return null;
+  const v = b[m + 4], t = v ? Number(b.readBigUInt64BE(m + 8)) : b.readUInt32BE(m + 8);
+  if (!t) return null;
+  const d = new Date((t - 2082844800) * 1000);
+  return d.getUTCFullYear() > 2000 && d < new Date() ? d.toISOString().replace(/\.000Z$/, "Z") : null;
+}
+
 /** Adds the page's films to its JSON-LD graph. `pub` = the output folder (to read our own films' length). */
 export function videoLd(html, { path, SITE, pub, name: pageName }) {
   const url = `${SITE}${path}`, films = [];
@@ -66,8 +81,9 @@ export function videoLd(html, { path, SITE, pub, name: pageName }) {
     const base = src.split("/").pop().replace(/\.[^.]+$/, ""), own = OWN[base] || {};
     const name = attr(tag, "aria-label") || `${pageName}: film`;
     const poster = abs(attr(tag, "data-poster-lg")) || abs(attr(tag, "data-poster")) || abs(attr(tag, "poster")) || abs(og);
-    const sec = pub ? fileDuration(join(pub, decodeURI(src.split("?")[0]))) : null;
-    films.push({ "@type": "VideoObject", name, description: own.description || `${name}, from the ${pageName} case study by Cromatic Studios.`, thumbnailUrl: poster, ...(sec ? { duration: iso(sec) } : {}), contentUrl: SITE + src });
+    const file = pub ? join(pub, decodeURI(src.split("?")[0])) : null, sec = file ? fileDuration(file) : null;
+    const wpm = /\/wp-content\/uploads\/(\d{4})\/(\d{2})\//.exec(src), up = own.uploadDate || (file && fileCreated(file)) || (wpm ? `${wpm[1]}-${wpm[2]}-01` : null);
+    films.push({ "@type": "VideoObject", name, description: own.description || `${name}, from the ${pageName} case study by Cromatic Studios.`, thumbnailUrl: poster, ...(up ? { uploadDate: up } : {}), ...(sec ? { duration: iso(sec) } : {}), contentUrl: SITE + src });
   }
   if (!films.length) return html;
   films.forEach((f, i) => { f["@id"] = `${url}#film-${i + 1}`; f.isPartOf = { "@id": url }; if (!f.thumbnailUrl) delete f.thumbnailUrl; });

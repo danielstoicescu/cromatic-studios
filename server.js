@@ -256,6 +256,9 @@ function serve(req, res) {
   };
   // r140: private client reports: never indexed, never cached by Cloudflare, no referrer leaving the page
   // r322: and the internal process deck (/prezentare/proces-<code>/), the same way
+  // r382 (Daniel, 29 Oct): /onboarding/ (and its Romanian copy) stays open to people and its links are followed, but it is
+  // kept out of search (the page says so too, and it left the sitemap and llms.txt)
+  if (/^\/(?:ro\/)?onboarding\/(?:index\.html)?$/.test(path)) headers["X-Robots-Tag"] = "noindex, follow";
   if (path.startsWith("/rapoarte/") || path.startsWith("/prezentare/") || /^\/(?:ro\/)?streetindex\//.test(path)) { headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"; headers["Cache-Control"] = "private, no-store"; headers["Referrer-Policy"] = "no-referrer"; }
   if (status === 404) headers["Cache-Control"] = "no-store";
   else if (req.headers["if-none-match"] === f.etag) { res.writeHead(304, headers); return res.end(); }

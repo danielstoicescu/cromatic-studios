@@ -764,7 +764,7 @@ ${footer}`;
     const desc = "Meet the people of Cromatic Studios, an independent creative studio in Bucharest founded in 2014 and led by two brothers, Daniel and Cristian Stoicescu."; // r136: under 155 characters, a whole sentence
     const FULL = { Daniel: "Daniel Stoicescu", Cristian: "Cristian Stoicescu" };
     const person = (n) => ({ "@type": "Person", "@id": n === "Daniel" ? `${SITE}/#daniel` : n === "Cristian" ? `${SITE}/#cristian` : `${SITE}/team/#${n.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")}`, name: FULL[n] || n, ...(CREW_INFO[n]?.role ? { jobTitle: CREW_INFO[n].role } : {}), ...(CREW_INFO[n]?.bio ? { description: CREW_INFO[n].bio } : {}), ...(CREW_INFO[n]?.instagram ? { sameAs: [CREW_INFO[n].instagram] } : {}), worksFor: { "@id": `${SITE}/#studio` } });
-    const ld = hubLd(path, title, desc, [["Team", path]], [{ "@type": "AboutPage", "@id": `${SITE}${path}#about`, url: `${SITE}${path}`, about: { "@id": `${SITE}/#studio` } }, ...CREW.map(person)]);
+    const ld = hubLd(path, title, desc, [["Team", path]], [{ "@type": "AboutPage", "@id": `${SITE}${path}#about`, url: `${SITE}${path}`, name: title, about: { "@id": `${SITE}/#studio` } }, ...CREW.map(person)]);
     return `${head({ title, desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub" style="--bc:#B098C8;--bt:#111">

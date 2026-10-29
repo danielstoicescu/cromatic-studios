@@ -43,7 +43,7 @@ export const WORK_TITLES = {
   "the-aesthetic-court": "The Aesthetic Court: medical congress website",
   "toskani-med": "Toskani MED: aesthetic medicine brand & packaging",
   "prevomit": "Prevomit: product site for a motion sickness range", // TASK-076 (second half): Zdrovit product sites, case page only (no portfolio card)
-  "slaboficat": "Slaboficat Slim: one-page product site for a liver supplement",
+  "slaboficat": "Slaboficat Slim: product site for a liver supplement", // r382: <= 60 characters
   "supramax": "Supramax articulații: product site for a joint-care range",
   "vizik": "Vizik: product site for three eye drops, three colours",
   "vizimel": "Vizimel: product site for an eye supplement",
@@ -65,6 +65,10 @@ export const WORK_TITLES = {
   "elithia": "Elithia: women's health clinic brand & website",
   "sticker-republic": "Sticker Republic: sticker reels & content",
   "printoteca": "Printoteca: print-on-demand reels & content",
+  // r382 (Mira's audit: these three had "<name> · Cromatic Studios" in both languages; RO rewritten in ro.json)
+  "echo-school": "Echo School: Instagram for a digital arts school",
+  "darya-hope": "Darya Hope: skincare brand strategy & packaging",
+  "tracy-j": "Tracy J Skincare: identity & packaging",
   "eliade-18": "Eliade 18: our studio floor in Eliade Tower",
   "rdw-2023": "Romanian Design Week 2023: our AI pop-up studio"
 };

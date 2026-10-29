@@ -199,7 +199,9 @@ let ONB = null, ONB_RO = null; // r139c: and its Romanian copy
     const og = (/<meta property="og:image" content="([^"]+)"/.exec(h) || [])[1] || `${SITE_URL}/og.jpg`;
     h = h.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${desc}">`);
     if (!/<link rel="canonical"/.test(h)) h = h.replace("</title>", `</title>\n<link rel="canonical" href="${url}">`);
-    if (!/<meta name="robots"/.test(h)) h = h.replace(/(<link rel="canonical"[^>]*>)/, `$1\n<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">`);
+    // r382 (Daniel, 29 Oct: /onboarding/ must not be in Google): noindex, its links still followed (server.js sends the
+    // same as X-Robots-Tag); the Romanian copy inherits it through the translation. Out of the sitemap and llms.txt below
+    h = h.replace(/<meta name="robots"[^>]*>\n?/g, "").replace(/(<link rel="canonical"[^>]*>)/, `$1\n<meta name="robots" content="noindex, follow">`);
     const ld = { "@context": "https://schema.org", "@graph": [studioNode(SITE_URL, SAME_AS), websiteNode(SITE_URL),
       { "@type": "WebPage", "@id": url, url, name: title, description: desc, isPartOf: { "@id": `${SITE_URL}/#website` }, about: { "@id": `${SITE_URL}/#studio` }, primaryImageOfPage: og, inLanguage: "en" }] };
     if (!h.includes("application/ld+json")) h = h.replace("</head>", `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>\n</head>`);
@@ -878,16 +880,20 @@ const roPaths = [];
   const onb = ONB ? (() => { const text = pageText(ONB.html); return { ...ONB, html: undefined, text, lastmod: LASTMOD.get(ONB.path, text, { files: ["site/onboarding"], own: true }) }; })() : null;
   // r139c (N34): and its Romanian copy, with the English one's date (as every Romanian page)
   const onbRo = onb && ONB_RO ? { ...ONB_RO, html: undefined, text: pageText(ONB_RO.html), lastmod: onb.lastmod } : null;
-  const order = [PAGES["/site/"], home, ...(onb ? [onb] : []), ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p]), ...(onbRo ? [onbRo] : [])];
+  // r382: /onboarding/ and /ro/onboarding/ are noindex now: out of the sitemap, llms.txt and llms-full.txt
+  const order = [PAGES["/site/"], home, ...hubPaths.map((p) => PAGES[p]), ...workPaths.map((p) => PAGES[p]).filter(Boolean), ...roPaths.map((p) => PAGES[p])];
   // r135d: each language pair also in the sitemap (Bing reads hreflang there more reliably than in the page head)
   const roSet = new Set(roPaths), pairs = new Map();
-  if (onbRo) roSet.add(onbRo.path); // r139c
-  for (const p of ["/site/", ...hubPaths, ...workPaths, ...(onbRo ? ["/onboarding/"] : [])]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
+  for (const p of ["/site/", ...hubPaths, ...workPaths]) { const rp = roPath(p); if (rp && roSet.has(rp)) { const alt = [["en", p], ["ro", rp], ["x-default", p]]; pairs.set(p, alt); pairs.set(rp, alt); } }
   // TASK-053 (Daniel): the home (the map) has no hreflang, in its <head> or here: /ro/ is the Romanian twin of /site/
   // (the same content), and a ro link from / would be one /ro/ never returns; i18n.mjs only writes the full en/ro/x-default
   // trio, so / keeps its canonical alone
-  writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order.map((e) => ({ ...e, alt: pairs.get(e.path) }))));
-  writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, PROJECTS: PROJ_ALL, SAME_AS }, { ...PAGES, ...(onb ? { "/onboarding/": onb } : {}), ...(onbRo ? { [onbRo.path]: onbRo } : {}) }));
+  // r382 (Mira's audit: Eliade 18 orphaned): the studio's own 2019 floor is not a project on a street (data.mjs has it
+  // only in OFFICES, not in PROJECTS), so no street lists it; the map's Eliade 18 place still opens its page. It leaves
+  // the sitemap (EN and RO) instead of being linked from a street it does not belong to
+  const UNLISTED = new Set(["/work/eliade-18/", roPath("/work/eliade-18/")].filter(Boolean));
+  writeFileSync(join(pub, "sitemap.xml"), sitemapXml(SITE_URL, order.filter((e) => !UNLISTED.has(e.path)).map((e) => ({ ...e, alt: pairs.get(e.path) }))));
+  writeFileSync(join(pub, "llms.txt"), llmsTxt(SITE_URL, { ...DATA, PROJECTS: PROJ_ALL, SAME_AS }, PAGES));
   writeFileSync(join(pub, "llms-full.txt"), llmsFull(SITE_URL, order));
   LASTMOD.save();
 }
@@ -1006,7 +1012,8 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
     if (!n2.includes('class="cz-build"')) n2 = n2.replace(/(<a class="brand" href="\/(?:site\/|ro\/(?:site\/)?)"[^>]*>[\s\S]*?)(<\/a>)/, `$1<span class="cz-build" translate="no" aria-hidden="true">${BUILD_LABEL} build</span>$2`);
   }
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema
-  if (/\.html$/.test(f)) n2 = n2.replace(/<title>([^<]*?) · Cromatic Studios<\/title>/, (m, t0) => (t0.length + 19 > 66 ? `<title>${t0}</title>` : m));
+  // r382 (Mira's audit: 34 titles over 60): the suffix stays only while the whole title fits in 60 (was 66)
+  if (/\.html$/.test(f)) n2 = n2.replace(/<title>([^<]*?) · Cromatic Studios<\/title>/, (m, t0) => (t0.length + 19 > 60 ? `<title>${t0}</title>` : m));
   if (n2 !== t) writeFileSync(p2, n2); } })(pub);
 // r140: /rapoarte, private client reports (site/rapoarte/**, copied as is AFTER the pass above: no footer, no
 // cookie card, no GA4). Unguessable folder names, noindex in the page and in the server headers, never in the sitemap
@@ -1073,6 +1080,27 @@ ${CONSENT /* r211 (Daniel: GA4 on the mini-game): the site's consent card and GA
 }
 // r356: the website becomes the home page, the map moves to /city/ (build/homemove.mjs), before the precompression
 { const { moveHome } = await import("./homemove.mjs"); moveHome({ pub, SITE: SITE_URL }); }
+// r382 (Mira's audit: <meta charset> after the first 1024 bytes on 112 pages, the passes above add scripts and styles
+// at the top of the head): on every page of ours, the charset is the first thing in <head>
+{
+  let n = 0;
+  (function walk(d) {
+    for (const f of readdirSync(d)) {
+      const p = join(d, f);
+      if (statSync(p).isDirectory()) { if (!(d === pub && f === "wp-content")) walk(p); continue; }
+      if (!/\.html$/.test(f)) continue;
+      const t = readFileSync(p, "utf8"), m = /<head\b[^>]*>/i.exec(t);
+      if (!m) continue;
+      const cs = /<meta charset="?utf-8"?\s*\/?>\n?/i;
+      const after = t.slice(m.index + m[0].length);
+      if (/^\s*<meta charset=/i.test(after)) continue;
+      const he = after.search(/<\/head>/i), headPart = he < 0 ? after : after.slice(0, he), rest = he < 0 ? "" : after.slice(he);
+      const o = t.slice(0, m.index + m[0].length) + '\n<meta charset="utf-8">' + headPart.replace(cs, "") + rest;
+      writeFileSync(p, o); n++;
+    }
+  })(pub);
+  console.log(`[head] <meta charset> moved to the top of the head on ${n} page(s)`);
+}
 // precompress text files once, at build time (the server just picks the right variant)
 const COMP = /\.(html|js|css|svg|txt|xml|json|webmanifest|ico)$/;
 (function walk(d) {
