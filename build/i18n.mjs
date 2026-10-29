@@ -195,6 +195,8 @@ html.embed .cs-bar{display:none}
     const sw = `<a class="lang-sw" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}">${label}</a>`;
     if (/<a class="drive-btn[ "]/.test(html)) html = html.replace(/<a class="drive-btn(?=[ "])/, `${sw}<a class="drive-btn`); // r365: the class may carry more (dk-host)
     else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style>${/class="cs-back"/.test(html) ? CASE_BAR : ""}<a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
+    // r387: on the case pages the back link and the language switch sit in a landmark (axe "region")
+    html = html.replace(/(<a class="lang-sw lang-fixed"[^>]*>[^<]*<\/a>)((?:\s|<!--[^>]*-->)*)(<a class="cs-back"[^>]*>[^<]*<\/a>)/, `$2<nav class="cs-nav" aria-label="Cromatic Studios">$3$1</nav>`);
     return html;
   }
 

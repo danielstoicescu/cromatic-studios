@@ -302,7 +302,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     </div>`;
   }).join("");
   const SVC_LINKS = { "Branding & Design": ["brand-strategy", "brand-identity"], "Video Production": ["video-production"], "UX & UI Design": ["websites-apps"], "Growth & Content": ["social-media-content"] };
-  const STREET_INK = { A: "#fff", B: "#fff", C: "#0d0c09", D: "#0d0c09", E: "#0d0c09" };
+  const STREET_INK = { A: "#0d0c09", B: "#0d0c09", C: "#0d0c09", D: "#0d0c09", E: "#0d0c09" }; // r387: ink on the Coffee green (8.9:1) and the Fintech blue (6.4:1), was white (2.22, 2.93)
   const SITE_TITLE = "Cromatic Studios · Branding, web & film studio in Bucharest"; // r356: <= 60 characters (the home page now)
   // r356: <= 155 characters
   const HOME_DESC = "Independent brand studio in Bucharest since 2014. Strategy, identity, websites and apps, film and content for indie brands. One coffee away.";
@@ -375,7 +375,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       }
       if (rows.some((r) => r.length < 3)) return "";
       if (first) wall.lead = rows[0].slice(0, 2).map((x) => x.page); // r381: preloaded in the head (the first paint shows row 1 from its start)
-      const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
+      const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name"${hid ? ' aria-hidden="true"' : ""}>${esc(x.name)}</span></a>`; // r387: the card's name names the link, the cover is alt="" (image-redundant-alt)
       return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
     <div class="pw-rows">${rows.map((l) => `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`).join("")}</div>
     ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We’re here for the brand experiences <span class="pw-heart" aria-hidden="true">💛</span></h1></div>
