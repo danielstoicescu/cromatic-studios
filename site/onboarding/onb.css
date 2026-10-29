@@ -56,12 +56,6 @@ mark { background: var(--y); color: var(--ink); border-radius: 6px; padding: 0 .
 .btn.big { font-size: clamp(17px, 1.7vw, 22px); padding: 18px 30px 20px; }
 .link { font-weight: 800; text-decoration: none; border-bottom: 2px solid currentColor; padding-bottom: 1px; }
 
-/* ---------- the spinning cup (sprite: 24 frames of 160px) ---------- */
-.cup { display: inline-block; width: 34px; height: 34px; background: url(/cup-spin.png) 0 0 / 2400% 100% no-repeat; animation: cupspin 1.9s steps(24, jump-none) infinite; vertical-align: middle; flex: 0 0 auto; }
-.cup.sm { width: 22px; height: 22px; }
-.cup.xl { width: 120px; height: 120px; }
-.cup.xxl { width: clamp(120px, 16vw, 200px); height: clamp(120px, 16vw, 200px); }
-@keyframes cupspin { to { background-position: 100% 0; } }
 
 /* ---------- nav ---------- */
 .nav { position: fixed; z-index: 50; top: 12px; left: 50%; transform: translateX(-50%); width: min(1180px, calc(100% - 24px)); height: 56px; display: flex; align-items: center; gap: 18px; padding: 0 8px 0 14px; border-radius: 999px; background: rgba(251,250,245,.84); color: var(--ink); border: 1.5px solid var(--ink); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); transition: transform .5s var(--eoq), opacity .4s; }
@@ -393,7 +387,6 @@ mark { background: var(--y); color: var(--ink); border-radius: 6px; padding: 0 .
 .bx p { font-size: 16px; opacity: .76; }
 .bx img { border-radius: 16px; border: 1.5px solid var(--ink); aspect-ratio: 16 / 10; object-fit: cover; margin-bottom: 8px; }
 .bx-cup { grid-column: span 2; background: var(--y); align-items: flex-start; }
-.bx-cup .cup.xl { margin: 10px auto 10px; }
 .tab-mock { display: flex; gap: 4px; background: rgba(13,12,9,.12); padding: 6px 6px 0; border-radius: 12px 12px 0 0; width: 100%; }
 .tab-mock .tab { display: flex; align-items: center; gap: 6px; font: 700 13px/1 var(--sans); background: #fff; border-radius: 9px 9px 0 0; padding: 8px 12px; border: 1px solid rgba(13,12,9,.3); border-bottom: 0; }
 .tab-mock .tab.dim { background: transparent; opacity: .55; border: 0; }
@@ -448,7 +441,7 @@ mark { background: var(--y); color: var(--ink); border-radius: 6px; padding: 0 .
 .foot a { text-decoration: none; }
 
 /* reduced motion: no autoplay feel, no sprite spin */
-.rm .cup, .rm .you-sun svg, .rm .scroll-cue, .rm .cop-siren { animation: none !important; }
+.rm .you-sun svg, .rm .scroll-cue, .rm .cop-siren { animation: none !important; }
 :is(.rm, html:not(.js)) .intro[data-scene], :is(.rm, html:not(.js)) .xp { height: auto; }
 :is(.rm, html:not(.js)) .intro-pin, :is(.rm, html:not(.js)) .xp-pin { position: relative; }
 
@@ -714,7 +707,6 @@ html:not(.js) .wcap, html:not(.js) .rcap { visibility: visible; margin-bottom: 1
 .pill-mv { position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: .2em; background: transparent !important; border-color: transparent !important; color: var(--ink); padding: .06em .42em .12em .2em; cursor: default; transition: transform .45s var(--spring); }
 .pill-mv::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; z-index: -2; background: conic-gradient(from var(--mvA), #FED012, #28C840, #119BFE, #B098C8, #F65342, #FED012); animation: mvSpin 3.2s linear infinite; }
 .pill-mv::after { content: ""; position: absolute; inset: calc(.06em + 1px); border-radius: inherit; z-index: -1; background: #fff; transition: background-color .3s ease; }
-.pill-mv .cup { width: .86em; height: .86em; }
 .pill-mv:hover { transform: rotate(-5deg) scale(1.07); }
 .pill-mv:hover::before { animation-duration: 1.1s; }
 .pill-mv:hover::after { background: #FED012; }
@@ -765,27 +757,19 @@ html:not(.js) .wcap, html:not(.js) .rcap { visibility: visible; margin-bottom: 1
 .studio .photos { margin-top: clamp(30px, 4vw, 56px); height: clamp(320px, 40vw, 560px); max-width: 1100px; }
 @media (max-width: 760px) { .studio .photos { height: 112vw; } }
 
-/* the end: the intro's wall of spinning cups fills the screen, then the cups fall */
+/* the end (r396: the wall of spinning cups is gone) */
 .go { position: relative; overflow: hidden; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; }
 .go-in { position: relative; z-index: 1; width: 100%; }
-.go-kz { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-.go.kz-on .go-in { text-shadow: 0 0 18px #FED012, 0 0 36px #FED012; }
-.go-kz .kz { position: absolute !important; inset: 0; z-index: 0 !important; }
-.go-kz :is(.kz-block, .kz-eyebrow, .kz-dots, .kz-marq, .kz-veils, .kz-coffee, .kz-stream, .kz-scrim, .kz-fx, .kz-flash) { display: none !important; }
 
 /* r140c: the chip rows scroll sideways, each chip its own width, the edges fade instead of cutting a label */
 .chip { flex: 0 0 auto; }
 @media (max-width: 760px) {
   .chips { -webkit-mask: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 28px), transparent); mask: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 28px), transparent); }
 }
-/* the end: the cups play behind the title and the buttons, which stay readable and tappable throughout */
-.go-in { z-index: 2; }
-.go-kz { z-index: 0 !important; }
 
 /* r140d (Daniel, round two) */
-/* the end: no bar above the cup */
+/* the end: no bar above it */
 .go { border-top: 0 !important; }
-.go-kz { bottom: auto; height: 100vh; }
 /* "It opens" plain white; "with a coffee." white with its cup and the rainbow on the outline only */
 .open-h .pill-w { box-shadow: .06em .07em 0 var(--ink); }
 .pill-mv::after { inset: calc(.07em + 1.5px); }
@@ -981,10 +965,8 @@ html:not(.czl-on) .czl-x { display: none; }
   .z-worlds .czl-worlds { display: none; }
 }
 /* r373 (Daniel, 28 Oct: "de rezolvat butoanele de pe telefon"): on a 360-400 px phone the bar's "Cromatic City" was cut
-   behind the menu button (the bar is overflow: hidden). Under 400 px the spinning cup steps out of the bar (it is on the
-   page below) and the way in loses its arrow, so the name, RO, "Cromatic City" and the menu all fit whole */
+   behind the menu button (the bar is overflow: hidden). Under 400 px the way in loses its arrow (r396: the bar's spinning cup is gone), so the name, RO, "Cromatic City" and the menu all fit whole */
 @media (max-width: 400px) {
-  .nav .brand .cup { display: none; }
   .nav .nav-cta { flex: 0 0 auto; padding: 10px 11px; font-size: 13.5px; }
   .nav .nav-cta [aria-hidden="true"] { display: none; }
 }

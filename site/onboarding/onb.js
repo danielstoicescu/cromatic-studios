@@ -521,50 +521,6 @@
   frame(performance.now());
   requestAnimationFrame(loop);
 
-  /* ---------- the end: the wall of spinning cups from the intro, then they fall (the kinetic bundle, as on /site/) */
-  const go = $(".go"), goKz = $(".go-kz"), kzSrc = go?.dataset.kz;
-  if (go && goKz && kzSrc && !RM) {
-    const [kjs, kcss] = kzSrc.split("|");
-    let loaded = null, played = false;
-    const load = () => loaded || (loaded = new Promise((res) => {
-      const link = document.createElement("link"); link.rel = "stylesheet"; link.href = kcss; document.head.appendChild(link);
-      const sc = document.createElement("script"); sc.src = kjs; sc.async = true;
-      sc.onload = () => (link.sheet ? res(true) : link.addEventListener("load", () => res(true), { once: true }));
-      sc.onerror = () => res(false);
-      document.body.appendChild(sc);
-    }));
-    const play = async () => {
-      if (played) return;
-      played = true;
-      if (!(await load()) || !window.cromaticKinetic) return;
-      let k = null;
-      const done = () => { go.classList.remove("kz-on"); };
-      // the words, the buttons and the centre cup, in 0..1 of the stage, every frame: the wall parts around them and
-      // the falling cups bounce off them
-      const title = $(".go-h", go), cupEl = $(".go-in > .cup", go), rg = document.createRange();
-      const obstacles = () => {
-        const R = goKz.getBoundingClientRect(), W = R.width || 1, H = R.height || 1, out = [];
-        const box = (r, pad = 0) => ({ x0: (r.left - pad - R.left) / W, x1: (r.right + pad - R.left) / W, y0: (r.top - pad - R.top) / H, y1: (r.bottom + pad - R.top) / H });
-        // the title and the centre cup part the wall; the buttons and the contact line only stop the falling cups
-        const m = phone() ? 0.022 : 0.04;
-        if (title) { rg.selectNodeContents(title); for (const r of rg.getClientRects()) if (r.width > 4) out.push({ ...box({ left: r.left, right: r.right, top: r.top + r.height * 0.12, bottom: r.bottom - r.height * 0.06 }), m }); }
-        for (const b of go.querySelectorAll(".go-btns .btn, .go-contact")) out.push({ ...box(b.getBoundingClientRect(), 3), part: false });
-        if (cupEl) { const r = cupEl.getBoundingClientRect(); out.push({ x: (r.left + r.width / 2 - R.left) / W, y: (r.top + r.height * 0.56 - R.top) / H, r: (r.width * 0.4) / H, m: m * 1.2 }); }
-        return out;
-      };
-      try { k = window.cromaticKinetic(done, async () => {}, { drop: true, lite: phone(), obstacles }); } catch { return; }
-      // the stage lives in this section, not over the page; only the cups play (the words skip straight to them)
-      const st = document.body.querySelector(":scope > .kz");
-      if (st) goKz.appendChild(st);
-      go.classList.add("kz-on");
-      try { await k.warm?.(); } catch {}
-      k.resume();
-      requestAnimationFrame(() => k.finish());
-    };
-    new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) load(); }, { rootMargin: "120% 0px" }).observe(go);
-    new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting && e.intersectionRatio > 0.55) play(); }, { threshold: [0.56] }).observe(go);
-  }
-
   /* ---------- r138k: the buttons into the map are windows onto it ----------
      Behind the glass the city pans with the pointer, as if you were looking around through it (not with reduced
      motion; then it simply stays centred). */

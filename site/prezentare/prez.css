@@ -82,11 +82,6 @@ img { transition: opacity .4s ease; }
 .rm .slide .a[data-r]:not(.rv):not(.keep) { opacity: 0 !important; }
 .rm .slide .pill.tilt-l { transform: rotate(-2.2deg) !important; } .rm .slide .pill.tilt-r { transform: rotate(1.6deg) !important; }
 
-/* ---------- the spinning cup (the site's sprite) ---------- */
-.cup { display: inline-block; width: calc(var(--u) * 2); height: calc(var(--u) * 2); background: url(/cup-spin.png) 0 0 / 2400% 100% no-repeat; animation: cupspin 1.9s steps(24, jump-none) infinite; flex: 0 0 auto; }
-.cup.xxl { width: calc(var(--u) * 9); height: calc(var(--u) * 9); }
-@keyframes cupspin { to { background-position: 100% 0; } }
-
 /* ---------- chrome ---------- */
 .chrome { position: fixed; left: 0; right: 0; z-index: 10; display: flex; align-items: center; gap: calc(var(--u) * 1); padding: 0 calc(var(--u) * 2.2); color: var(--cfg, var(--paper)); pointer-events: none; transition: color .45s ease, opacity .5s ease; }
 .top { top: 0; height: calc(var(--u) * 4); justify-content: space-between; }
@@ -133,7 +128,6 @@ body.idle .bot .nb { opacity: 0; }
 
 /* 1 · cover */
 .cover { display: flex; flex-direction: column; align-items: flex-start; position: relative; z-index: 1; }
-.cover .cup { margin-bottom: calc(var(--u) * 1.4); margin-left: calc(var(--u) * -1); }
 .cover .lead { font-size: calc(var(--u) * 1.8); }
 .cover-foot { margin-top: calc(var(--u) * 3.6); font-size: max(10px, calc(var(--u) * .72)); opacity: .5; }
 .turn { display: inline-block; margin-top: .08em; transition: transform .22s ease, opacity .22s ease !important; }
@@ -450,7 +444,6 @@ body.idle .bot .nb { opacity: 0; }
 .st-t { grid-column: 2 / 4; font: 800 calc(var(--u) * 1.1)/1.2 var(--sans); opacity: .75; padding-left: calc(var(--u) * 1); }
 
 /* thank you */
-.thanks .cup { margin-left: calc(var(--u) * -1); margin-bottom: calc(var(--u) * .6); }
 .thanks .d1 { font-size: calc(var(--u) * 9); }
 .ty { display: grid; grid-template-columns: repeat(3, auto); gap: calc(var(--u) * 1.4); margin-top: calc(var(--u) * 3); }
 .ty li { display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * .9); background: #fff; border: var(--ol) solid var(--ink); border-radius: calc(var(--u) * 1.4); padding: calc(var(--u) * 1.3) calc(var(--u) * 1.8) calc(var(--u) * 1.5); font: 800 calc(var(--u) * 1.45)/1.15 var(--sans); box-shadow: var(--sh) var(--sh) 0 var(--ink); }
@@ -469,6 +462,8 @@ body.idle .bot .nb { opacity: 0; }
 
 /* a narrow or portrait screen (a phone, a tablet upright): the same slides, one column */
 @media (max-aspect-ratio: 1/1) {
+  /* r396: the cup above the cover's title is gone; on a tall screen its room stays, so the title keeps clear of the shapes */
+  .cover { padding-top: calc(var(--u) * 10.4); }
   :root { --u: min(1.9vw, 1.1svh); }
   .slide > .in { width: 100%; height: 100%; padding: calc(var(--u) * 9) calc(var(--u) * 5) calc(var(--u) * 9); }
   .split { grid-template-columns: 1fr; gap: calc(var(--u) * 3); height: auto; }

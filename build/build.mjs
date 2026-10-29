@@ -843,9 +843,8 @@ const roPaths = [];
   // switch in their own header, next to the drive button (not the corner pill the case pages have)
   if (ONB) {
     const file = join(pub, "onboarding", "index.html"), rp = roPath("/onboarding/");
-    // r140: its last section plays the intro's wall of cups: it gets the kinetic bundle the website uses
+    // r396 (Daniel: no spinning cups but the favicon's): its last section no longer plays the intro's wall of cups (r140)
     let en = readFileSync(file, "utf8");
-    if (kz && !en.includes("data-kz=")) en = en.replace('<section class="go" id="go"', `<section class="go" id="go" data-kz="${kz.js}|${kz.css}"`);
     // r232 (Daniel, Lottie: /onboarding/): its explainers, drawn by the site's Lottie layer (src/lottie-ui: the shared player's
     // host and the page's own, one hashed file) from the pieces' JSON (window.__CZL_CFG, as on the map); the Romanian copy
     // keeps them (scripts are not translated)

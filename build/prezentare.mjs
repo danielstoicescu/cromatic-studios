@@ -80,7 +80,6 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     S("ink", c.cover.part, c.cover.title, `
   <div class="shapes" aria-hidden="true"><i class="sh-p a"></i><i class="sh-r a"></i><i class="sh-c a"></i><i class="sh-d a"></i></div>
   <div class="cover">
-    <i class="cup xxl a" aria-hidden="true"></i>
     ${eb(c.cover.eyebrow)}
     <h1 class="d1 a">${c.cover.h1} <span class="turn pill pill-y tilt-l" data-words="${esc(JSON.stringify(c.cover.words))}">${c.cover.words[0]}</span></h1>
     ${lead(c.cover.lead)}
@@ -399,7 +398,6 @@ export async function buildPrezentare({ root, pub, mediaMap, COVERS, canvases, R
     // ---------- last · thank you ----------
     S("yellow", c.thanks.part, c.thanks.title, `
   <div class="stack mid thanks">
-    <i class="cup xxl a" aria-hidden="true"></i>
     <h2 class="d1 a">${c.thanks.h}</h2>
     <ul class="ty">${c.thanks.items.map(([col, k, href, t]) => `<li class="a"><span class="pill pill-${col} sm">${k}</span>${href ? `<a href="${href}"${href.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>${t}</a>` : `<span>${t}</span>`}</li>`).join("")}</ul>
   </div>`, "s-thanks");
