@@ -835,7 +835,9 @@
       if (!D.ready) {
         if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500);
         // beta 3.xx: the sound's context in the first idle moment (see SND.prep), not in the first key press
-        (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => SND.prep(), { timeout: 1500 });
+        // r399: and only once the opening is over (window.__czIntro.onEnd): under it the context's 100+ ms task held the page
+        const sndPrep = () => (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => SND.prep(), { timeout: 1500 }), Z = window.__czIntro;
+        if (Z && Z.onEnd && !Z.done) Z.onEnd(() => setTimeout(sndPrep, 600)); else sndPrep();
       }
       if (FREE) return freeTick(dt, now); // round 4: the arcade car
       const L = curL();

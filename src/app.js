@@ -18,6 +18,11 @@
   // between its steps; czRun goes on until the slice has had the thread for czBudget ms, then hands it back (a message,
   // not a timer: no 4 ms clamp, and other tasks, input and the loader's frames, get their turn) and carries on.
   var czBudget = 40, czSliceAt = 0;
+  // r399 (audit 29 Oct, /city/ on a phone: TBT 4 s, the boot's 40 ms slices are 160 ms long tasks on a 4x slower
+  // phone): while the opening plays (it draws in its worker; nothing on this thread is waited on) and for the jobs that
+  // follow it onto the map (fxLater, the crayon textures), the slices are 8 ms, so a tap on Skip, the cookie card or the
+  // first key is never held for long; 10 s after the opening, the map's own jobs (world switches) take 40 ms again
+  try { const Z = window.__czIntro; if (Z && Z.onEnd && !Z.done) { czBudget = 8; Z.onEnd(() => setTimeout(() => { czBudget = 40; }, 10000)); } } catch (e) { czBudget = 40; }
   var czYield = () => new Promise((res) => { const ch = new MessageChannel(); ch.port1.onmessage = () => { ch.port1.onmessage = null; res(); }; ch.port2.postMessage(0); });
   var czDue = () => performance.now() - czSliceAt >= czBudget;
   // a point where an async job may hand the thread back (only once its slice is used up)
@@ -44966,7 +44971,8 @@ void main(){
         window.__bootT.slices = { busy: Math.round(czStat.busy), n: czStat.n, away: Math.round(czStat.away) }; // beta 3.xx: tests
         // beta 3.xx (the first drive): the sound's context is made while the opening still has its words to play (nothing else
         // needs the main thread then); otherwise nav2 makes it in its first idle moment on the map (see nav2's SND.prep)
-        try { if (CZI?.phase?.() === "words") (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => { try { nav2?.snd?.prep?.(); } catch (e) {} }, { timeout: 1500 }); } catch (e) {}
+        // r399: no longer under the words: new AudioContext() alone is a 100-130 ms task (the audio service), the longest of
+        // the boot; nav2 makes it in its first idle moment once the opening is over (see nav2's tick)
         introReadyRes?.();
         if (CZI) CZI.ready(); else { mapEndIntro(); kineticLater(); }
       };

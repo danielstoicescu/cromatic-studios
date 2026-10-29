@@ -20,9 +20,11 @@ import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
 import { optimizeImages, socialCards, canvasVariants, wallCovers } from "./images.mjs"; // r139d: canvasVariants; r382: wallCovers
 import { makeI18n, roPath } from "./i18n.mjs";
+import { purgeCss } from "./purgecss.mjs"; // r399
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = (f) => join(root, "src", f);
+const siteSrcEarly = (f) => join(root, "site", f); // r399 (the CSS purge reads the site's script)
 // r135: live on the main domain (Daniel, 2026-10-12): drive.cromaticstudios.com and www. answer with a 301 to it
 const SITE_URL = (process.env.SITE_URL || "https://cromaticstudios.com").replace(/\/$/, "");
 // r139c (N51): how many case studies there are, counted from their sources (the "34" in the copy was written by hand)
@@ -244,6 +246,19 @@ jsOut = steamMedia(jsOut);
 // bar shows its address (/work/<page>/, /play/gloves/, r161), and a picture loaded then (a phone turned) must not be
 // looked for under it
 jsOut = jsOut.replace(/"assets\/([0-9a-f]{10}\.(?:png|jpe?g|webp|gif|svg|mp4|webm))"/g, '"/assets/$1"');
+// r399 (audit 29 Oct: styles.css 383 KB, 82-86% unused on /city/): rules no page text can ever match leave the map's
+// stylesheet (build/purgecss.mjs). The text: the bundle as shipped, the page's HTML parts, the loader, and every build
+// module and site script (anything that might write a class into the map's page), read whole; SAFE: names the code builds
+// from parts the purge cannot see (none needed today; add a pattern here when a rule must stay)
+{
+  const SAFE = [];
+  const bdir = join(root, "build"), read = (f) => { try { return readFileSync(f, "utf8"); } catch { return ""; } };
+  const corpus = [jsOut, head, content, homeWork(), read(join(src("intro"), "boot.js")), ...readdirSync(bdir).filter((f) => f.endsWith(".mjs")).map((f) => read(join(bdir, f))), read(siteSrcEarly("site.js")), read(siteSrcEarly("data.mjs"))].join("\n");
+  const before = cssOut.length, r = purgeCss(cssOut, corpus, { safe: SAFE });
+  cssOut = r.css;
+  if (process.env.CZ_PURGE_LOG) writeFileSync(process.env.CZ_PURGE_LOG, JSON.stringify(r.gone)); // (QA: the selectors dropped)
+  console.log(`[css] the map's stylesheet: ${r.dropped} rules no page can match dropped, ${(before / 1024).toFixed(0)} -> ${(cssOut.length / 1024).toFixed(0)} KB`);
+}
 const jsName = `assets/app.${hash(jsOut)}.js`, cssName = `assets/styles.${hash(cssOut)}.css`;
 // r223 (Daniel, the Lottie intro A as the site's loader): src/intro holds the opening (intro-{desktop,phone}.json and the
 // worlds' pictures, made by design/intro-lottie/_source/build2.mjs), the player (lottie-web 5.12.2's worker build, MIT,
@@ -257,7 +272,16 @@ const czlMapCfg = (c) => ({ ...c, j: Object.fromEntries(Object.entries(c.j).filt
     const { transformSync } = await import("esbuild");
     const dir = src("intro");
     const put = (name, buf) => { const dot = name.lastIndexOf("."), rel = `assets/${name.slice(0, dot)}.${hash(buf)}${name.slice(dot)}`; writeFileSync(join(pub, rel), buf); return "/" + rel; };
-    const player = put("lottie-worker.js", Buffer.from(transformSync(readFileSync(join(dir, "vendor", "lottie_worker.js"), "utf8"), { minify: true, target: "es2017", legalComments: "inline" }).code));
+    // r399 (audit 29 Oct: lottie-worker.js was 68 KB of script on the page's thread, 67 of them unused there): the worker's
+    // own code (workerContent, the whole of lottie that draws) is its own file, which the worker loads by its address; the
+    // page's file keeps only the proxy that talks to it (~5 KB). Same code, the same worker; it was a Blob of the same text
+    let LW = readFileSync(join(dir, "vendor", "lottie_worker.js"), "utf8");
+    { const a = LW.indexOf("\tfunction workerContent() {"), b = LW.indexOf("\nfunction createWorker(fn) {"), k = "var workerInstance = createWorker(workerContent);";
+      if (a > 0 && b > a && LW.includes(k)) {
+        const wurl = put("lottie-worker-w.js", Buffer.from("/*! lottie-web 5.12.2 (worker build) · MIT License · Copyright (c) 2015 Bodymovin · https://github.com/airbnb/lottie-web */\n" + transformSync("(" + LW.slice(a, b).trim() + "());", { minify: true, target: "es2017", legalComments: "none" }).code));
+        LW = LW.slice(0, a) + LW.slice(b).replace(k, `var workerInstance = new Worker(${JSON.stringify(wurl)});`);
+      } else console.warn("[build] lottie worker: workerContent not found, the player keeps its inline worker"); }
+    const player = put("lottie-worker.js", Buffer.from(transformSync(LW, { minify: true, target: "es2017", legalComments: "inline" }).code));
     const cfg = { player, json: {}, pjson: {}, mk: {}, atlas: {}, size: {}, pill: {}, first: {}, brand: {} };
     for (const ab of ["desktop", "phone"]) {
       const j = JSON.parse(readFileSync(join(dir, `intro-${ab}.json`), "utf8"));
