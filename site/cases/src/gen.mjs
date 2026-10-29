@@ -278,7 +278,7 @@ figure.only-sm{display:none}
 .mix-prod .frame>img{object-fit:contain;padding:clamp(14px,9%,56px);transform:rotate(var(--tilt,0deg));mix-blend-mode:multiply}
 .mix-prod:hover .frame>img{transform:rotate(0deg) scale(1.04)}
 .mix-card .frame{display:grid;place-items:center}
-.mix-card .frame>img{width:auto;height:auto;max-width:76%;max-height:72%;padding:0;object-fit:fill;mix-blend-mode:normal;border-radius:8px;box-shadow:0 18px 34px -16px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.06)}
+.mix-card .frame>img{width:auto;height:auto;max-width:76%;max-height:72%;padding:0;object-fit:fill;mix-blend-mode:normal;border-radius:0;box-shadow:none}
 .mix-cell:not(.mix-prod):hover .frame>img{transform:scale(1.03)}
 .mix-tag{position:absolute;left:12px;top:12px;padding:3px 12px 5px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-small);line-height:var(--lh-small);font-weight:800;transform:rotate(-4deg);pointer-events:none}
 .mix-text{border-radius:var(--radius-m);background:var(--field);color:var(--field-fg);padding:clamp(18px,2.2vw,34px);display:flex;align-items:flex-end}

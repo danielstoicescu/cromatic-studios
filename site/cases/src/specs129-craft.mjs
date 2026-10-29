@@ -52,8 +52,8 @@ export const CRAFT = {
             { img: m("event-54"), alt: "Two team members brewing coffee", at: [1, 6, 1, 9], pos: "50% 40%", sm: 2, smr: 0.8 },
             { img: m("patch"), alt: "Embroidered Craft Coffee patch: The finest equipment", contain: true, bg: "#dcebfa", tilt: -5, tag: "Badge system", at: [6, 10, 1, 5], sm: 1, smr: 1 },
             { img: m("event-12"), alt: "A team member at the brew bar", at: [10, 13, 1, 6], pos: "50% 30%", sm: 1, smr: 1 },
-            { img: m("logo"), alt: "The Craft Coffee wordmark in blue", contain: true, card: true, bg: "#e63445", tilt: -3, tag: "Logo", at: [6, 10, 5, 9], sm: 1, smr: 1 },
-            { img: m("tag"), alt: "Craft Coffee service tag", contain: true, card: true, bg: "#dcebfa", tilt: 5, at: [10, 13, 6, 9], sm: 1, smr: 1 }
+            { img: m("logo-white"), alt: "The Craft Coffee logo in blue, on white", contain: true, bg: "#ffffff", tag: "Logo", at: [6, 10, 5, 9], sm: 1, smr: 1 },
+            { img: m("stamp"), alt: "The Craft Coffee stamp: the finest equipment", bg: "#ffffff", at: [10, 13, 6, 9], sm: 1, smr: 1 }
           ],
           cap: "The badge and the wordmark, with the team behind the bar"
         },
