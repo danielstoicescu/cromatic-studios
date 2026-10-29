@@ -3,8 +3,9 @@
 // for video) plus one endpoint: POST /api/boarding, which emails the boarding pass to the studio
 // and a copy to the passenger.
 import http from "node:http";
+import net from "node:net";
 import https from "node:https";
-import { readFileSync, readdirSync, statSync, appendFileSync, mkdirSync, createReadStream } from "node:fs";
+import { readFileSync, readdirSync, statSync, appendFileSync, mkdirSync, createReadStream, openSync, readSync, closeSync } from "node:fs";
 import { join, extname, dirname, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
@@ -34,7 +35,18 @@ const TYPES = {
 const typeFor = (url, ext) => (ext === ".webm" && url.includes("/polite-radio/") ? "audio/webm" : TYPES[ext]);
 const COMPRESS = new Set([".html", ".js", ".css", ".svg", ".json", ".txt", ".xml", ".webmanifest", ".ico"]);
 
-// everything is small enough to hold in memory, compressed once at start
+// Text (html, js, css, ...) and small binaries live in memory, compressed once at start. r400 (Mira's audit, finding 9):
+// binaries from 64 KB up (pictures, films) stay on disk and stream, with the same ETag as before (sha1 of the bytes,
+// read in 1 MB chunks). Holding all ~540 MB in memory made one process ~575 MB RSS on a 1 GB box shared with the
+// WordPress, so a graceful reload (old and new process side by side for a few seconds) did not fit; now ~240 MB at
+// start (measured on the 29 Oct build).
+const MEM_MAX = 64 * 1024;
+const chunk = Buffer.allocUnsafe(1 << 20);
+function sha1File(p) {
+  const h = createHash("sha1"), fd = openSync(p, "r");
+  try { for (let n; (n = readSync(fd, chunk, 0, chunk.length, null)) > 0;) h.update(chunk.subarray(0, n)); } finally { closeSync(fd); }
+  return h.digest("base64url").slice(0, 16);
+}
 const files = new Map();
 (function load(dir) {
   for (const name of readdirSync(dir)) {
@@ -42,11 +54,12 @@ const files = new Map();
     if (statSync(p).isDirectory()) { load(p); continue; }
     if (p.endsWith(".br") || p.endsWith(".gz")) continue;
     const ext = extname(p).toLowerCase(), url = "/" + p.slice(ROOT.length + 1).split("\\").join("/");
-    // r134h: big files (the old site's case-study PDF, long films) stay on disk and stream; the rest lives in memory
-    const st = statSync(p);
-    if (st.size > 8e6 && !COMPRESS.has(ext)) { files.set(url, { disk: p, size: st.size, type: typeFor(url, ext) || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}"` }); continue; }
+    const st = statSync(p), type = typeFor(url, ext) || "application/octet-stream", immutable = url.startsWith("/assets/");
+    // r134h: big files (the old site's case-study PDF, long films) stay on disk and stream, ETag from size and time
+    if (st.size > 8e6 && !COMPRESS.has(ext)) { files.set(url, { disk: p, size: st.size, type, immutable, etag: `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}"` }); continue; }
+    if (st.size > MEM_MAX && !COMPRESS.has(ext)) { files.set(url, { disk: p, size: st.size, type, immutable, etag: `"${sha1File(p)}"` }); continue; }
     const buf = readFileSync(p);
-    const f = { buf, type: typeFor(url, ext) || "application/octet-stream", immutable: url.startsWith("/assets/"), etag: `"${createHash("sha1").update(buf).digest("base64url").slice(0, 16)}"` };
+    const f = { buf, type, immutable, etag: `"${createHash("sha1").update(buf).digest("base64url").slice(0, 16)}"` };
     if (COMPRESS.has(ext)) {
       // precompressed by the build; fall back to compressing here if a variant is missing
       try { f.br = readFileSync(p + ".br"); } catch { f.br = zlib.brotliCompressSync(buf); }
@@ -608,9 +621,38 @@ Preferred-Languages: en, ro
 Canonical: https://${PRIMARY_HOST || "cromaticstudios.com"}/.well-known/security.txt
 `;
 
-http.createServer((req, res) => {
+// r400 (Mira's audit, finding 9: every deploy gave ~10-20 s of HTTP 503): pm2 runs this app in cluster mode with ONE
+// instance (ecosystem.config.cjs), so `pm2 reload` starts the new release's process next to the old one while the pm2
+// daemon keeps port 8081 open, waits for our "ready" message, and only then asks the old process to stop. Before, the
+// deploy did pm2 delete + start: nothing listened on 8081 until the new process had read the whole build, and the
+// server's Apache proxy answered 503 meanwhile. One instance, not two: the box has 1 CPU and 1 GB shared with the
+// WordPress, and /ops (login codes, sessions) and The Core (write queues) keep state in this process's memory.
+// Lifecycle: listening -> process.send("ready") -> serving; SIGINT/SIGTERM (or pm2's "shutdown" message) -> /healthz
+// says 503, the server stops taking new connections, requests in flight and requests still arriving on open keep-alive
+// connections are answered (with Connection: close, so each connection closes after its answer), idle connections
+// close on their 5 s keep-alive timeout, then the process exits; after DRAIN_MS it exits anyway (pm2 kill_timeout is longer).
+let ready = false, draining = false;
+const DRAIN_MS = Number(process.env.DRAIN_MS || 10000);
+const conns = new Map(); // socket -> requests in flight on it
+function track(req, res) {
+  const s = req.socket;
+  conns.set(s, (conns.get(s) || 0) + 1);
+  if (draining) res.setHeader("Connection", "close");
+  let done = false;
+  const end = () => {
+    if (done) return; done = true;
+    const n = (conns.get(s) || 1) - 1;
+    if (conns.has(s)) conns.set(s, n);
+    if (draining && n <= 0) s.end();
+  };
+  res.on("finish", end); res.on("close", end);
+}
+const server = http.createServer((req, res) => {
+  track(req, res);
   // r136 (N45): the public health check says only that the site is up; the mail details need the leads key
+  // r400: and it is a readiness probe: 503 until the server listens and from the moment it starts draining
   if (req.url === "/healthz" || req.url.startsWith("/healthz?")) {
+    if (!ready || draining) return send(res, 503, { ok: false, ready, draining });
     const key = new URL(req.url, "http://x").searchParams.get("key") || "";
     const full = !!process.env.LEADS_KEY && key.length >= 16 && key === process.env.LEADS_KEY;
     return send(res, 200, full ? { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: true, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail, oai: oaiState } : { ok: true, oai: oaiState });
@@ -672,4 +714,23 @@ http.createServer((req, res) => {
   if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res).catch(() => send(res, 500, { ok: false }));
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405); return res.end(); }
   serve(req, res);
-}).listen(PORT, () => console.log(`Cromatic Navigation Mode on :${PORT} (${files.size} files)`));
+});
+server.on("connection", (s) => { conns.set(s, 0); s.on("close", () => conns.delete(s)); });
+server.listen(PORT, process.env.LISTEN_HOST || undefined, () => { // LISTEN_HOST: the deploy's preflight run binds 127.0.0.1 only
+  ready = true;
+  console.log(`Cromatic Navigation Mode on :${PORT} (${files.size} files, ${Math.round(process.memoryUsage().rss / 1048576)} MB)`);
+  if (process.send) process.send("ready"); // pm2 wait_ready: the reload goes on only now
+});
+function shutdown(why) {
+  if (draining) return;
+  draining = true;
+  console.log(`[shutdown] ${why}: draining ${conns.size} connection(s)`);
+  // net's close, not http's: since Node 19 http.Server.close() also cuts idle keep-alive connections (see below)
+  net.Server.prototype.close.call(server, () => { console.log("[shutdown] all requests answered, bye"); process.exit(0); });
+  // idle keep-alive connections are NOT cut here: a request the proxy sends on one a moment later would meet a reset
+  // (a 502/503 for that visitor). They get their answer (with Connection: close) or close on Node's 5 s idle timeout.
+  setTimeout(() => { console.warn(`[shutdown] ${conns.size} connection(s) still open after ${DRAIN_MS} ms, exiting`); process.exit(0); }, DRAIN_MS).unref();
+}
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("message", (m) => { if (m === "shutdown") shutdown("shutdown message"); }); // pm2 shutdown_with_message / Windows

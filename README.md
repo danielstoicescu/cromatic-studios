@@ -25,7 +25,8 @@ State when this file was written: **live 4.10** (r296, `3559138`); beta = live +
 | `core30/` | **The Core 3.0** (brand discovery tool), built in `~/cromatic-core` and copied here; see `core30/README.md`. Do not edit it here |
 | `ops/` | the **/ops** mirror of the Cromatic Ops dashboard (`ops.mjs` = API + passwordless login, `www/` = app, `users.json` = who may log in) |
 | `server.js` | the Node server (all hosts, all routes below) |
-| `app.js` | the pm2 entry on the server: loads `.env`, port 8081, imports `server.js` |
+| `app.js` | the app's entry: loads `.env`, port 8081, imports `server.js` |
+| `ecosystem.config.cjs`, `deploy/` | how pm2 runs it (since r400): cluster mode, ONE instance, `wait_ready`, started through the deploy symlink (`deploy/pm2-entry.cjs` -> `app.js`); `deploy/pm2-reload.mjs` is the post-symlink step (preflight, then graceful `pm2 reload`) |
 | `mail-template.js` | the boarding pass email |
 | `design/` | design sources and QA. `design/lottie-ui/_source/tools/qa/` holds the Playwright QA scripts (regression, fps, game, pill, welcome, ...) |
 | `Dockerfile`, `bunnyshell.yaml` | **unused** (kept from the first setup; production is Bunnyshell Cloud with deploy steps, not Environments/Docker) |
@@ -43,7 +44,7 @@ State when this file was written: **live 4.10** (r296, `3559138`); beta = live +
 | `/thecore30/<id>?t=<token>`, `/thecore30/lite`, `/thecore30/blank`, `/api/core30/*` | The Core 3.0 (answers live outside the release in `CORE30_DATA`) |
 | `/ops`, `/api/ops/*` | the Ops mirror (email + emailed code login, data in `OPS_DATA`) |
 | `POST /api/boarding` | the boarding pass form (mail to the studio + the passenger, lead saved) |
-| `/api/csp-report*`, `/api/ctx`, `/api/leads`, `/healthz` | CSP reports, internal-IP flag, leads (key), health |
+| `/api/csp-report*`, `/api/ctx`, `/api/leads`, `/healthz` | CSP reports, internal-IP flag, leads (key), health (r400: a readiness probe, 503 until the process listens and while it drains on shutdown) |
 
 Hosts: `cromaticstudios.com` is the primary host (`PRIMARY_HOST`); `www.` and `drive.` 301 to it. `beta.cromaticstudios.com` (`BETA_HOST`) serves the beta build from `public-beta/` (never indexed, built without GA); if no beta build exists it shows the live site with `noindex`. `/ops` and The Core answer on both hosts.
 
@@ -89,7 +90,7 @@ Every round gets an r-number in its commit message (`r296: ...`, follow-ups `r29
    BASE=<url> node design/lottie-ui/_source/tools/qa/patrol.mjs   # prints {"ok":true,...}, exits 1 on failure
    ```
    The script lives on branch `patrol-pullover-fix` (not on main yet): `git show origin/patrol-pullover-fix:design/lottie-ui/_source/tools/qa/patrol.mjs > design/lottie-ui/_source/tools/qa/patrol.mjs` next to `lib.mjs`.
-5. **After a deploy**: `/healthz` answers `{"ok":true}`, the label under the logo reads the new version, `/api/core30/simplu21/config?t=x` answers **403** (The Core is mounted), `/ops` shows its login, `beta.` shows "β".
+5. **After a deploy**: `/healthz` answers `{"ok":true}` (a 503 `{"ok":false}` means the process is starting or draining), the label under the logo reads the new version, `/api/core30/simplu21/config?t=x` answers **403** (The Core is mounted), `/ops` shows its login, `beta.` shows "β".
 
 ## Deploy (Bunnyshell Cloud, manual)
 
@@ -99,11 +100,11 @@ There is **no auto-deploy**. A deploy is a manual click:
 
 1. Push to `origin/main` (only approved work, see above).
 2. Open the app's deployment overview in Bunnyshell, check the deploy pointer field (`deployPointer`) is **main**, click **DEPLOY**, then **Deploy** in the "Are you sure?" modal. If another deployment is running the form is absent; wait. A "Deployment started" toast can be stale: confirm "In progress..." under the app name.
-3. The steps (edited in the Bunnyshell UI, must stay ASCII-only): pre-symlink = `npm ci` + build of live into `public/` + beta (copy, apply `beta/nav2.patch`, build without GA into `public-beta/`, hard links to dedupe), keeping 2 releases; post-symlink = pm2 restart of `app.js`.
+3. The steps (edited in the Bunnyshell UI, must stay ASCII-only): pre-symlink = `npm ci` + build of live into `public/` + beta (copy, apply `beta/nav2.patch`, build without GA into `public-beta/`, hard links to dedupe), keeping 2 releases; post-symlink = `cd /var/www/cromatic_drive/app && node deploy/pm2-reload.mjs` (since r400; before: pm2 delete + start of `app.js`, which gave ~10-20 s of 503 on every deploy). The script first boots the new release once on `127.0.0.1:18081` (preflight: `/healthz` must answer 200 within 90 s, else pm2 is left alone, the old process keeps serving and the deploy fails), then runs `pm2 reload ecosystem.config.cjs --update-env`: pm2 keeps port 8081 open, starts the new process beside the old one, waits for its "ready", and only then lets the old one finish its requests and exit. No request fails. The first deploy after r400 moves the old fork-mode app to cluster mode (one last short gap). Logs: `pm2 logs cromatic-drive`.
 4. Wait until the live `assets/app.<hash>.js` changes, then run the post-deploy checks above.
 5. **Record the deploy** in `~/cromatic-ops/refs/deploy-journal.md` (time +03:00, version, commit, what shipped, who approved).
 
-Secrets (SMTP, leads key, The Core admin key, ops bridge key, CSP stats key, ...) are Bunnyshell Secrets or the server's shared `.env`; they reach pm2 as environment variables. They are never committed, never printed in logs (the server logs only which variable a key came from), and never pasted in chat. Variable names the server reads: `PORT`, `PRIMARY_HOST`, `BETA_HOST`, `BETA_HOST2`, `BETA_DIR`, `PUBLIC_DIR`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_HELO`, `MAIL_FROM`, `MAIL_TO`, `MAIL_SUBJECT_TAG`, `LEADS_DIR`, `LEADS_KEY`, `CORE30_DATA`, `CORE30_ADMIN_KEY`, `OPS_DATA`, `CSP_STATS_KEY`, `INTERNAL_IPS`, `OAI_PIXEL_ID`, `OAI_CONVERSIONS_KEY`, `OLD_WP_UPLOADS`, `ACME_ROOT`.
+Secrets (SMTP, leads key, The Core admin key, ops bridge key, CSP stats key, ...) are Bunnyshell Secrets or the server's shared `.env`; they reach pm2 as environment variables. They are never committed, never printed in logs (the server logs only which variable a key came from), and never pasted in chat. Variable names the server reads: `PORT`, `PRIMARY_HOST`, `BETA_HOST`, `BETA_HOST2`, `BETA_DIR`, `PUBLIC_DIR`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_HELO`, `MAIL_FROM`, `MAIL_TO`, `MAIL_SUBJECT_TAG`, `LEADS_DIR`, `LEADS_KEY`, `CORE30_DATA`, `CORE30_ADMIN_KEY`, `OPS_DATA`, `CSP_STATS_KEY`, `INTERNAL_IPS`, `OAI_PIXEL_ID`, `OAI_CONVERSIONS_KEY`, `OLD_WP_UPLOADS`, `ACME_ROOT`; since r400 also `DRAIN_MS` (shutdown drain, default 10000), `LISTEN_HOST`; the deploy script reads `CZ_APP_PATH` (default `/var/www/cromatic_drive/app`), `PREFLIGHT=0` (skip the preflight), `PREFLIGHT_PORT` (18081), `PM2_BIN`.
 
 ## Working in this repo
 
