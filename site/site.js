@@ -496,15 +496,21 @@
 // Every 6-10 s ONE visible screen loses its signal (snow, a drop, the horizontal hold slipping, the picture rolling),
 // now in the shader. No WebGL2, reduced motion, a lost context: the flat wall (A). ?glitch=1 (or ?glitch=snow,roll)
 // glitches at once and often; ?crt=R,d tries other radii and distances (both in diagonals).
+// r382 (Mira's audit: on software GL, SwiftShader, the wall took the whole main thread, 260 long tasks, 12.6 fps): the
+// context is asked with failIfMajorPerformanceCaveat, so a browser without a real GPU says no and keeps the flat wall;
+// the canvas is drawn at 1.5x at most; phones keep 384 x 260 textures (desktop 560 x 380), each cover scaled to it
+// from whichever file the browser chose (the covers have a srcset now); and when the CRT stops (a lost context, a
+// failed link) its hook leaves the wall's loop and its listeners go, so nothing of it runs any more.
 (function () {
   var W = window.__czWall, wall = document.querySelector(".pwall.pw-first");
   if (!W || !W.go || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   var cv = document.createElement("canvas"), gl = null;
-  try { gl = cv.getContext("webgl2", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false }); } catch (e) {}
+  try { gl = cv.getContext("webgl2", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: true, powerPreference: "low-power" }); } catch (e) {}
   if (!gl) return;
   var phone = matchMedia("(max-width: 700px)").matches, Q = new URLSearchParams(location.search);
   var geo = (Q.get("crt") || "").split(",").map(Number), RK = geo[0] > 0.3 ? geo[0] : 0.85, DK = geo[1] > 0.5 ? geo[1] : 2.0;
-  var DPR = Math.min(devicePixelRatio || 1, 2), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 6 : 8, RAD = phone ? 10 : 12;
+  var TW = phone ? 384 : 560, TH = phone ? 260 : 380, TL = Math.floor(Math.log2(TW)) + 1, up2d = null;
+  var DPR = Math.min(devicePixelRatio || 1, 1.5), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 6 : 8, RAD = phone ? 10 : 12;
   cv.className = "pw-gl"; cv.setAttribute("aria-hidden", "true");
   var VS = "#version 300 es\nlayout(location=0) in vec2 aC;layout(location=1) in vec4 iBox;layout(location=2) in vec4 iA;layout(location=3) in vec4 iG;layout(location=4) in vec4 iM;uniform vec2 uRes;out vec2 vP;flat out vec4 vBox,vA,vG,vM;void main(){vec2 p=iBox.xy+aC*iBox.zw;vP=(aC-.5)*iBox.zw;vBox=iBox;vA=iA;vG=iG;vM=iM;gl_Position=vec4(p/uRes*2.-1.,0.,1.);gl_Position.y=-gl_Position.y;}";
   var FS = "#version 300 es\nprecision highp float;precision highp sampler2DArray;uniform sampler2DArray uT;uniform float uPitch,uDpr,uBez,uRad,uRk,uDk,uSeed,uMask,uTime;in vec2 vP;flat in vec4 vBox,vA,vG,vM;out vec4 o;" +
@@ -564,13 +570,14 @@
   var rowsEl = wall.querySelector(".pw-rows"), rows = [].slice.call(wall.querySelectorAll(".pw-row")), cards = [], layers = {}, NL = 0, queue = [];
   rows.forEach(function (row, i) { [].forEach.call(row.querySelectorAll(".pw-case"), function (el) { var k = el.getAttribute("href"); if (!(k in layers)) layers[k] = { i: NL++, up: 0, cards: [] }; var L = layers[k]; var c = { el: el, img: el.querySelector("img"), row: i, L: L, hov: 0 }; L.cards.push(c); cards.push(c); }); });
   var tex = null, inst = new Float32Array(cards.length * 16), ibuf = null, vao = null;
-  var lost = function () { dead = true; wall.classList.remove("crt3"); cv.remove(); };
+  var offs = [], on = function (el, k, f, o) { el.addEventListener(k, f, o); offs.push(function () { el.removeEventListener(k, f, o); }); };
+  var lost = function () { if (dead) return; dead = true; wall.classList.remove("crt3"); cv.remove(); setTimeout(function () { var i = W.hooks.indexOf(frame); if (i >= 0) W.hooks.splice(i, 1); }, 0); offs.forEach(function (f) { f(); }); offs = []; queue = []; window.__czCrt = null; };
   cv.addEventListener("webglcontextlost", function (e) { e.preventDefault(); lost(); });
   var setup = function () {
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { lost(); return; }
     gl.useProgram(prog); ["uRes", "uT", "uPitch", "uDpr", "uBez", "uRad", "uRk", "uDk", "uSeed", "uMask", "uTime"].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
     tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
-    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 10, gl.RGBA8, 560, 380, NL); // mips: the halation reads the blurred levels
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, TL, gl.RGBA8, TW, TH, NL); // mips: the halation reads the blurred levels
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     vao = gl.createVertexArray(); gl.bindVertexArray(vao);
@@ -590,14 +597,14 @@
     cards.forEach(function (c) { var b = c.el.getBoundingClientRect(); c.x = b.left - r.left - (X[c.row] || 0); c.y = b.top - r.top; c.w = b.width; c.h = b.height; });
     if (ready || gl.isProgram(prog)) { gl.viewport(0, 0, cv.width, cv.height); }
   };
-  var rz = 0; addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (ready) measure(); }, 150); });
-  addEventListener("load", function () { if (ready) measure(); });
+  var rz = 0; on(window, "resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (ready && !dead) measure(); }, 150); });
+  on(window, "load", function () { if (ready && !dead) measure(); });
   // the pointer and the keyboard: the set under them leans in (the DOM decides which one, so it is always the right one)
   var over = null, focus = null;
-  wall.addEventListener("pointerover", function (e) { over = e.target.closest && e.target.closest(".pw-case"); if (live && live.c.el === over) live = null; });
-  wall.addEventListener("pointerleave", function () { over = null; });
-  wall.addEventListener("focusin", function (e) { focus = e.target.closest && e.target.closest(".pw-case"); });
-  wall.addEventListener("focusout", function () { focus = null; });
+  on(wall, "pointerover", function (e) { over = e.target.closest && e.target.closest(".pw-case"); if (live && live.c.el === over) live = null; });
+  on(wall, "pointerleave", function () { over = null; });
+  on(wall, "focusin", function (e) { focus = e.target.closest && e.target.closest(".pw-case"); });
+  on(wall, "focusout", function () { focus = null; });
   // the glitches: when, which screen, how the signal goes (a fast loss, a sustain where the tuner fights back, the recovery with a bloom)
   var TYPES = ["snow", "drop", "hsync", "roll"], TID = { snow: 1, drop: 2, hsync: 3, roll: 4 }, DUR = { snow: [520, 900], drop: [620, 950], hsync: [380, 760], roll: [700, 980] };
   var gq = Q.get("glitch"), DEBUG = gq != null, FORCE = gq && gq !== "1" ? gq.split(",").filter(function (x) { return TID[x]; }) : null;
@@ -615,9 +622,9 @@
   var frame = function (t, dt) {
     if (dead) return;
     if (!ready) { if (!PAR || gl.getProgramParameter(prog, PAR.COMPLETION_STATUS_KHR)) setup(); return; }
-    // at most two covers a frame go up to the GPU (each a single 560 x 380 copy)
+    // at most two covers a frame go up to the GPU (each one TW x TH copy, scaled from the file the browser chose)
     var upd = 0;
-    for (var u = 0; u < 2 && queue.length; u++) { var c0 = queue.shift(); if (c0.L.up) continue; try { gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex); gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, c0.L.i, 560, 380, 1, gl.RGBA, gl.UNSIGNED_BYTE, c0.img); c0.L.up = 1; upd = 1; c0.L.cards.forEach(function (x) { x.el.classList.add("crt-ready"); }); } catch (e) {} }
+    for (var u = 0; u < 2 && queue.length; u++) { var c0 = queue.shift(); if (c0.L.up) continue; try { if (!up2d) { up2d = document.createElement("canvas"); up2d.width = TW; up2d.height = TH; up2d.x = up2d.getContext("2d"); up2d.x.imageSmoothingQuality = "high"; } up2d.x.clearRect(0, 0, TW, TH); up2d.x.drawImage(c0.img, 0, 0, TW, TH); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex); gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, c0.L.i, TW, TH, 1, gl.RGBA, gl.UNSIGNED_BYTE, up2d); c0.L.up = 1; upd = 1; c0.L.cards.forEach(function (x) { x.el.classList.add("crt-ready"); }); } catch (e) {} }
     if (upd) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     if (!next) next = t + (DEBUG ? 900 : 6000 + Math.random() * 4000);
     if (!live && t >= next) { fire(t); next = t + (DEBUG ? 1600 : 6000 + Math.random() * 4000); }
