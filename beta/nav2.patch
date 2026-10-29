@@ -1,8 +1,8 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index 5999e99..a5fd444 100644
+index 22ed139..8cf34e7 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
-@@ -520,7 +520,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
+@@ -544,7 +544,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
  const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
@@ -2200,10 +2200,10 @@ index 0000000..57ab698
 \ No newline at end of file
 diff --git a/site/rapoarte/loniva-programme-1a8d79e736/index.html b/site/rapoarte/loniva-programme-1a8d79e736/index.html
 new file mode 100644
-index 0000000..c5382ec
+index 0000000..2bf44d1
 --- /dev/null
 +++ b/site/rapoarte/loniva-programme-1a8d79e736/index.html
-@@ -0,0 +1,1272 @@
+@@ -0,0 +1,1252 @@
 +<!doctype html>
 +<html lang="en">
 +<head><meta name="robots" content="noindex, nofollow, noarchive">
@@ -2760,6 +2760,10 @@ index 0000000..c5382ec
 +.sec--dark{background:#1f1109;}
 +
 +/* ---------- together ---------- */
++.sec--light .rit--ink{background:#1d1009;border-color:transparent;--ink:#F4E8D8;--ink-soft:#DCC9B2;--ink-muted:#A8906F;--move-accent:#E89A4B;}
++.rit--ink .rit__b{border-color:rgba(244,232,216,.12) !important;}
++.rit--ink strong{color:#E89A4B;}
++.pg-sub{font-family:var(--fa);font-style:italic;font-size:clamp(1.15rem,2vw,1.5rem);color:var(--move-accent);margin-top:.5rem;}
 +.rits{display:grid;gap:.9rem;margin-top:1.6rem;}
 +@media(min-width:760px){.rits{grid-template-columns:repeat(2,1fr);}}
 +@media(min-width:1100px){.rits{grid-template-columns:repeat(3,1fr);}}
@@ -2956,7 +2960,6 @@ index 0000000..c5382ec
 +  <div class="wrap">
 +    <span class="eyebrow rv"><svg class="star" style="width:.8rem;height:.8rem;color:var(--move-accent)"><use href="#st"/></svg> Cromatic Studios · Loniva · Programme &amp; bar · October 2026</span>
 +    <h1 class="pg-title rv" data-d="1" style="margin-top:1.4rem">What happens<br>inside <em>Loniva.</em></h1>
-+    <p class="lead rv" data-d="2" style="margin-top:1.4rem">Activities, circuits, packages and a bar menu, built on the rooms and machines the architect has already drawn. Nothing below needs a square metre or a piece of equipment that is not in the plan.</p>
 +    <p class="src-note rv" data-d="3"><svg class="ico"><use href="#i-doc"/></svg><span>Source: Biofit, <em>ONEDA Longevity Studio RO, Concept Design</em> (17 Oct 2026) and <em>Specialist Equipment Recommendations</em> (20 Oct 2026). The architect's working names, ONEDA and LONGIVA, are retired: everything is Loniva.</span></p>
 +    <div class="stats4 rv" data-d="4">
 +      <div class="stat2"><b>6 + 1</b><span>BASI Reformers with towers, plus a Cadillac for private sessions</span></div>
@@ -2968,22 +2971,19 @@ index 0000000..c5382ec
 +</section>
 +
 +<!-- TOGETHER -->
-+<section id="s-together" data-nav="Together" class="sec--light">
++<section id="s-together" data-nav="Community" class="sec--light">
 +  <div class="wrap">
-+    <span class="chip rv"><svg class="ico"><use href="#i-users"/></svg> The community comes first</span>
-+    <h2 class="h1 rv" style="margin-top:.9rem">A club before<br>a studio.</h2>
-+    <p class="lead rv" style="margin-top:1rem">Loniva sells longevity, but people renew for the people. Every treatment room seats one, so the community lives in the rhythms around them: the same six faces in a class, the same table at Iva's, the same Saturday walk.</p>
++    <span class="chip rv"><svg class="ico"><use href="#i-users"/></svg> Community</span>
++    <h2 class="h1 rv" style="margin-top:.9rem">The community<br>comes first.</h2>
++    <p class="pg-sub rv">Empowerment for community activities.</p>
++    <p class="lead rv" style="margin-top:1rem">Loniva sells longevity, but people renew for the people. Every treatment room seats one, so the community lives in the rhythms around them: the same six faces in a class, the same Friday evening at Iva's.</p>
 +    <div class="rits">
-+      <div class="rit rit--hero rv" data-d="1"><span class="rit__k">Every week · 8 weeks</span><b class="rit__n">Cercul</b><span class="rit__en">the circle of six</span><p class="rit__b">One reformer class holds six people, so six is the unit. The same circle, the same slot, eight weeks in a row. It opens with a Harta scan, closes with a second one and an evening at Iva's. Friends sign up together; strangers leave as friends.</p></div>
-+      <div class="rit rv" data-d="2"><span class="rit__k">Every Friday</span><b class="rit__n">Iva's, late</b><span class="rit__en">members' Friday</span><p class="rit__b">After the last Forma class, Iva's stays open an extra hour for members and one guest each. No programme, just the bar.</p></div>
-+      <div class="rit rv" data-d="3"><span class="rit__k">Every Saturday</span><b class="rit__n">Loniva Walk</b><span class="rit__en">5 km from the door</span><p class="rit__b">A walk-run that starts and ends at the studio, with coffee at Iva's after. Costs nothing, needs no square metre, and puts the brand on the street every weekend.</p></div>
-+      <div class="rit rv" data-d="1"><span class="rit__k">Every quarter</span><b class="rit__n">Harta Day</b><span class="rit__en">open morning</span><p class="rit__b">Members re-scan, compare progress and stay for a short talk by a guest: a doctor, a nutritionist, a sleep coach. Results are personal; the morning is shared.</p></div>
-+      <div class="rit rv" data-d="2"><span class="rit__k">Every month</span><b class="rit__n">Bring one</b><span class="rit__en">a guest pass</span><p class="rit__b">Every membership includes one guest a month, who gets the First Visit. Members recruit members, which is the cheapest marketing a club has.</p></div>
-+      <div class="rit rv" data-d="3"><span class="rit__k">Twice a year</span><b class="rit__n">Iva's collabs</b><span class="rit__en">guest brands at the bar</span><p class="rit__b">A local brand takes over the menu or the terrace at Iva's for a week: a bakery, a skincare line, a running brand. NUDES in Barcelona built half its community this way.</p></div>
-+    </div>
-+    <div class="card card--ink rv" style="margin-top:1rem">
-+      <span class="klabel"><svg class="ico"><use href="#i-sparkle"/></svg> <strong>Iva</strong> keeps the thread</span>
-+      <p class="body" style="margin-top:.55rem">A monthly letter from <strong>Iva</strong> names the circles that finished, the members who hit a milestone and the next Harta Day. The app reminds you that your circle meets tomorrow, not that your subscription renews.</p>
++      <div class="rit rit--hero rv" data-d="1"><span class="rit__k">Every week · 8 weeks</span><b class="rit__n">The Circle</b><span class="rit__en">a circle of six</span><p class="rit__b">One reformer class holds six people, so six is the unit. The same circle, the same slot, eight weeks in a row. It opens with a scan, closes with a second one and an evening at Iva's. Friends sign up together; strangers leave as friends.</p></div>
++      <div class="rit rv" data-d="2"><span class="rit__k">Every Friday</span><b class="rit__n">Late at Iva's</b><span class="rit__en">members' Friday</span><p class="rit__b">After the last Form class, Iva's stays open an extra hour for members and one guest each. No programme, just the bar.</p></div>
++      <div class="rit rv" data-d="1"><span class="rit__k">Every quarter</span><b class="rit__n">Scan Day</b><span class="rit__en">open morning</span><p class="rit__b">Members re-scan, compare progress and stay for a short talk by a guest: a doctor, a nutritionist, a sleep coach. Results are personal; the morning is shared.</p></div>
++      <div class="rit rv" data-d="2"><span class="rit__k">Every month</span><b class="rit__n">Bring a Friend</b><span class="rit__en">a guest pass</span><p class="rit__b">Every membership includes one guest a month, who gets the First Visit. Members recruit members, which is the cheapest marketing a club has.</p></div>
++      <div class="rit rv" data-d="3"><span class="rit__k">Twice a year</span><b class="rit__n">Guest Edition at Iva's</b><span class="rit__en">guest brands at the bar</span><p class="rit__b">A local brand takes over the menu or the terrace at Iva's for a week: a bakery, a skincare line, a running brand. NUDES in Barcelona built half its community this way.</p></div>
++      <div class="rit rit--ink rv" data-d="3"><span class="rit__k">Every month</span><b class="rit__n">Iva's Letter</b><span class="rit__en">the thread between them</span><p class="rit__b"><strong>Iva</strong> writes to every member once a month: the circles that finished, the milestones reached, the next Scan Day. The app reminds you that your circle meets tomorrow, not that your subscription renews.</p></div>
 +    </div>
 +  </div>
 +</section>
@@ -2999,15 +2999,15 @@ index 0000000..c5382ec
 +        <div class="mapbox">
 +          <svg viewBox="48 28 912 618" role="img" aria-label="Schematic floor plan of Loniva with five zones">
 +            <g class="zone dim" data-z="staff" tabindex="0"><rect x="60" y="255" width="225" height="110"/><text x="172" y="305" text-anchor="middle">Staff</text><text class="sub" x="172" y="328" text-anchor="middle">restricted</text></g>
-+            <g class="zone z-move" data-z="pilates" tabindex="0"><rect x="60" y="40" width="560" height="200"/><text x="380" y="125" text-anchor="middle">Forma</text><text class="sub" x="380" y="150" text-anchor="middle">pilates · 6 reformers · Cadillac</text></g>
-+            <g class="zone" data-z="scan" tabindex="0"><rect x="630" y="40" width="150" height="200"/><text x="705" y="125" text-anchor="middle">Harta</text><text class="sub" x="705" y="150" text-anchor="middle">3D scan</text></g>
-+            <g class="zone" data-z="recovery" tabindex="0"><rect x="295" y="255" width="215" height="110"/><text x="390" y="305" text-anchor="middle">Repaus</text><text class="sub" x="390" y="328" text-anchor="middle">recovery</text></g>
++            <g class="zone z-move" data-z="pilates" tabindex="0"><rect x="60" y="40" width="560" height="200"/><text x="380" y="125" text-anchor="middle">Form</text><text class="sub" x="380" y="150" text-anchor="middle">pilates · 6 reformers · Cadillac</text></g>
++            <g class="zone" data-z="scan" tabindex="0"><rect x="630" y="40" width="150" height="200"/><text x="705" y="125" text-anchor="middle">Scan</text><text class="sub" x="705" y="150" text-anchor="middle">3D scan</text></g>
++            <g class="zone" data-z="recovery" tabindex="0"><rect x="295" y="255" width="215" height="110"/><text x="390" y="305" text-anchor="middle">Rest</text><text class="sub" x="390" y="328" text-anchor="middle">recovery</text></g>
 +            <g class="zone" data-z="women" tabindex="0"><rect x="295" y="375" width="215" height="65"/><text x="390" y="414" text-anchor="middle">Women</text></g>
 +            <g class="zone" data-z="men" tabindex="0"><rect x="295" y="448" width="215" height="65"/><text x="390" y="487" text-anchor="middle">Men</text></g>
 +            <g class="zone dim" data-z="corridor"><rect x="520" y="255" width="60" height="258"/></g>
-+            <g class="zone" data-z="hbot" tabindex="0"><rect x="590" y="255" width="190" height="80"/><text x="702" y="292" text-anchor="middle">Aer</text><text class="sub" x="702" y="313" text-anchor="middle">oxygen</text></g>
-+            <g class="zone" data-z="red" tabindex="0"><rect x="590" y="344" width="190" height="80"/><text x="702" y="381" text-anchor="middle">Lumina</text><text class="sub" x="702" y="402" text-anchor="middle">red light</text></g>
-+            <g class="zone" data-z="cryo" tabindex="0"><rect x="590" y="433" width="190" height="80"/><text x="702" y="470" text-anchor="middle">Ger</text><text class="sub" x="702" y="491" text-anchor="middle">cryo</text></g>
++            <g class="zone" data-z="hbot" tabindex="0"><rect x="590" y="255" width="190" height="80"/><text x="702" y="292" text-anchor="middle">Air</text><text class="sub" x="702" y="313" text-anchor="middle">oxygen</text></g>
++            <g class="zone" data-z="red" tabindex="0"><rect x="590" y="344" width="190" height="80"/><text x="702" y="381" text-anchor="middle">Light</text><text class="sub" x="702" y="402" text-anchor="middle">red light</text></g>
++            <g class="zone" data-z="cryo" tabindex="0"><rect x="590" y="433" width="190" height="80"/><text x="702" y="470" text-anchor="middle">Cryo</text><text class="sub" x="702" y="491" text-anchor="middle">whole-body</text></g>
 +            <g class="zone z-bar" data-z="bar" tabindex="0"><rect x="295" y="525" width="485" height="90"/><text x="420" y="556" text-anchor="middle">Iva's</text><text class="sub" x="420" y="578" text-anchor="middle">health bar · 6 seats</text><text x="668" y="556" text-anchor="middle">Reception</text></g>
 +            <g class="zone" data-z="terrace" tabindex="0"><rect x="800" y="345" width="150" height="270"/><text x="875" y="460" text-anchor="middle">Terrace</text><text class="sub" x="875" y="484" text-anchor="middle">+6 · TBC</text></g>
 +            <path d="M 786 600 l 16 -10 v 20 z" fill="#E89A4B"/>
@@ -3021,7 +3021,7 @@ index 0000000..c5382ec
 +          <button class="cbtn" data-c="lunch" aria-pressed="false" type="button">Loniva 30</button>
 +          <button class="cbtn" data-c="reset" aria-pressed="false" type="button">Loniva 60</button>
 +          <button class="cbtn" data-c="oxygen" aria-pressed="false" type="button">Loniva 90</button>
-+          <button class="cbtn" data-c="after" aria-pressed="false" type="button">Forma+</button>
++          <button class="cbtn" data-c="after" aria-pressed="false" type="button">After Class</button>
 +        </div>
 +      </div>
 +      <aside class="info" id="info" aria-live="polite">
@@ -3037,25 +3037,21 @@ index 0000000..c5382ec
 +<!-- NAMES -->
 +<section id="s-names" data-nav="The names" class="sec--light">
 +  <div class="wrap">
-+    <span class="chip rv"><svg class="ico"><use href="#i-tag"/></svg> Proposal · room by room</span>
-+    <h2 class="h1 rv" style="margin-top:.9rem">One house,<br>Romanian rooms.</h2>
-+    <p class="lead rv" style="margin-top:1rem">Everything is Loniva. Inside, each room takes one short Romanian word: plain enough for a door sign, warm enough to say out loud, and readable for an English speaker with one line underneath. The bar takes the second half of the name itself.</p>
++    <span class="chip rv"><svg class="ico"><use href="#i-tag"/></svg> Room by room</span>
++    <h2 class="h1 rv" style="margin-top:.9rem">One house,<br>plain rooms.</h2>
++    <p class="lead rv" style="margin-top:1rem">Everything is Loniva. Inside, each room takes one short English word, so a member from Bucharest, Vienna or Dubai reads every door the same way. The bar is the exception: it belongs to Iva.</p>
 +    <div class="nmgrid">
-+      <div class="nm nm--hero rv" data-d="1"><span class="nm__room">The health bar</span><b class="nm__w">Iva's</b><span class="nm__en">health bar</span><p class="nm__why">The woman inside the name gets her own place. People will say <em>ne vedem la Iva</em> after class, as they would about a friend's kitchen, and the brand repeats itself every time they do. No petrol station, café chain or juice bar in Bucharest owns it.</p></div>
-+      <div class="nm rv" data-d="2"><span class="nm__room">Pilates studio</span><b class="nm__w">Forma</b><span class="nm__en">reformer studio</span><p class="nm__why">Shape, in Romanian and Latin, and the root inside the word reformer. Every class format sits under it.</p></div>
-+      <div class="nm rv" data-d="3"><span class="nm__room">Cryotherapy</span><b class="nm__w">Ger</b><span class="nm__en">cryo</span><p class="nm__why">Frost. One syllable, short as the session itself.</p></div>
-+      <div class="nm rv" data-d="1"><span class="nm__room">Red light</span><b class="nm__w">Lumina</b><span class="nm__en">red light</span><p class="nm__why">Light. The softest word for the warmest room.</p></div>
-+      <div class="nm rv" data-d="2"><span class="nm__room">Hyperbaric oxygen</span><b class="nm__w">Aer</b><span class="nm__en">oxygen</span><p class="nm__why">Air. Three letters for the room people stay in longest.</p></div>
-+      <div class="nm rv" data-d="3"><span class="nm__room">Recovery suite</span><b class="nm__w">Repaus</b><span class="nm__en">recovery</span><p class="nm__why">Rest. Exactly what the integrated recliner is for.</p></div>
-+      <div class="nm rv" data-d="1"><span class="nm__room">3D body scan</span><b class="nm__w">Harta</b><span class="nm__en">body scan</span><p class="nm__why">The map. It shows where a member stands today and where the next quarter takes them.</p></div>
++      <div class="nm nm--hero rv" data-d="1"><span class="nm__room">The health bar</span><b class="nm__w">Iva's</b><span class="nm__en">health bar</span><p class="nm__why">The woman inside the name gets her own place. Members will meet "at Iva's" after class, as they would at a friend's kitchen, and the brand repeats itself every time they do.</p></div>
++      <div class="nm rv" data-d="2"><span class="nm__room">Pilates studio</span><b class="nm__w">Form</b><span class="nm__en">reformer studio</span><p class="nm__why">Shape, what a reformer gives you, and the root inside the machine's own name. Every class format sits under it.</p></div>
++      <div class="nm rv" data-d="3"><span class="nm__room">Cryotherapy</span><b class="nm__w">Cryo</b><span class="nm__en">whole-body cold</span><p class="nm__why">The word people already search for. Short as the session itself.</p></div>
++      <div class="nm rv" data-d="1"><span class="nm__room">Red light</span><b class="nm__w">Light</b><span class="nm__en">red &amp; near-infrared</span><p class="nm__why">The softest word for the warmest room.</p></div>
++      <div class="nm rv" data-d="2"><span class="nm__room">Hyperbaric oxygen</span><b class="nm__w">Air</b><span class="nm__en">oxygen</span><p class="nm__why">Three letters for the room people stay in longest.</p></div>
++      <div class="nm rv" data-d="3"><span class="nm__room">Recovery suite</span><b class="nm__w">Rest</b><span class="nm__en">recovery</span><p class="nm__why">Exactly what the integrated recliner is for.</p></div>
++      <div class="nm rv" data-d="1"><span class="nm__room">3D body scan</span><b class="nm__w">Scan</b><span class="nm__en">body scan</span><p class="nm__why">Where every member starts, and how their progress is shown back to them each quarter.</p></div>
 +      <div class="nm rv" data-d="2"><span class="nm__room">The host</span><b class="nm__w"><strong>Iva</strong></b><span class="nm__en">bar · app · screens · letter</span><p class="nm__why">One person, everywhere. The bar is her place, and the app, the menu screens and the monthly letter all speak in her voice. <strong>Iva</strong>'s pick is the drink of the day.</p></div>
-+      <div class="nm rv" data-d="3"><span class="nm__room">Circuits</span><b class="nm__w">Loniva 30 · 60 · 90</b><span class="nm__en">plus Forma+ after class</span><p class="nm__why">Named by their length, so the menu explains itself and a booking never needs a glossary.</p></div>
++      <div class="nm rv" data-d="3"><span class="nm__room">Circuits</span><b class="nm__w">Loniva 30 · 60 · 90</b><span class="nm__en">plus After Class</span><p class="nm__why">Named by their length, so the menu explains itself and a booking never needs a glossary.</p></div>
 +    </div>
-+    <div class="grid g2" style="margin-top:1rem">
-+      <div class="card rv" data-d="1"><span class="klabel"><svg class="ico"><use href="#i-frame"/></svg> On the doors</span><p class="body" style="margin-top:.55rem">Two lines on every sign: the Romanian word large, the English word small beneath it. <strong>AER</strong> over <em>oxygen</em>, <strong>GER</strong> over <em>cryo</em>. Loniva appears once, on the façade and at reception; the rooms never repeat it.</p></div>
-+      <div class="card rv" data-d="2"><span class="klabel"><svg class="ico"><use href="#i-globe"/></svg> If the client wants English on the doors</span><p class="body" style="margin-top:.55rem">The same system works with plain words: Bar, Studio, Cold, Light, Oxygen, Rest, Scan. Clearer for tourists, less ownable. The Romanian set gives the house a voice; the English set only gives it directions.</p></div>
-+    </div>
-+    <p class="tiny rv" style="margin-top:.8rem">Room names live under Loniva and need no trademark of their own. Ger was chosen over frig, which is a slang word in British English.</p>
++    <div class="card rv" style="margin-top:1rem"><span class="klabel"><svg class="ico"><use href="#i-frame"/></svg> On the doors</span><p class="body" style="margin-top:.55rem">One word per door, set large: <strong>FORM</strong>, <strong>CRYO</strong>, <strong>LIGHT</strong>, <strong>AIR</strong>, <strong>REST</strong>, <strong>SCAN</strong>. Loniva appears once, on the façade and at reception; the rooms never repeat it.</p></div>
 +  </div>
 +</section>
 +
@@ -3067,37 +3063,37 @@ index 0000000..c5382ec
 +    <p class="lead rv" style="margin-top:1rem">Four verbs, each tied to a room. Pilates is the habit that brings people back every week; the longevity rooms are what nobody else in the neighbourhood has; the scan proves both are working.</p>
 +
 +    <div class="agroup rv">
-+      <div class="agroup__head"><span class="agroup__n"><em>01</em> · Move</span><span class="agroup__d">In Forma: small-group reformer, six beds, one instructor.</span></div>
++      <div class="agroup__head"><span class="agroup__n"><em>01</em> · Move</span><span class="agroup__d">In Form: small-group reformer, six beds, one instructor.</span></div>
 +      <div class="alist c3">
 +        <div class="act"><div class="act__top"><span class="act__n">Foundations</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>50 min</span></div><p class="act__b">The first two visits for every new member. Springs, straps, breath and the basics of the machine, taught slowly in a full class of beginners.</p><span class="act__eq">6 × BASI Reformer</span></div>
-+        <div class="act"><div class="act__top"><span class="act__n">Signature Reformer</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>50 min</span></div><p class="act__b">The core class and most of the timetable. Full-body, controlled, progressive across a month so members feel the difference.</p><span class="act__eq">6 × BASI Reformer</span></div>
-+        <div class="act"><div class="act__top"><span class="act__n">Heated Reformer</span><span class="act__t"><svg class="ico"><use href="#i-flame"/></svg>50 min · ~35°C</span></div><p class="act__b">Selected sessions under the ceiling infrared panels. Same class, warmer room, deeper sweat. A clear point of difference on the timetable.</p><span class="act__eq">IR ceiling panels, independent of HVAC</span></div>
-+        <div class="act"><div class="act__top"><span class="act__n">Slow Reformer</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>50 min</span></div><p class="act__b">Lower load, longer holds, mobility and balance. The gentlest door into the house for members over 50 or anyone coming back after time off.</p><span class="act__eq">6 × BASI Reformer</span></div>
-+        <div class="act"><div class="act__top"><span class="act__n">Tower Strength</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>45 min</span></div><p class="act__b">Uses the towers fitted to every reformer: springs overhead, standing work, more load. The class that converts gym people.</p><span class="act__eq">Reformer + Tower combination</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Signature</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>50 min</span></div><p class="act__b">The core class and most of the timetable. Full-body, controlled, progressive across a month so members feel the difference.</p><span class="act__eq">6 × BASI Reformer</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Heat</span><span class="act__t"><svg class="ico"><use href="#i-flame"/></svg>50 min · ~35°C</span></div><p class="act__b">Selected sessions under the ceiling infrared panels. Same class, warmer room, deeper sweat. A clear point of difference on the timetable.</p><span class="act__eq">IR ceiling panels, independent of HVAC</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Slow</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>50 min</span></div><p class="act__b">Lower load, longer holds, mobility and balance. The gentlest door into the house for members over 50 or anyone coming back after time off.</p><span class="act__eq">6 × BASI Reformer</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Tower</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>45 min</span></div><p class="act__b">Uses the towers fitted to every reformer: springs overhead, standing work, more load. The class that converts gym people.</p><span class="act__eq">Reformer + Tower combination</span></div>
 +        <div class="act"><div class="act__top"><span class="act__n">Private &amp; Duo</span><span class="act__t"><svg class="ico"><use href="#i-clock"/></svg>55 min</span></div><p class="act__b">One-to-one or two-to-one on the Cadillac, behind a curtain. Rehab-adjacent work, technique, or simply the premium option. A red-light mat for restorative privates is optional.</p><span class="act__eq">BASI Cadillac · Nircura mat (option)</span></div>
 +      </div>
 +    </div>
 +
 +    <div class="agroup rv">
-+      <div class="agroup__head"><span class="agroup__n"><em>02</em> · Measure</span><span class="agroup__d">In Harta: the baseline every member starts from.</span></div>
++      <div class="agroup__head"><span class="agroup__n"><em>02</em> · Measure</span><span class="agroup__d">In Scan: the baseline every member starts from.</span></div>
 +      <div class="alist" style="grid-template-columns:1fr">
-+        <div class="act"><div class="act__top"><span class="act__n">Harta · 3D Body Scan</span><span class="act__t"><svg class="ico"><use href="#i-scan"/></svg>~10 min</span></div><p class="act__b">A full-body scan at the first visit, then again every 8 to 12 weeks. Posture, proportions and change over time, shown to the member as their own before-and-after. It turns a feeling into a chart.</p><span class="act__eq">SCANECA · in the Pilates studio, behind a privacy curtain</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Scan · 3D body scan</span><span class="act__t"><svg class="ico"><use href="#i-scan"/></svg>~10 min</span></div><p class="act__b">A full-body scan at the first visit, then again every 8 to 12 weeks. Posture, proportions and change over time, shown to the member as their own before-and-after. It turns a feeling into a chart.</p><span class="act__eq">SCANECA · in the Pilates studio, behind a privacy curtain</span></div>
 +      </div>
 +    </div>
 +
 +    <div class="agroup rv">
-+      <div class="agroup__head"><span class="agroup__n"><em>03</em> · Charge</span><span class="agroup__d">Ger, Lumina, Aer: three rooms, one corridor.</span></div>
++      <div class="agroup__head"><span class="agroup__n"><em>03</em> · Charge</span><span class="agroup__d">Cryo, Light, Air: three rooms, one corridor.</span></div>
 +      <div class="alist c3">
-+        <div class="act"><div class="act__top"><span class="act__n">Ger · Cryo</span><span class="act__t"><svg class="ico"><use href="#i-snow"/></svg>2 to 4 min</span></div><p class="act__b">Whole-body cold exposure in an electric cabin. The fastest treatment in the house and the most dramatic: in, out, wide awake. Changed in the room.</p><span class="act__eq">CTN e°CABIN · ~10 min slot with changing</span></div>
-+        <div class="act"><div class="act__top"><span class="act__n">Lumina · Red light</span><span class="act__t"><svg class="ico"><use href="#i-sun"/></svg>~12 min</span></div><p class="act__b">Standing full-body red and near-infrared light. Warm, quiet, easy to repeat weekly. The natural pair to cryo in a single visit.</p><span class="act__eq">CTN LedPro Vertical · 660 + 850 nm family</span></div>
-+        <div class="act"><div class="act__top"><span class="act__n">Aer · Oxygen</span><span class="act__t"><svg class="ico"><use href="#i-o2"/></svg>60 min</span></div><p class="act__b">An hour in the hyperbaric chamber, fully clothed: read, rest, listen. The longest and most exclusive session, sold in courses rather than as a walk-in.</p><span class="act__eq">CTN OxyPro modular · one or two people, model TBC</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Cryo</span><span class="act__t"><svg class="ico"><use href="#i-snow"/></svg>2 to 4 min</span></div><p class="act__b">Whole-body cold exposure in an electric cabin. The fastest treatment in the house and the most dramatic: in, out, wide awake. Changed in the room.</p><span class="act__eq">CTN e°CABIN · ~10 min slot with changing</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Light · Red light</span><span class="act__t"><svg class="ico"><use href="#i-sun"/></svg>~12 min</span></div><p class="act__b">Standing full-body red and near-infrared light. Warm, quiet, easy to repeat weekly. The natural pair to cryo in a single visit.</p><span class="act__eq">CTN LedPro Vertical · 660 + 850 nm family</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Air · Oxygen</span><span class="act__t"><svg class="ico"><use href="#i-o2"/></svg>60 min</span></div><p class="act__b">An hour in the hyperbaric chamber, fully clothed: read, rest, listen. The longest and most exclusive session, sold in courses rather than as a walk-in.</p><span class="act__eq">CTN OxyPro modular · one or two people, model TBC</span></div>
 +      </div>
 +    </div>
 +
 +    <div class="agroup rv">
-+      <div class="agroup__head"><span class="agroup__n"><em>04</em> · Recover</span><span class="agroup__d">In Repaus: one integrated recliner.</span></div>
++      <div class="agroup__head"><span class="agroup__n"><em>04</em> · Recover</span><span class="agroup__d">In Rest: one integrated recliner.</span></div>
 +      <div class="alist" style="grid-template-columns:1fr">
-+        <div class="act"><div class="act__top"><span class="act__n">Repaus · Recovery suite</span><span class="act__t"><svg class="ico"><use href="#i-chair"/></svg>30 min</span></div><p class="act__b">One integrated recliner at the centre of the room, with sound and vibration built into its frame. Around the client: compression boots on the legs, PEMF beneath, red-light panels over the face and upper body. Lie down once, everything comes to you. Lights low, phone away.</p><span class="act__eq">Gharieni RLX Wellnamis (integrated) · BEMER Evo · CTN e°COMPRESSION · Nircura dual panels</span></div>
++        <div class="act"><div class="act__top"><span class="act__n">Rest · Recovery suite</span><span class="act__t"><svg class="ico"><use href="#i-chair"/></svg>30 min</span></div><p class="act__b">One integrated recliner at the centre of the room, with sound and vibration built into its frame. Around the client: compression boots on the legs, PEMF beneath, red-light panels over the face and upper body. Lie down once, everything comes to you. Lights low, phone away.</p><span class="act__eq">Gharieni RLX Wellnamis (integrated) · BEMER Evo · CTN e°COMPRESSION · Nircura dual panels</span></div>
 +      </div>
 +    </div>
 +
@@ -3118,25 +3114,25 @@ index 0000000..c5382ec
 +    <div class="circ rv">
 +      <div class="circ__head"><span class="circ__n">Loniva 30 <small>the lunch break, for the office tower</small></span><span class="circ__min">30 min</span></div>
 +      <p class="circ__for">Cold, then warm, then a drink to take back to the desk.</p>
-+      <div class="bar"><span class="bar__s s-in" style="--g:3"><span>In</span></span><span class="bar__s s-cr" style="--g:8"><span>Ger · cryo</span></span><span class="bar__s s-rl" style="--g:12"><span>Lumina · red light</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
++      <div class="bar"><span class="bar__s s-in" style="--g:3"><span>In</span></span><span class="bar__s s-cr" style="--g:8"><span>Cryo</span></span><span class="bar__s s-rl" style="--g:12"><span>Light</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
 +      <div class="circ__steps"><span><b>3</b> check-in</span><span><b>8</b> cryo incl. changing</span><span><b>12</b> red light</span><span><b>7</b> drink</span></div>
 +    </div>
 +    <div class="circ rv">
 +      <div class="circ__head"><span class="circ__n">Loniva 60 <small>the weekly one</small></span><span class="circ__min">60 min</span></div>
 +      <p class="circ__for">The full longevity corridor plus the recovery suite. The circuit that memberships are built around.</p>
-+      <div class="bar"><span class="bar__s s-in" style="--g:3"><span>In</span></span><span class="bar__s s-cr" style="--g:8"><span>Ger · cryo</span></span><span class="bar__s s-rl" style="--g:12"><span>Lumina · red light</span></span><span class="bar__s s-rc" style="--g:30"><span>Repaus · recovery</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
++      <div class="bar"><span class="bar__s s-in" style="--g:3"><span>In</span></span><span class="bar__s s-cr" style="--g:8"><span>Cryo</span></span><span class="bar__s s-rl" style="--g:12"><span>Light</span></span><span class="bar__s s-rc" style="--g:30"><span>Rest · recovery</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
 +      <div class="circ__steps"><span><b>3</b> check-in</span><span><b>8</b> cryo</span><span><b>12</b> red light</span><span><b>30</b> recovery suite</span><span><b>7</b> drink</span></div>
 +    </div>
 +    <div class="circ rv">
 +      <div class="circ__head"><span class="circ__n">Loniva 90 <small>the long one</small></span><span class="circ__min">90 min</span></div>
 +      <p class="circ__for">An hour in the chamber, a short compression session, a slow drink. The premium visit.</p>
-+      <div class="bar"><span class="bar__s s-in" style="--g:3"><span>In</span></span><span class="bar__s s-ox" style="--g:60"><span>Aer · oxygen</span></span><span class="bar__s s-rc" style="--g:20"><span>Compression</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
++      <div class="bar"><span class="bar__s s-in" style="--g:3"><span>In</span></span><span class="bar__s s-ox" style="--g:60"><span>Air · oxygen</span></span><span class="bar__s s-rc" style="--g:20"><span>Compression</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
 +      <div class="circ__steps"><span><b>3</b> check-in</span><span><b>60</b> oxygen</span><span><b>20</b> compression</span><span><b>7</b> drink</span></div>
 +    </div>
 +    <div class="circ rv">
-+      <div class="circ__head"><span class="circ__n">Forma+ <small>Pilates, then the corridor</small></span><span class="circ__min">85 min</span></div>
++      <div class="circ__head"><span class="circ__n">After Class <small>Pilates, then the corridor</small></span><span class="circ__min">85 min</span></div>
 +      <p class="circ__for">Turns a Pilates member into a longevity member, one add-on at a time.</p>
-+      <div class="bar"><span class="bar__s s-mv" style="--g:50"><span>Forma · reformer</span></span><span class="bar__s s-cr" style="--g:8"><span>Ger · cryo</span></span><span class="bar__s s-rc" style="--g:20"><span>Compression</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
++      <div class="bar"><span class="bar__s s-mv" style="--g:50"><span>Form · reformer</span></span><span class="bar__s s-cr" style="--g:8"><span>Cryo</span></span><span class="bar__s s-rc" style="--g:20"><span>Compression</span></span><span class="bar__s s-br" style="--g:7"><span>Iva's</span></span></div>
 +      <div class="circ__steps"><span><b>50</b> reformer</span><span><b>8</b> cryo</span><span><b>20</b> compression</span><span><b>7</b> shake</span></div>
 +    </div>
 +    <p class="tiny rv" style="margin-top:.9rem">Durations are planning assumptions. Final session lengths follow the supplier protocols.</p>
@@ -3148,7 +3144,7 @@ index 0000000..c5382ec
 +  <div class="wrap">
 +    <span class="chip rv"><svg class="ico"><use href="#i-tag"/></svg> How it is sold</span>
 +    <h2 class="h1 rv" style="margin-top:.9rem">Alone, or together.</h2>
-+    <p class="lead rv" style="margin-top:1rem">Four ways in for one person, six for two, three, six or a team. Every package includes the Harta scan and ends at Iva's, so the two things that make Loniva different are in every price.</p>
++    <p class="lead rv" style="margin-top:1rem">Four ways in for one person, six for two, three, six or a team. Every package includes the 3D scan and ends at Iva's, so the two things that make Loniva different are in every price.</p>
 +    <div class="packs packs--4">
 +      <div class="pk rv" data-d="1">
 +        <span class="pk__k">Entry</span><span class="pk__n">First Visit</span>
@@ -3157,21 +3153,21 @@ index 0000000..c5382ec
 +        <span class="pk__for">For anyone who has never been. Shows the whole house in 90 minutes.</span>
 +      </div>
 +      <div class="pk rv" data-d="2">
-+        <span class="pk__k">Membership</span><span class="pk__n">Forma</span>
++        <span class="pk__k">Membership</span><span class="pk__n">Move</span>
 +        <div class="pk__p"><b>990</b><span>lei / month</span></div>
 +        <ul><li><svg class="ico"><use href="#i-check"/></svg>8 reformer classes, any format incl. heated</li><li><svg class="ico"><use href="#i-check"/></svg>3D scan every quarter</li><li><svg class="ico"><use href="#i-check"/></svg>Member price at the bar</li><li><svg class="ico"><use href="#i-check"/></svg>After-class add-ons at member price</li></ul>
 +        <span class="pk__for">For the Pilates regular. The door to everything else.</span>
 +      </div>
 +      <div class="pk rv" data-d="3">
-+        <span class="pk__k">Membership</span><span class="pk__n">Repaus</span>
++        <span class="pk__k">Membership</span><span class="pk__n">Recover</span>
 +        <div class="pk__p"><b>1,190</b><span>lei / month</span></div>
-+        <ul><li><svg class="ico"><use href="#i-check"/></svg>4 × Loniva 60 circuits</li><li><svg class="ico"><use href="#i-check"/></svg>3D scan every quarter</li><li><svg class="ico"><use href="#i-check"/></svg>A drink with every circuit</li><li><svg class="ico"><use href="#i-check"/></svg>Aer at member price</li></ul>
++        <ul><li><svg class="ico"><use href="#i-check"/></svg>4 × Loniva 60 circuits</li><li><svg class="ico"><use href="#i-check"/></svg>3D scan every quarter</li><li><svg class="ico"><use href="#i-check"/></svg>A drink with every circuit</li><li><svg class="ico"><use href="#i-check"/></svg>Air at member price</li></ul>
 +        <span class="pk__for">For people who do not want a class, only the rooms.</span>
 +      </div>
 +      <div class="pk pk--hero rv" data-d="1">
-+        <span class="pk__k">The full house</span><span class="pk__n">Loniva</span>
++        <span class="pk__k">The full house</span><span class="pk__n">Loniva Complete</span>
 +        <div class="pk__p"><b>2,390</b><span>lei / month</span><s>~3,500 lei</s></div>
-+        <ul><li><svg class="ico"><use href="#i-check"/></svg>8 reformer classes</li><li><svg class="ico"><use href="#i-check"/></svg>4 × Loniva 60 circuits</li><li><svg class="ico"><use href="#i-check"/></svg>1 hour in Aer</li><li><svg class="ico"><use href="#i-check"/></svg>Monthly 3D scan and quarterly read</li><li><svg class="ico"><use href="#i-check"/></svg>100 lei credit at Iva's</li></ul>
++        <ul><li><svg class="ico"><use href="#i-check"/></svg>8 reformer classes</li><li><svg class="ico"><use href="#i-check"/></svg>4 × Loniva 60 circuits</li><li><svg class="ico"><use href="#i-check"/></svg>1 hour in Air</li><li><svg class="ico"><use href="#i-check"/></svg>Monthly 3D scan and quarterly read</li><li><svg class="ico"><use href="#i-check"/></svg>100 lei credit at Iva's</li></ul>
 +        <span class="pk__for">The flagship. Priced so the scarce hour feels earned, not discounted.</span>
 +      </div>
 +    </div>
@@ -3180,42 +3176,42 @@ index 0000000..c5382ec
 +    <p class="body rv" style="margin-top:.5rem;max-width:66ch">The rooms seat one at a time, so group packages stagger people by ten minutes and bring them back together at Iva's. The reformer studio is the natural group room: six beds, one circle.</p>
 +    <div class="packs">
 +      <div class="pk rv" data-d="1">
-+        <span class="pk__k">For two</span><span class="pk__n">Loniva Doi</span>
++        <span class="pk__k">For two</span><span class="pk__n">Duo</span>
 +        <div class="gpk__who" aria-label="2 people"><i></i><i></i></div>
 +        <div class="pk__p"><b>1,690</b><span>lei / month · both</span><s>1,980 lei</s></div>
-+        <ul><li><svg class="ico"><use href="#i-check"/></svg>Two Forma memberships, 8 classes each</li><li><svg class="ico"><use href="#i-check"/></svg>Book side by side in the same class</li><li><svg class="ico"><use href="#i-check"/></svg>Harta scans for both, every quarter</li></ul>
++        <ul><li><svg class="ico"><use href="#i-check"/></svg>Two Move memberships, 8 classes each</li><li><svg class="ico"><use href="#i-check"/></svg>Book side by side in the same class</li><li><svg class="ico"><use href="#i-check"/></svg>Scans for both, every quarter</li></ul>
 +        <span class="pk__for">Partners, friends, mother and daughter.</span>
 +      </div>
 +      <div class="pk rv" data-d="2">
-+        <span class="pk__k">For three</span><span class="pk__n">Forma Trei</span>
++        <span class="pk__k">For three</span><span class="pk__n">Trio Session</span>
 +        <div class="gpk__who" aria-label="3 people"><i></i><i></i><i></i></div>
 +        <div class="pk__p"><b>390</b><span>lei · 55 min · for three</span></div>
 +        <ul><li><svg class="ico"><use href="#i-check"/></svg>Semi-private class on three reformers</li><li><svg class="ico"><use href="#i-check"/></svg>Your own instructor, your own pace</li><li><svg class="ico"><use href="#i-check"/></svg>130 lei each, less than a drop-in</li></ul>
 +        <span class="pk__for">For friends who want the studio to themselves.</span>
 +      </div>
 +      <div class="pk pk--hero rv" data-d="3">
-+        <span class="pk__k">For six</span><span class="pk__n">Cercul</span>
++        <span class="pk__k">For six</span><span class="pk__n">The Circle</span>
 +        <div class="gpk__who" aria-label="6 people"><i></i><i></i><i></i><i></i><i></i><i></i></div>
 +        <div class="pk__p"><b>5,400</b><span>lei · 8 weeks · for six</span></div>
-+        <ul><li><svg class="ico"><use href="#i-check"/></svg>The whole class, same slot, 8 weeks</li><li><svg class="ico"><use href="#i-check"/></svg>Harta scan at the start and the end</li><li><svg class="ico"><use href="#i-check"/></svg>Closing evening at Iva's for the circle</li><li><svg class="ico"><use href="#i-check"/></svg>900 lei each, about 112 per class</li></ul>
++        <ul><li><svg class="ico"><use href="#i-check"/></svg>The whole class, same slot, 8 weeks</li><li><svg class="ico"><use href="#i-check"/></svg>3D scan at the start and the end</li><li><svg class="ico"><use href="#i-check"/></svg>Closing evening at Iva's for the circle</li><li><svg class="ico"><use href="#i-check"/></svg>900 lei each, about 112 per class</li></ul>
 +        <span class="pk__for">The community product. Six people who meet every week become the reason the seventh joins.</span>
 +      </div>
 +      <div class="pk rv" data-d="1">
-+        <span class="pk__k">For two · in the corridor</span><span class="pk__n">Loniva 60 Doi</span>
++        <span class="pk__k">For two · in the corridor</span><span class="pk__n">Loniva 60 for Two</span>
 +        <div class="gpk__who" aria-label="2 people"><i></i><i></i></div>
 +        <div class="pk__p"><b>720</b><span>lei · for two</span><s>798 lei</s></div>
-+        <ul><li><svg class="ico"><use href="#i-check"/></svg>Two Loniva 60 circuits, 10 minutes apart</li><li><svg class="ico"><use href="#i-check"/></svg>Finish together at Iva's</li><li><svg class="ico"><use href="#i-check"/></svg>A shared hour in Aer, if the chamber seats two</li></ul>
++        <ul><li><svg class="ico"><use href="#i-check"/></svg>Two Loniva 60 circuits, 10 minutes apart</li><li><svg class="ico"><use href="#i-check"/></svg>Finish together at Iva's</li><li><svg class="ico"><use href="#i-check"/></svg>A shared hour in Air, if the chamber seats two</li></ul>
 +        <span class="pk__for">The date-night version of longevity.</span>
 +      </div>
 +      <div class="pk rv" data-d="2">
-+        <span class="pk__k">For a team</span><span class="pk__n">Echipa</span>
++        <span class="pk__k">For a team</span><span class="pk__n">Team Pass</span>
 +        <div class="gpk__who" aria-label="team"><i></i><i></i><i></i><i></i><i class="o"></i><i class="o"></i><i class="o"></i></div>
 +        <div class="pk__p"><b>3,600</b><span>lei · 20 visits</span></div>
-+        <ul><li><svg class="ico"><use href="#i-check"/></svg>20 Loniva 30 circuits, shared by colleagues</li><li><svg class="ico"><use href="#i-check"/></svg>Valid 3 months, lunch hours</li><li><svg class="ico"><use href="#i-check"/></svg>Add a team Cercul for the reformer</li></ul>
++        <ul><li><svg class="ico"><use href="#i-check"/></svg>20 Loniva 30 circuits, shared by colleagues</li><li><svg class="ico"><use href="#i-check"/></svg>Valid 3 months, lunch hours</li><li><svg class="ico"><use href="#i-check"/></svg>Add a team Circle in the studio</li></ul>
 +        <span class="pk__for">Sold floor by floor in the office tower above.</span>
 +      </div>
 +      <div class="pk rv" data-d="3">
-+        <span class="pk__k">For an occasion</span><span class="pk__n">Iva's, private</span>
++        <span class="pk__k">For an occasion</span><span class="pk__n">Private Evening at Iva's</span>
 +        <div class="gpk__who" aria-label="up to 12 people"><i></i><i></i><i></i><i></i><i></i><i></i><i class="o"></i><i class="o"></i><i class="o"></i><i class="o"></i><i class="o"></i><i class="o"></i></div>
 +        <div class="pk__p"><b>2,900</b><span>lei · 2 hours · up to 12</span></div>
 +        <ul><li><svg class="ico"><use href="#i-check"/></svg>The studio and Iva's after hours</li><li><svg class="ico"><use href="#i-check"/></svg>A reformer class in two rounds of six</li><li><svg class="ico"><use href="#i-check"/></svg>Drinks from Iva's for every guest</li></ul>
@@ -3223,23 +3219,7 @@ index 0000000..c5382ec
 +      </div>
 +    </div>
 +
-+    <details class="prices rv"><summary>Single prices and Bucharest benchmarks</summary>
-+    <div class="tblwrap" style="margin-top:.8rem">
-+      <table class="ptable">
-+        <thead><tr><th>Item</th><th>Length</th><th>Benchmark</th><th>Working price</th></tr></thead>
-+        <tbody>
-+          <tr><td>Reformer group class</td><td>50 min</td><td>90 lei group class at Pilates House; 38 € trio at The Pilates Studio</td><td><b>150 lei</b></td></tr>
-+          <tr><td>Private · Cadillac</td><td>55 min</td><td>165 lei at Pilates House; 50 to 60 € at The Pilates Studio</td><td><b>290 lei</b></td></tr>
-+          <tr><td>Cryo</td><td>2 to 4 min</td><td>No verified Bucharest price found</td><td><b>180 lei</b></td></tr>
-+          <tr><td>Red light</td><td>~12 min</td><td>No verified Bucharest price found</td><td><b>120 lei</b></td></tr>
-+          <tr><td>Recovery suite</td><td>30 min</td><td>No verified Bucharest price found</td><td><b>160 lei</b></td></tr>
-+          <tr><td>Oxygen · HBOT</td><td>60 min</td><td>No verified Bucharest price found</td><td><b>450 lei</b></td></tr>
-+          <tr><td>3D body scan</td><td>~10 min</td><td>Included in every package</td><td><b>150 lei</b></td></tr>
-+          <tr><td>Loniva 30 · 60 · 90</td><td>30 · 60 · 90 min</td><td>Built from the singles above</td><td><b>249 · 399 · 590 lei</b></td></tr>
-+        </tbody>
-+      </table>
-+    </div>
-+    <p class="tiny" style="margin-top:.8rem">Pilates benchmarks read from the studios' public price lists on 29 October 2026. Treatment prices are placeholders to be checked against local providers before launch. All prices include VAT.</p></details>
++
 +  </div>
 +</section>
 +
@@ -3274,7 +3254,7 @@ index 0000000..c5382ec
 +          <div class="mi"><span class="mi__n"><i class="sw" style="--a:#d99a2b;--b:#f6dfa3"></i>Golden Latte</span><span class="mi__p">20</span><span class="mi__d">Turmeric, ginger, cinnamon, oat milk. Warm, caffeine-free.</span></div>
 +        </div>
 +        <div class="mpanel" id="m-shakes" role="tabpanel" hidden>
-+          <div class="mi"><span class="mi__n"><i class="sw" style="--a:#5a3420;--b:#c89a6e"></i>Post-Forma <span class="pick">Iva's pick</span></span><span class="mi__p">36</span><span class="mi__d">Banana, cacao, almond butter, oat milk, chocolate whey.</span><span class="mi__m">~30 g protein</span></div>
++          <div class="mi"><span class="mi__n"><i class="sw" style="--a:#5a3420;--b:#c89a6e"></i>Post-Reformer <span class="pick">Iva's pick</span></span><span class="mi__p">36</span><span class="mi__d">Banana, cacao, almond butter, oat milk, chocolate whey.</span><span class="mi__m">~30 g protein</span></div>
 +          <div class="mi"><span class="mi__n"><i class="sw" style="--a:#4f7a2e;--b:#c8d98a"></i>Green</span><span class="mi__p">36</span><span class="mi__d">Spinach, mango, matcha, coconut milk, vanilla whey.</span><span class="mi__m">~26 g protein</span></div>
 +          <div class="mi"><span class="mi__n"><i class="sw" style="--a:#9b2d4a;--b:#f0a8b8"></i>Berry Collagen</span><span class="mi__p">34</span><span class="mi__d">Red berries, Greek yoghurt, almond milk, collagen.</span><span class="mi__m">~22 g protein</span></div>
 +          <div class="mi"><span class="mi__n"><i class="sw" style="--a:#e07a3a;--b:#ffd29a"></i>Peach Glow</span><span class="mi__p">34</span><span class="mi__d">Peach, mango, coconut water, dried apricot, collagen, vanilla whey.</span><span class="mi__m">~24 g protein</span></div>
@@ -3318,10 +3298,10 @@ index 0000000..c5382ec
 +
 +    <h3 class="h3 rv" style="margin-top:2.2rem">What to drink after what</h3>
 +    <div class="pairs">
-+      <div class="pair rv" data-d="1"><span class="pair__a">After Forma</span><p class="pair__b">Post-Forma shake</p><p class="pair__c">The protein-forward one, at member price after every class.</p></div>
-+      <div class="pair rv" data-d="2"><span class="pair__a">After Ger</span><p class="pair__b">Golden latte</p><p class="pair__c">Something warm in the hands after three minutes of cold.</p></div>
++      <div class="pair rv" data-d="1"><span class="pair__a">After class</span><p class="pair__b">Post-Reformer shake</p><p class="pair__c">The protein-forward one, at member price after every class.</p></div>
++      <div class="pair rv" data-d="2"><span class="pair__a">After Cryo</span><p class="pair__b">Golden latte</p><p class="pair__c">Something warm in the hands after three minutes of cold.</p></div>
 +      <div class="pair rv" data-d="3"><span class="pair__a">After heated class</span><p class="pair__b">Electrolyte water</p><p class="pair__c">Replaces what thirty-five degrees took out.</p></div>
-+      <div class="pair rv" data-d="4"><span class="pair__a">After Aer</span><p class="pair__b">Clear spritz</p><p class="pair__c">Light, cold, nothing heavy after an hour lying still.</p></div>
++      <div class="pair rv" data-d="4"><span class="pair__a">After Air</span><p class="pair__b">Clear spritz</p><p class="pair__c">Light, cold, nothing heavy after an hour lying still.</p></div>
 +    </div>
 +
 +    <h3 class="h3 rv" style="margin-top:2.2rem">Where the menu comes from</h3>
@@ -3340,9 +3320,9 @@ index 0000000..c5382ec
 +    <span class="chip rv"><svg class="ico"><use href="#i-alert"/></svg> Decided: one name, Loniva · integrated recliner. Still open:</span>
 +    <h2 class="h1 rv" style="margin-top:.9rem">Five open points.</h2>
 +    <div class="opens">
-+      <div class="op op--key rv"><b>Approve the names</b><span>Iva's, Forma, Ger, Lumina, Aer, Repaus and Harta go to Biofit's signage schedule once the client signs them off. The English fallback set stays ready if they prefer it on the doors.</span></div>
-+      <div class="op rv"><b>One person or two in Aer</b><span>Biofit's design intent prefers a single-user chamber, while the quotation is for the two-person VH2 and the coordination plan says model TBC. Two seats doubles capacity and allows a shared session.</span></div>
-+      <div class="op rv"><b>Protocols need an owner</b><span>Screening, session limits and supervision for Ger and Aer are outside Biofit's design scope. They have to be written with the supplier and a medical advisor before opening.</span></div>
++      <div class="op op--key rv"><b>Approve the names</b><span>Iva's, Form, Cryo, Light, Air, Rest and Scan go to Biofit's signage schedule once the client signs them off.</span></div>
++      <div class="op rv"><b>One person or two in Air</b><span>Biofit's design intent prefers a single-user chamber, while the quotation is for the two-person VH2 and the coordination plan says model TBC. Two seats doubles capacity and allows a shared session.</span></div>
++      <div class="op rv"><b>Protocols need an owner</b><span>Screening, session limits and supervision for Cryo and Air are outside Biofit's design scope. They have to be written with the supplier and a medical advisor before opening.</span></div>
 +      <div class="op rv"><b>The bar menu feeds Biofit's bar consultancy</b><span>Biofit proposes a health bar consultancy from November to January covering recipes, costing and training. This menu is the brand-side input to that work; recipes, portions and allergens remain theirs to finalise.</span></div>
 +      <div class="op rv"><b>Prices need a local check</b><span>Pilates prices are benchmarked against Bucharest studios. Treatment prices have no verified local benchmark yet and should be checked before any package is printed.</span></div>
 +    </div>
@@ -3393,12 +3373,12 @@ index 0000000..c5382ec
 +
 +/* ---------- floor map ---------- */
 +var INFO={
-+  pilates:{k:"Move",h:"Forma · Pilates studio",b:"Daylit, tonal, arched mirrors with soft backlighting. Six reformers run together with one instructor; the Cadillac sits behind a curtain for private work. Ceiling infrared panels heat selected classes to about 35°C.",d:[["Equipment","6 × BASI Reformer with tower · 1 × BASI Cadillac"],["Class","6 clients + 1 instructor"],["Heated","IR ceiling panels, ~35°C"],["Audio","4 speakers, Bluetooth for instructors"]]},
-+  scan:{k:"Measure",h:"Harta · 3D scan",b:"The 3D scanner lives in the Pilates studio but serves every member. Baseline at the first visit, reassessment every quarter. A curtain gives privacy, since scans are done in underwear.",d:[["Equipment","SCANECA 3D body scanner"],["Investment","€18,990 + VAT"],["Lead time","~90 days"]]},
-+  recovery:{k:"Recover",h:"Repaus · Recovery suite",b:"Softer and quieter than the treatment rooms. The integrated recliner carries sound and vibration in its own frame, so the client lies down once while compression, PEMF and red-light panels are layered on.",d:[["Recliner","Gharieni RLX Wellnamis, integrated"],["Built in","Vibroacoustic stimulation · binaural audio"],["Layers","BEMER Evo · CTN e°COMPRESSION · Nircura dual panels"],["Investment","~€26,000 (Option B)"]]},
-+  hbot:{k:"Charge",h:"Aer · Oxygen",b:"The hyperbaric chamber: an hour, fully clothed, the most exclusive session in the house. The room geometry is driven by the chamber and its separate air and cooling units.",d:[["Equipment","CTN OxyPro modular · VH1 or VH2 TBC"],["Session","60 min, clothed"],["Investment","€69,900 + VAT (VH2 quote)"]]},
-+  red:{k:"Charge",h:"Lumina · Red light",b:"A single standing full-body cabin of red and near-infrared light. The most compact of the treatment rooms and the easiest to repeat weekly.",d:[["Equipment","CTN LedPro Vertical"],["Session","~12 min, standing"],["Investment","€34,500 + VAT"]]},
-+  cryo:{k:"Charge",h:"Ger · Cryo",b:"An electric whole-body cryotherapy cabin. Two to four minutes, changed inside the room. Short slots make it the highest-capacity treatment in the house.",d:[["Equipment","CTN e°CABIN"],["Session","2 to 4 min"],["Investment","€89,900 + VAT"]]},
++  pilates:{k:"Move",h:"Form · Pilates studio",b:"Daylit, tonal, arched mirrors with soft backlighting. Six reformers run together with one instructor; the Cadillac sits behind a curtain for private work. Ceiling infrared panels heat selected classes to about 35°C.",d:[["Equipment","6 × BASI Reformer with tower · 1 × BASI Cadillac"],["Class","6 clients + 1 instructor"],["Heated","IR ceiling panels, ~35°C"],["Audio","4 speakers, Bluetooth for instructors"]]},
++  scan:{k:"Measure",h:"Scan · 3D body scan",b:"The 3D scanner lives in the Pilates studio but serves every member. Baseline at the first visit, reassessment every quarter. A curtain gives privacy, since scans are done in underwear.",d:[["Equipment","SCANECA 3D body scanner"],["Investment","€18,990 + VAT"],["Lead time","~90 days"]]},
++  recovery:{k:"Recover",h:"Rest · Recovery suite",b:"Softer and quieter than the treatment rooms. The integrated recliner carries sound and vibration in its own frame, so the client lies down once while compression, PEMF and red-light panels are layered on.",d:[["Recliner","Gharieni RLX Wellnamis, integrated"],["Built in","Vibroacoustic stimulation · binaural audio"],["Layers","BEMER Evo · CTN e°COMPRESSION · Nircura dual panels"],["Investment","~€26,000 (Option B)"]]},
++  hbot:{k:"Charge",h:"Air · Oxygen",b:"The hyperbaric chamber: an hour, fully clothed, the most exclusive session in the house. The room geometry is driven by the chamber and its separate air and cooling units.",d:[["Equipment","CTN OxyPro modular · VH1 or VH2 TBC"],["Session","60 min, clothed"],["Investment","€69,900 + VAT (VH2 quote)"]]},
++  red:{k:"Charge",h:"Light · Red light",b:"A single standing full-body cabin of red and near-infrared light. The most compact of the treatment rooms and the easiest to repeat weekly.",d:[["Equipment","CTN LedPro Vertical"],["Session","~12 min, standing"],["Investment","€34,500 + VAT"]]},
++  cryo:{k:"Charge",h:"Cryo",b:"An electric whole-body cryotherapy cabin. Two to four minutes, changed inside the room. Short slots make it the highest-capacity treatment in the house.",d:[["Equipment","CTN e°CABIN"],["Session","2 to 4 min"],["Investment","€89,900 + VAT"]]},
 +  bar:{k:"Front of house",h:"Iva's · Reception and bar",b:"The first thing anyone sees: a curved reception, the bar beside it, a planted vitrina behind glass. Separate tills, shared member system. Digital menu screens are built into the rear wall.",d:[["Seats","6 at the bar"],["Offer","Drinks only, no food preparation"],["Staff","Reception and bar, 2 to 3 on shift in total"]]},
 +  terrace:{k:"Front of house",h:"Terrace",b:"Six outside seats extend the bar into the street and make the studio visible through the reflective façade, subject to landlord and local approval.",d:[["Seats","~6, subject to approval"]]},
 +  women:{k:"Changing",h:"Women's changing",b:"Compact and considered: tonal green, travertine, brushed nickel, halo lighting and flattering mirrors.",d:[["Lockers","10, digital combination locks"],["Shower","1, refillable dispensers"]]},
@@ -3424,13 +3404,13 @@ index 0000000..c5382ec
 +  cryo:[614,473], red:[614,384], hbot:[614,295], recovery:[488,310], barSeat:[330,600], corChg:[550,478], changing:[490,478], corPil:[550,200], pil:[200,200], corTop:[550,245] };
 +var C={
 +  lunch:{pts:["entry","rec","corB","corCryo","cryo","corCryo","corRed","red","corRed","corB","barSeat"],stops:[["rec","1"],["cryo","2"],["red","3"],["barSeat","4"]],
-+         note:{k:"Circuit · 30 min",h:"Loniva 30",b:"Check in, Ger, Lumina, a drink from Iva's to take back upstairs. Built for the office tower's lunch hour.",d:[["Rooms","Ger · Lumina · Iva's"],["Single price","249 lei (working)"],["Pass","10 visits for 1,990 lei"]]}},
++         note:{k:"Circuit · 30 min",h:"Loniva 30",b:"Check in, Cryo, Light, a drink from Iva's to take back upstairs. Built for the office tower's lunch hour.",d:[["Rooms","Cryo · Light · Iva's"],["Single price","249 lei (working)"],["Pass","10 visits for 1,990 lei"]]}},
 +  reset:{pts:["entry","rec","corB","corCryo","cryo","corCryo","corRed","red","corRed","corRecov","recovery","corRecov","corB","barSeat"],stops:[["rec","1"],["cryo","2"],["red","3"],["recovery","4"],["barSeat","5"]],
-+         note:{k:"Circuit · 60 min",h:"Loniva 60",b:"The full corridor and Repaus. The weekly visit that memberships are built on.",d:[["Rooms","Ger · Lumina · Repaus · Iva's"],["Single price","399 lei (working)"],["In","Repaus and Loniva memberships"]]}},
++         note:{k:"Circuit · 60 min",h:"Loniva 60",b:"The full corridor and Rest. The weekly visit that memberships are built on.",d:[["Rooms","Cryo · Light · Rest · Iva's"],["Single price","399 lei (working)"],["In","Recover and Loniva Complete"]]}},
 +  oxygen:{pts:["entry","rec","corB","corHbot","hbot","corHbot","corRecov","recovery","corRecov","corB","barSeat"],stops:[["rec","1"],["hbot","2"],["recovery","3"],["barSeat","4"]],
-+         note:{k:"Circuit · 90 min",h:"Loniva 90",b:"An hour in Aer, twenty minutes of compression in Repaus, a slow drink. The premium visit, sold mainly in courses.",d:[["Rooms","Aer · Repaus · Iva's"],["Single price","590 lei (working)"],["Course","Aer 10 for 3,900 lei"]]}},
++         note:{k:"Circuit · 90 min",h:"Loniva 90",b:"An hour in Air, twenty minutes of compression in Rest, a slow drink. The premium visit, sold mainly in courses.",d:[["Rooms","Air · Rest · Iva's"],["Single price","590 lei (working)"],["Course","Air 10 for 3,900 lei"]]}},
 +  after:{pts:["entry","rec","corB","corChg","changing","corChg","corPil","pil","corPil","corCryo","cryo","corCryo","corRecov","recovery","corRecov","corB","barSeat"],stops:[["rec","1"],["changing","2"],["pil","3"],["cryo","4"],["recovery","5"],["barSeat","6"]],
-+         note:{k:"Circuit · 85 min",h:"Forma+",b:"Change, reformer, then straight down the corridor: Ger and compression before a shake at Iva's. How a Pilates member discovers the rest of the house.",d:[["Rooms","Changing · Forma · Ger · Repaus · Iva's"],["Add-on","Member price after any class"]]}}
++         note:{k:"Circuit · 85 min",h:"After Class",b:"Change, reformer, then straight down the corridor: Cryo and compression before a shake at Iva's. How a Pilates member discovers the rest of the house.",d:[["Rooms","Changing · Form · Cryo · Rest · Iva's"],["Add-on","Member price after any class"]]}}
 +};
 +var route=document.getElementById("route"), stopsG=document.getElementById("stops");
 +var cbtns=Array.prototype.slice.call(document.querySelectorAll(".cbtn"));
