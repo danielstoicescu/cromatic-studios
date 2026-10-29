@@ -1646,7 +1646,12 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
    under the covers (.crt3). The rig faces you flat, a dark bezel per set and small gaps; the DOM covers stay on top,
    see-through once their picture is on the glass (.crt-ready), so links, focus, the hover name and the first tap work
    as before. No lift on hover (the set leans in on the glass instead). The h1 and the link stay flat above it all */
-.pwall.crt3 .pw-gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+/* r381: the CRT wall mounts without moving anything (CLS 0.04 at 1440, 0.027 on a phone: the rows' gaps went 16 -> 10 px,
+   12 -> 8 on phones, when .crt3 arrived and the wall's centred block shrank 6-8 px). The first wall has the CRT's gaps
+   from the first paint, so its height is the same before and after; the canvas is out of the flow from the start */
+.pwall.pw-first .pw-rows, .pwall.pw-first .pw-row { gap: 10px; }
+@media (max-width: 700px) { .pwall.pw-first .pw-rows, .pwall.pw-first .pw-row { gap: 8px; } }
+.pwall .pw-gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .pwall.crt3 .pw-rows { position: relative; z-index: 1; gap: 10px; }
 .pwall.crt3 .pw-row { gap: 10px; }
 .pwall.crt3 .pw-case { border-radius: 12px; background: #161513; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }

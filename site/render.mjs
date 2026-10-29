@@ -372,6 +372,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
         if (loose.length) console.warn(`[wall] cover but not on the wall and not in WALL_OUT: ${loose.join(", ")}`);
       }
       if (rows.some((r) => r.length < 3)) return "";
+      if (first) wall.lead = rows[0].slice(0, 2).map((x) => x.page); // r381: preloaded in the head (the first paint shows row 1 from its start)
       const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
       return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
     <div class="pw-rows">${rows.map((l) => `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`).join("")}</div>
@@ -379,12 +380,16 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     <p class="pw-alt"><a href="/">Or take the scenic route through the Cromatic City <span aria-hidden="true">→</span></a></p>` : ""}
   </section>`;
     };
-    const preload = false && hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "";
+    // r381: the wall's first two covers (row 1 from its start: what the first paint shows, before site.js slides the
+    // rows; the phones' LCP, 2.67 s on PSI) are fetched from the head, at high priority, not after the CSS and the fonts
+    const wallFirst = wall(true);
+    const wallPre = (wall.lead || []).map((pg) => `<link rel="preload" as="image" href="/onboarding/media/covers/${pg}.webp" fetchpriority="high">`).join("\n");
+    const preload = wallPre || (false && hp.d ? `${hp.m ? `<link rel="preload" as="image" href="${hp.m.src}" media="(max-width: 700px)" fetchpriority="high">\n` : ""}<link rel="preload" as="image" href="${hp.d.src}"${hp.m ? ' media="(min-width: 701px)"' : ""} fetchpriority="high">` : "");
     return `${head({ title: SITE_TITLE, desc: HOME_DESC, path: "/site/", ld, preload })}
 ${header(true)}
 <main id="main">
   ${/* r349 (Daniel, new order): the wall of work is the first fold, under one line; then the four chapters; then the
-     drive (half a screen) where the "place, facade, brand" fold was; then the streets */ ""}${wall(true)}
+     drive (half a screen) where the "place, facade, brand" fold was; then the streets */ ""}${wallFirst}
 
   <section id="what" class="sec">
     <div class="wrap">
