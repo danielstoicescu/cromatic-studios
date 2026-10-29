@@ -392,3 +392,52 @@ export async function socialCards(pub, root, SITE, pick, skip, log = console.log
   }
   log(`[og] ${pages} pages with their own 1200×630 card, ${made} new${missing ? `, ${missing} not in the cache (install sharp and build once)` : ""}`);
 }
+
+// r382 (Mira's audit, finding 6): the home page's wall of work showed /onboarding/media/covers/<case>.webp as is: one
+// 560 px file for every screen (shown at 220-340 px, 62vw on a phone), revalidated at the origin on every visit. Every
+// page but /onboarding/ itself now takes hashed copies from /assets/w/ (immutable): 320 and 480 px made with sharp
+// (committed in site/.img-cache by content hash, like every other copy) and the 560 px original as the widest choice
+// (the covers are 560 px wide, so there is no 640). The wall's <img> and the head's preload of its first covers get a
+// srcset and sizes. The CRT wall (site.js) uploads whichever file the browser chose, scaled to its texture.
+const COVER_W = [320, 480];
+export const COVER_SIZES = "(max-width: 700px) 62vw, (max-width: 916px) 220px, (max-width: 1416px) 24vw, 340px";
+export async function wallCovers(pub, root, log = console.log) {
+  let sharp = null;
+  try { sharp = (await import("sharp")).default; } catch {}
+  const dir = join(root, "site", "onboarding", "media", "covers"), cacheDir = join(root, "site", ".img-cache");
+  mkdirSync(join(pub, "assets", "w"), { recursive: true });
+  const sets = new Map();
+  const setFor = async (slug) => {
+    if (sets.has(slug)) return sets.get(slug);
+    let buf = null;
+    try { buf = readFileSync(join(dir, `${slug}.webp`)); } catch { sets.set(slug, null); return null; }
+    const h = createHash("sha1").update(buf).digest("hex").slice(0, 12), list = [];
+    for (const w of COVER_W) {
+      const name = `${h}-${w}.webp`, cached = join(cacheDir, name);
+      if (!existsSync(cached)) { if (!sharp) continue; await sharp(buf).resize({ width: w }).webp({ quality: 78, effort: 5 }).toFile(cached); }
+      copyFileSync(cached, join(pub, "assets", "w", name));
+      list.push(`/assets/w/${name} ${w}w`);
+    }
+    const top = `/assets/w/${h}-560.webp`;
+    writeFileSync(join(pub, top), buf);
+    list.push(`${top} 560w`);
+    const s = { src: top, srcset: list.join(", ") };
+    sets.set(slug, s);
+    return s;
+  };
+  const htmls = [];
+  (function walk(d) { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) { if (f !== "onboarding" && !(d === pub && /^(rapoarte|wp-content|assets)$/.test(f))) walk(p); } else if (f === "index.html") htmls.push(p); } })(pub);
+  let pages = 0, tags = 0;
+  for (const f of htmls) {
+    const t = readFileSync(f, "utf8");
+    if (!t.includes("/onboarding/media/covers/")) continue;
+    const slugs = [...new Set([...t.matchAll(/\/onboarding\/media\/covers\/([\w-]+)\.webp/g)].map((m) => m[1]))];
+    for (const s of slugs) await setFor(s);
+    let n = 0;
+    const o = t
+      .replace(/<img src="\/onboarding\/media\/covers\/([\w-]+)\.webp"/g, (m, s) => { const c = sets.get(s); if (!c) return m; n++; return `<img src="${c.src}" srcset="${c.srcset}" sizes="${COVER_SIZES}"`; })
+      .replace(/<link rel="preload" as="image" href="\/onboarding\/media\/covers\/([\w-]+)\.webp"/g, (m, s) => { const c = sets.get(s); if (!c) return m; n++; return `<link rel="preload" as="image" href="${c.src}" imagesrcset="${c.srcset}" imagesizes="${COVER_SIZES}"`; });
+    if (n) { writeFileSync(f, o); pages++; tags += n; }
+  }
+  log(`[covers] wall covers from /assets/w on ${pages} page(s), ${tags} tags, ${[...sets.values()].filter(Boolean).length} covers`);
+}

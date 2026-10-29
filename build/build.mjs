@@ -18,7 +18,7 @@ import { FILM_AUTO, ytFacade } from "./film.mjs";
 import * as DATA from "../site/data.mjs";
 import { makeRender } from "../site/render.mjs";
 import { kineticBundle } from "./kinetic.mjs";
-import { optimizeImages, socialCards, canvasVariants } from "./images.mjs"; // r139d: canvasVariants
+import { optimizeImages, socialCards, canvasVariants, wallCovers } from "./images.mjs"; // r139d: canvasVariants; r382: wallCovers
 import { makeI18n, roPath } from "./i18n.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -970,6 +970,7 @@ if (CLIPPED.length) console.warn(`[seo] description cut mid-sentence on ${CLIPPE
 // filled in after, so every case page ended with five full-size JPEGs, 50-300 KB each, for 400 px cards)
 (function covers(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { covers(p2); continue; } if (f !== "index.html") continue; const t = readFileSync(p2, "utf8"); if (t.includes("%%COVER:")) writeFileSync(p2, t.replace(/%%COVER:([\w-]+)%%/g, (m, sl) => COVERS[sl] || COVERS["name:" + ((DATA.PROJECTS.find((x) => x.page === sl) || {}).name || "").toLowerCase()] || "/og.jpg")); } })(pub);
 await optimizeImages(pub, root);
+await wallCovers(pub, root); // r382: the wall's covers from /assets/w (srcset, immutable)
 let PT_MIN = null; // (minified once, here: walkDG is not async)
 if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = { js: transformSync(PT_SITE.js, { minify: true, target: "es2017", legalComments: "none" }).code.trim(), css: transformSync(PT_SITE.css, { loader: "css", minify: true }).code.trim() }; } catch (e) { PT_MIN = { js: PT_SITE.js, css: PT_SITE.css }; }
 (function walkDG(d) { for (const f of readdirSync(d)) { const p2 = join(d, f); if (statSync(p2).isDirectory()) { walkDG(p2); continue; } if (!/\.(css|html|js)$/.test(f)) continue; const t = readFileSync(p2, "utf8"); let n2 = localDG(t);
