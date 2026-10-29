@@ -9,7 +9,7 @@ export const INDUSTRIES = [
     streetName: "Coffee Street",
     title: "Specialty coffee, food & drink branding in Bucharest",
     desc: "Branding, packaging, webshops and content for coffee shops, bakeries and food brands. Two Minutes, Steam, Craft Coffee and Slow Coffee Festival.", // r136: under 155 characters
-    eyebrow: "Coffee Street · 15 case studies",
+    eyebrow: "Coffee Street", // r373: no count (Daniel: "de scos bulina cu numărul de proiecte")
     h1: "Coffee, food and drink brands, made by regulars.",
     lead: "Cromatic Studios is a Bucharest branding studio for specialty coffee, food and drink. We design the brand, the box, the shop and the feed for the places people come back to.",
     intro: [
@@ -43,7 +43,7 @@ export const INDUSTRIES = [
     streetName: "Fintech Boulevard",
     title: "Fintech, banking & investment branding in Bucharest",
     desc: "Brand strategy, identity, websites and apps for banks, brokers and fintech. Investimental, Techventures Bank and Unchain Festival, from Bucharest.",
-    eyebrow: "Fintech Boulevard · 8 case studies",
+    eyebrow: "Fintech Boulevard",
     h1: "Finance brands with a human face.",
     lead: "Cromatic Studios designs brand strategy, identities, websites and apps for banks, brokers, investment groups, fintech startups and energy companies in Romania. Clear for the regulator, warm for the customer.",
     intro: [
@@ -76,7 +76,7 @@ export const INDUSTRIES = [
     streetName: "Medical Avenue",
     title: "Healthcare, clinic & pharma branding in Bucharest",
     desc: "Brand strategy, websites, TV ads and content for clinics, pharma and aesthetic medicine. Elithia, Clinica Sante, Toskani MED and Help4Brain.", // r136: under 155 characters
-    eyebrow: "Medical Avenue · 12 case studies", // TASK-064: was still 9 (TASK-026 added two, Maximag one); TASK-074: 8 cards + the 4 Zdrovit brands' pages (the work section counts them the same way)
+    eyebrow: "Medical Avenue",
     h1: "Healthcare brands that feel like care.",
     lead: "Cromatic Studios builds brands, websites, films and content for clinics, laboratories, pharma and aesthetic medicine, in Romania and abroad. Precise for the doctor. Calm for the patient.",
     intro: [
@@ -109,7 +109,7 @@ export const INDUSTRIES = [
     streetName: "The Shortest Shortcut",
     title: "Content for print, sticker & merch brands in Bucharest",
     desc: "Instagram reels, carousels and social content for print-on-demand and sticker brands. Printoteca and Sticker Republic, by Cromatic Studios in Bucharest.",
-    eyebrow: "The Shortest Shortcut · 2 case studies",
+    eyebrow: "The Shortest Shortcut",
     h1: "Print and merch brands, made to be followed.",
     lead: "Cromatic Studios makes social content for print-on-demand, sticker and merch brands. Reels, carousels and series that show the people and the machines behind every order.",
     intro: [

@@ -980,3 +980,11 @@ html:not(.czl-on) .czl-x { display: none; }
   /* the worlds' zone is full on a phone: its explainer stays on laptops and tablets */
   .z-worlds .czl-worlds { display: none; }
 }
+/* r373 (Daniel, 28 Oct: "de rezolvat butoanele de pe telefon"): on a 360-400 px phone the bar's "Cromatic City" was cut
+   behind the menu button (the bar is overflow: hidden). Under 400 px the spinning cup steps out of the bar (it is on the
+   page below) and the way in loses its arrow, so the name, RO, "Cromatic City" and the menu all fit whole */
+@media (max-width: 400px) {
+  .nav .brand .cup { display: none; }
+  .nav .nav-cta { flex: 0 0 auto; padding: 10px 11px; font-size: 13.5px; }
+  .nav .nav-cta [aria-hidden="true"] { display: none; }
+}

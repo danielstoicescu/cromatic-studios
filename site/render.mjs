@@ -173,10 +173,33 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   };
   const placeId = (name) => "w-" + name.replace(/\W+/g, "").toLowerCase();
   const coverFor = (p, covers) => (MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]]) || covers["place:" + placeId(p.name)] || (p.page && covers[p.page]) || null;
-  const bentoCard = (p, i, covers) => {
+  // r373 (Daniel, 28 Oct: "desktop mai aerisit"): on a desktop the portfolio reads in calm rows of one or two, never a
+  // mosaic: a feature beside a companion (7 + 5 of 12 columns), a pair of equals, one wide card; then the same rows with
+  // the feature on the other side. A work in progress (Lapterra) keeps its whole row. The last row never leaves a hole:
+  // one card left takes the row, two make a pair. Every card carries its desktop row in a class (b-d7, b-d5, b-d6, b-d12);
+  // the phone layout (site.css, 700 px and under) keeps its own rhythm by position
+  const ROWS = [[7, 5], [6, 6], [12], [5, 7], [6, 6], [12]];
+  const bentoPlan = (list) => {
+    const out = [];
+    let r = 0;
+    for (let i = 0; i < list.length;) {
+      if (list[i].wip) { out.push("full"); i++; continue; }
+      let row = ROWS[r % ROWS.length];
+      r++;
+      // the cards before the next full-width work (or the end) decide whether this row fits
+      let left = 0;
+      for (let j = i; j < list.length && !list[j].wip; j++) left++;
+      if (left === 1) row = [12];
+      else if (left < row.length) row = [6, 6];
+      for (const c of row) { out.push("d" + c); i++; }
+    }
+    return out;
+  };
+  const bentoGrid = (list, covers, attrs = "") => { const plan = bentoPlan(list); return `<div class="bento bento-air"${attrs}>${list.map((p, i) => bentoCard(p, i, covers, plan[i])).join("")}</div>`; };
+  const bentoCard = (p, i, covers, plan) => {
     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
     const media = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
-    const size = p.wip ? "full" : SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
+    const size = p.wip ? "full" : plan || SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
     // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
     // pill itself), the category on a chip at the top, the brief and "Read the case" on a paper note that opens under the
     // pill (site.css). One element more than before per card: the note
@@ -239,7 +262,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // band crosses the screen): the picture moves slower than the page and settles from a slight zoom, the street's name
   // in solid CromaticSans moves faster than it; the band fades into the paper the street's cards stand on
   const SB_GO = { A: "tm", B: "invest", C: "tac" }; // r359: a place on each street of the map (src/app.js MAP_PLACES)
-  const streetBand = (k, street, i, count) => {
+  const streetBand = (k, street, i) => {
     const slug = street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), m = (n) => A(`m:streets/${slug}/${n}`);
     const pd = m("poster.jpg"), pm = m("poster-m.jpg"), dm = m(`${slug}.mp4`), dw = m(`${slug}.webm`), mm = m(`${slug}-m.mp4`);
     const media = pd ? `<picture class="sb-pic">${pm ? `<source media="(max-width: 700px)" srcset="${pm.src}" width="${pm.w}" height="${pm.h}">` : ""}<img src="${pd.src}" width="${pd.w}" height="${pd.h}" alt="" loading="lazy" decoding="async"></picture>` : "";
@@ -247,7 +270,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     return `<div class="street-band${pd ? " has-media" : ""}">
         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
         <div class="sb-copy">
-          <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span><span>${count} ${count === 1 ? "project" : "projects"}</span></p>
+          <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span></p>
           ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${DK_STILL()}<span>Take a drive in the Cromatic City</span></a></div>
           <p class="sb-name" aria-hidden="true">${esc(street)}</p>
         </div>
@@ -259,20 +282,19 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     if (!list.length) return "";
     const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
     const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
-    const n = new Set([...list.filter((p) => p.page).map((p) => p.page), ...(small ? zdPages() : [])]).size; // TASK-074: + the Zdrovit brands' case pages (reached from the Zdrovit row)
+    // r373 (Daniel, 28 Oct: "de scos bulina cu numărul de proiecte pe fiecare stradă"): no count on the band or the card
     // TASK-139 (Daniel, 28 Oct: "next level, să simți că treci dintr-o categorie în alta"): each street opens on its band
     // (streetBand above), then the street's card and sign land on it (site.js sets --sp, 0 → 1)
     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
-      ${streetBand(k, street, si, list.length)}
+      ${streetBand(k, street, si)}
       <div class="street-head">
         <div class="sh-main">
           <h3 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h3>
           <p class="sh-lead">${esc(info.lead)}</p>
           ${ind ? `<a class="sh-more" href="/industries/${ind.slug}/" aria-label="${esc(info.t)}: the whole street"><span>The whole street</span> <i aria-hidden="true">→</i></a>` : ""}
         </div>
-        <p class="sh-count"><b>${n}</b> <span class="mono">case ${n === 1 ? "study" : "studies"}</span></p>
       </div>
-      <div class="bento">${list.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
+      ${bentoGrid(list, covers)}
       ${small ? zdRow() : ""}
     </div>`;
   }).join("");
@@ -632,7 +654,7 @@ ${footer}`;
   const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || ZDROVIT_BRANDS.find((b) => b.page === sl)?.name || sl })) });
   // TASK-074: a Zdrovit brand's case page has no portfolio entry; a service page that names it still shows its card
   const zdProj = (slug) => { const b = ZDROVIT_BRANDS.find((x) => x.page === slug); return b ? { name: b.name, cat: b.cat || "Zdrovit · Beauty & Supplement Park", desc: b.desc || b.line, page: b.page, c: b.c || "#e30613", t: b.t || "#ffffff", poster: b.poster || b.name, img: b.img } : null; };
-  const hubCases = (slugs, covers, col) => `<div class="bento"${col ? ` style="--dc:${col}"` : ""}>${slugs.map((sl) => byPage(sl) || zdProj(sl)).filter(Boolean).map((p, i) => bentoCard(p, i, covers)).join("")}</div>`;
+  const hubCases = (slugs, covers, col) => bentoGrid(slugs.map((sl) => byPage(sl) || zdProj(sl)).filter(Boolean), covers, col ? ` style="--dc:${col}"` : "");
   const hubFaq = (faq) => `<section class="sec" id="faq"><div class="wrap faq"><div><p class="eyebrow mono">Good questions</p><h2 class="ptitle">${pill("Before", "#FED012", -1.5)} ${pill("the coffee", "#F65342", 1)}</h2></div>
       <div class="qa">${faq.map(([q, a], i) => `<details${i === 0 ? " open" : ""}><summary>${q}</summary><p>${a}</p></details>`).join("")}</div></div></section>`;
   const hubEnd = `<section class="c-end"><div class="wrap">
@@ -664,7 +686,7 @@ ${header(false)}
   ${hubHero(d.eyebrow, d.h1, d.lead, col)}
   <section class="wrap c2-lead hub-intro">${d.intro.map((x) => `<p>${x}</p>`).join("")}</section>
   <section class="sec"><div class="wrap"><h2 class="eyebrow mono">What we do on ${esc(street)}</h2>${cards(d.offer, col)}</div></section>
-  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)} · ${d.cases.length + (d.street === "C" ? zdPages().length : 0)} case studies</p>
+  <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono">${esc(street)}</p>
     <h2 class="ptitle">${pill("The work", col, -1.5)}</h2>${hubCases(d.cases, covers, col)}
     ${(() => { const more = PROJECTS.filter((p) => p.street === d.street && !p.page); return more.length ? `<p class="friends"><span class="mono">Also on ${esc(street)}</span> ${more.map((p) => `<span class="fpill">${esc(p.name)}</span>`).join("")}</p>` : ""; })()}
     ${d.street === "C" ? zdRow() : "" /* TASK-074: the brands in the Zdrovit park (they were pills above as yard kiosks) */}
@@ -869,7 +891,7 @@ ${footer}`;
     <div class="hub-cards">${L.benefits.map((x, i) => `<article class="hub-card" data-rv style="--sc:${col};--i:${i}"><span class="mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p></article>`).join("")}</div>
     ${nudge("benefits")}</div></section>
   <section class="sec sec-alt" id="work"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.casesEyebrow)}</p>${title2(L.casesTitle)}
-    <div class="bento" style="--dc:${col}">${projects.map((p, i) => bentoCard(p, i, covers)).join("")}</div>
+    ${bentoGrid(projects, covers, ` style="--dc:${col}"`)}
     ${nudge("cases")}</div></section>
   ${drive}
   <section class="sec"><div class="wrap"><p class="eyebrow mono" data-rv>${esc(L.servicesEyebrow)}</p>${title2(L.servicesTitle)}

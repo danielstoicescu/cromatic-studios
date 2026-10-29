@@ -17,16 +17,32 @@ export const SI_PATHS = ["/streetindex/", "/ro/streetindex/"];
 
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const pad = (n) => String(n).padStart(2, "0");
-const STREET_SLUG = { A: "coffee-street", B: "fintech-boulevard", C: "medical-avenue", D: "the-shortest-shortcut" };
+export const STREET_SLUG = { A: "coffee-street", B: "fintech-boulevard", C: "medical-avenue", D: "the-shortest-shortcut" };
 
 // the four filter chapters, read from each project's fields (data.mjs has no chapters[] yet, see brief §7.4)
-const CH = {
+export const CH = {
   dream: /strateg|position|naming|persona|brand universe|workshop/i,
   voice: /brand|identit|logo|label|visual|design/i,
   world: /web|site|app|packag|box|film|video|product|merch|print|sticker|ui\b|ux|3d|label|tv/i,
   crowd: /content|social|growth|campaign|communicat|photo|ads|motion|smart tv|event|festival|pr\b/i
 };
-const chaptersOf = (p) => Object.keys(CH).filter((k) => CH[k].test(`${p.cat} ${p.desc}`));
+export const chaptersOf = (p) => Object.keys(CH).filter((k) => CH[k].test(`${p.cat} ${p.desc}`));
+
+// the media of each built case page: its hero first, then its pictures, in page order (logos and small pictures out).
+// Shared with the header's mega menu (build/megamenu.mjs), which reads the same case pages before the image pass
+export const caseGallery = (pub, page, max = 6) => {
+  const f = join(pub, "work", page, "index.html");
+  if (!existsSync(f)) return [];
+  const html = readFileSync(f, "utf8").split('class="c2-next"')[0], out = []; // not the "Next case" picture at the end
+  for (const tag of html.match(/<img\b[^>]*>/g) || []) {
+    const src = (/data-lz-src="([^"]+)"/.exec(tag) || /\ssrc="(\/[^"]+)"/.exec(tag) || [])[1];
+    const w = Number((/\swidth="(\d+)"/.exec(tag) || [])[1] || 0);
+    if (!src || src.startsWith("data:") || /alt="Cromatic Studios"/.test(tag) || /\.svg$/.test(src) || (w && w < 360)) continue;
+    if (!out.includes(src)) out.push(src);
+    if (out.length >= max) break;
+  }
+  return out;
+};
 
 const T = {
   en: {
@@ -82,20 +98,7 @@ export async function buildStreetIndex({ root, pub, mediaMap, COVERS, R }) {
   const roOf = (t) => { const k = String(t ?? "").replace(/\s+/g, " ").trim(); const v = RO.get(k) ?? RO.get(k.replace(/&/g, "&amp;")); return v != null && v !== "" ? v : t; };
   const m = (k) => mediaMap.get(k)?.src || "";
 
-  // the media of each built case page: its hero first, then its pictures, in page order (logos and small pictures out)
-  const galleryOf = (page) => {
-    const f = join(pub, "work", page, "index.html");
-    if (!existsSync(f)) return [];
-    const html = readFileSync(f, "utf8").split('class="c2-next"')[0], out = []; // not the "Next case" picture at the end
-    for (const tag of html.match(/<img\b[^>]*>/g) || []) {
-      const src = (/data-lz-src="([^"]+)"/.exec(tag) || /\ssrc="(\/[^"]+)"/.exec(tag) || [])[1];
-      const w = Number((/\swidth="(\d+)"/.exec(tag) || [])[1] || 0);
-      if (!src || src.startsWith("data:") || /alt="Cromatic Studios"/.test(tag) || /\.svg$/.test(src) || (w && w < 360)) continue;
-      if (!out.includes(src)) out.push(src);
-      if (out.length >= 6) break;
-    }
-    return out;
-  };
+  const galleryOf = (page) => caseGallery(pub, page);
 
   const css = readFileSync(join(root, "site", "streetindex", "si.css"), "utf8");
   const js = readFileSync(join(root, "site", "streetindex", "si.js"), "utf8");
@@ -256,3 +259,5 @@ ${ch.js}
   }
   console.log(`[streetindex] ${SI_PATHS.join(" + ")} -> ${streets.length} streets, ${total} places, ${cases} cases, beta only; view transition opt-in on ${nvt} case pages`);
 }
+// the sentence filter's words, for the header's mega menu (build/megamenu.mjs; its Romanian comes from site/i18n/ro.json)
+export const SI_WORDS = T;

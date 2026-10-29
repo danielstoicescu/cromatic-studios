@@ -174,6 +174,18 @@ export function makeI18n(root) {
     return out;
   }
 
+  // r373 (Daniel, 28 Oct: "de rezolvat butoanele de pe telefon"): on the pages without the site's header (the case
+  // pages and Steam; Slow Coffee Festival keeps its own menu bar) "← Cromatic Studios" and the language pill no longer float over the words.
+  // They sit on a slim paper bar (the 64 px the pages already keep free at the top); the bar slides away as you read
+  // down, comes back as soon as you scroll up, and stays away while the boarding pass is on screen. 180 ms, transform
+  // only; no motion with reduced motion; nothing inside the map's frame (html.embed)
+  const CASE_BAR = `<style>.cs-bar{position:fixed;left:0;right:0;top:0;z-index:9998;height:calc(64px + env(safe-area-inset-top,0px));background:#fbfaf5;border-bottom:1px solid rgba(13,12,9,.14);pointer-events:none}
+.cs-bar,.cs-back,.lang-fixed{transition:transform .18s cubic-bezier(.2,.7,.2,1),visibility 0s}
+html.cb-up .cs-bar,html.cb-up .cs-back,html.cb-up .lang-fixed{transform:translateY(calc(-100% - 20px - env(safe-area-inset-top,0px)));visibility:hidden;transition:transform .18s cubic-bezier(.4,0,1,1),visibility 0s .18s}
+.cs-back:focus-visible,.lang-fixed:focus-visible{outline:2px solid #0d0c09;outline-offset:3px}
+html.cb-up .cs-back:focus-visible,html.cb-up .lang-fixed:focus-visible{transform:none;visibility:visible}
+html.embed .cs-bar{display:none}
+@media (prefers-reduced-motion:reduce){.cs-bar,.cs-back,.lang-fixed{transition:none!important}}</style><div class="cs-bar" aria-hidden="true"></div><script>(function(){var h=document.documentElement;if(h.classList.contains("embed"))return;var y=scrollY,q=0,pass=false;function f(){q=0;var n=scrollY,d=n-y;if(n<90){h.classList.toggle("cb-up",pass);y=n;return}if(Math.abs(d)>8){h.classList.toggle("cb-up",pass||d>0);y=n}}addEventListener("scroll",function(){if(!q)q=requestAnimationFrame(f)},{passive:true});function w(){var s=document.querySelector(".czp-sec");if(!s||!("IntersectionObserver" in window))return;new IntersectionObserver(function(es){pass=es[0].isIntersecting;h.classList.toggle("cb-up",pass||(scrollY>90&&h.classList.contains("cb-up")))},{rootMargin:"0px 0px -35% 0px"}).observe(s)}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",w):w()})();</script>`;
   // both languages point at each other (hreflang), and the header gets a language switch
   function alternates(html, enPath, SITE, lang) {
     const ro = roPath(enPath);
@@ -182,7 +194,7 @@ export function makeI18n(root) {
     const other = lang === "ro" ? enPath : ro, label = lang === "ro" ? "EN" : "RO", name = lang === "ro" ? "English" : "Română";
     const sw = `<a class="lang-sw" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}">${label}</a>`;
     if (/<a class="drive-btn[ "]/.test(html)) html = html.replace(/<a class="drive-btn(?=[ "])/, `${sw}<a class="drive-btn`); // r365: the class may carry more (dk-host)
-    else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style><a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
+    else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style>${/class="cs-back"/.test(html) ? CASE_BAR : ""}<a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
     return html;
   }
 

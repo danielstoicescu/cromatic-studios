@@ -1037,14 +1037,9 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
 .sh-more:is(:hover, :focus-visible) i { translate: 4px 0; }
 .sh-more:active { translate: 0 1px; box-shadow: 0 1px 0 var(--ink); transition-duration: .1s; }
 .sh-more:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-.sh-count { display: grid; justify-items: center; gap: 10px; margin: 0; }
-.sh-count b { display: grid; place-items: center; width: 104px; height: 104px; border-radius: 50%; background: var(--dc); color: var(--dt); border: var(--line); box-shadow: 0 4px 0 var(--ink);
-  font: 900 44px/1 var(--f); letter-spacing: -.04em; transition: rotate .6s var(--bounce); }
-.sh-count .mono { font-size: 10.5px; letter-spacing: .18em; color: var(--muted); }
 @media (hover: hover) and (pointer: fine) {
   .street-head .street-sign { transition: rotate .7s var(--bounce); }
   .street-head:hover .street-sign { rotate: -.8deg; }
-  .street-head:hover .sh-count b { rotate: -10deg; }
 }
 /* coming into view (site.js adds .in): the sign swings in from its top corner, the words rise, the disc pops */
 .js .dom-street .street-sign { transition: opacity .45s var(--eoq), transform .95s var(--bounce), rotate .7s var(--bounce); }
@@ -1052,8 +1047,6 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
 .js .dom-street :is(.sh-sub, .sh-lead, .sh-more) { transition: opacity .6s var(--eoq) var(--d, .1s), transform .8s var(--eoq) var(--d, .1s), translate .45s var(--bounce), box-shadow .45s var(--bounce); }
 .js .dom-street .sh-lead { --d: .16s; } .js .dom-street .sh-more { --d: .22s; }
 .js .dom-street:not(.in) :is(.sh-sub, .sh-lead, .sh-more) { opacity: 0; transform: translateY(10px); }
-.js .dom-street .sh-count b { transition: transform .8s var(--bounce) .28s, opacity .3s var(--eoq) .28s, rotate .6s var(--bounce); }
-.js .dom-street:not(.in) .sh-count b { opacity: 0; transform: scale(.4); }
 @media (max-width: 700px) {
   .dom-street { margin-top: 76px; scroll-margin-top: 170px; }
   .street-head { grid-template-columns: 1fr; padding: 50px 22px 24px; border-radius: 26px; gap: 0; }
@@ -1063,11 +1056,8 @@ html.embed .cv-stage { height: 100vh; height: 100svh; }
   .sh-sub { margin-top: 4px; padding-right: 76px; min-height: 64px; display: flex; align-items: center; font-size: 21px; }
   .sh-lead { font-size: 17px; }
   .sh-more { margin-top: 18px; font-size: 14.5px; padding: 12px 18px 13px; }
-  .sh-count { position: absolute; right: 18px; top: 40px; gap: 6px; }
-  .sh-count b { width: 64px; height: 64px; font-size: 28px; box-shadow: 0 3px 0 var(--ink); }
-  .sh-count .mono { font-size: 9px; letter-spacing: .14em; }
 }
-@media (prefers-reduced-motion: reduce) { .js .dom-street :is(.street-sign, .sh-sub, .sh-lead, .sh-more, .sh-count b) { opacity: 1 !important; transform: none !important; } }
+@media (prefers-reduced-motion: reduce) { .js .dom-street :is(.street-sign, .sh-sub, .sh-lead, .sh-more) { opacity: 1 !important; transform: none !important; } }
 
 /* ---- TASK-071: the arcade cabinet in front of Two Minutes opens the game ("2 Minutes 2 Fight w/ I O N", /play/gloves/).
    A link over the cabinet (its place in each cut of the scene), with a tag above it (on a laptop it reaches left, off the
@@ -1359,10 +1349,6 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
 /* (the street's name is the band's now: the road sign on its card stays for screen readers only, no name twice) */
 .street-band + .street-head { padding-top: clamp(28px, 3vw, 40px); }
 .street-band + .street-head .street-sign { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; box-shadow: none; }
-@media (max-width: 700px) {
-  .street-band + .street-head .sh-count { position: static; grid-auto-flow: column; justify-content: start; align-items: center; gap: 10px; margin-top: 18px; }
-  .street-band + .street-head .sh-count b { width: 52px; height: 52px; font-size: 22px; }
-}
 
 /* r348 (Daniel): the drive's loop behind "place → facade → brand", the three words as pills, a button for the last line, more room before the street buttons */
 .city-band { margin-bottom: clamp(56px, 6vw, 88px); }
@@ -1515,29 +1501,34 @@ html { touch-action: manipulation; }
    Dacia 1300 parked over the left edge (site/render.mjs DK). r366 (Ilinca): the car drawn at 3x (crisp on a 3x phone); at
    rest only the still loads (7 KB), the 10-frame roll strip on the first hover or focus. Hover or keyboard focus: it rolls
    5 px once, the wheels turning with it, and stops (no wheelspin in place); a press nudges it on. Still with reduced motion */
-.dk-host { position: relative; overflow: visible; padding-left: 60px !important; background: #fff !important; color: var(--ink) !important; border: 0 !important; white-space: nowrap;
+/* r374 (LIVE, Daniel 29 Oct: "Doar mașina din buton să fie mai bine încadrată în interiorul lui"): the car is parked INSIDE
+   the pill now, not over its left edge. One frame per button: --dk-w (the car's width; its height follows the sprite,
+   56:34), --dk-x (the inset from the pill's left edge) and --dk-g (the room before the label); the pill's left padding is
+   their sum, so every size stays fixed (no layout shift). Vertically centred; about 63% of a 44 px pill, a comfortable
+   inset clear of the round end, the same 5 px roll on hover or focus, the still with reduced motion */
+.dk-host { --dk-w: 46px; --dk-x: 12px; --dk-g: 12px; position: relative; overflow: visible; padding-left: calc(var(--dk-x) + var(--dk-w) + var(--dk-g)) !important; background: #fff !important; color: var(--ink) !important; border: 0 !important; white-space: nowrap;
   box-shadow: 0 0 0 2.5px var(--y), 0 8px 18px rgba(13,12,9,.14) !important; transition: translate .2s var(--eoq), box-shadow .2s var(--eoq); }
 .dk-host:hover { translate: 0 -2px; box-shadow: 0 0 0 2.5px var(--y), 0 12px 24px rgba(13,12,9,.18) !important; }
 .dk-host:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 4px; }
 .dk-host > span:not(.dk) { color: var(--ink); }
 .hc-card .dk-host, .street-band .dk-host { box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38) !important; }
 .drive-cta .dk-host { box-shadow: 0 0 0 2.5px var(--ink), 0 6px 0 rgba(13,12,9,.18) !important; }
-.dk { position: absolute; left: -16px; bottom: 2px; width: 56px; height: 34px; overflow: hidden; pointer-events: none; filter: drop-shadow(0 3px 2px rgba(13,12,9,.3)); transition: translate .4s cubic-bezier(.3,1.3,.5,1); }
-.dk-roll { display: block; width: 560px; height: 34px; background: var(--dk-s) 0 0 / 56px 34px no-repeat; }
+.dk { --dk-h: calc(var(--dk-w, 46px) * 34 / 56); position: absolute; left: var(--dk-x, 12px); top: 50%; width: var(--dk-w, 46px); height: var(--dk-h); margin-top: calc(var(--dk-h) / -2); overflow: hidden; pointer-events: none; filter: drop-shadow(0 2px 1.5px rgba(13,12,9,.28)); transition: translate .4s cubic-bezier(.3,1.3,.5,1); }
+.dk-roll { display: block; width: calc(var(--dk-w, 46px) * 10); height: 100%; background: var(--dk-s) 0 0 / var(--dk-w, 46px) 100% no-repeat; }
 .dk-host:is(:hover, :focus-visible) .dk { translate: 5px 0; }
-.dk-host:is(:hover, :focus-visible) .dk-roll { background-image: var(--dk-r, var(--dk-s)); background-size: 560px 34px; animation: dkRoll .4s steps(10); }
-.dk-host:active .dk { translate: 8px 0; transition-duration: .12s; }
-@keyframes dkRoll { to { transform: translateX(-560px); } }
-.btn.dk-host .dk { bottom: 6px; }
-.drive-mini.dk-host { height: 44px; padding-left: 42px !important; padding-right: 14px; margin-left: 14px; }
-.drive-mini .dk { left: -18px; bottom: 3px; transform: scale(.86); transform-origin: 0 100%; }
-.sb-drive .dk { position: relative; left: auto; bottom: auto; display: inline-block; flex: 0 0 46px; width: 46px; height: 28px; margin: -8px 0 -8px -6px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
-@media (max-width: 700px) { .sb-drive:has(.dk) { padding-block: 10px; } }
+.dk-host:is(:hover, :focus-visible) .dk-roll { background-image: var(--dk-r, var(--dk-s)); background-size: 100% 100%; animation: dkRoll .4s steps(10); }
+.dk-host:active .dk { translate: 7px 0; transition-duration: .12s; }
+@keyframes dkRoll { to { transform: translateX(-100%); } }
+/* the phone's "Drive" in the header: a smaller car, so the pill keeps the logo's room at 360 */
+.drive-mini.dk-host { --dk-w: 36px; --dk-x: 9px; --dk-g: 7px; height: 44px; padding-right: 14px; margin-left: 8px; }
+/* the street banners' ghost pill: the parked still, in the flow, the same inset and room before the words */
+.sb-drive .dk { --dk-w: 46px; position: relative; left: auto; top: auto; display: inline-block; flex: 0 0 var(--dk-w); margin: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+.sb-drive:has(.dk) { padding-block: 12px; padding-left: 12px; gap: 12px; }
+@media (max-width: 700px) { .sb-drive .dk { --dk-w: 42px; } .sb-drive:has(.dk) { padding-block: 8px; padding-left: 9px; gap: 9px; } }
 /* a full-width pill on a phone: the label centred in the paper the car leaves free, on one line in Romanian at 360 too */
-@media (max-width: 700px) { .hc-ed-a .btn.dk-host { padding-left: 46px !important; padding-right: 16px; } }
-@media (max-width: 380px) { .hc-ed-a .btn.dk-host { font-size: 15px; min-height: 44px; } }
-@media (prefers-reduced-motion: reduce) { .dk-host .dk-roll { background-image: var(--dk-s) !important; background-size: 56px 34px !important; } .dk-host:is(:hover, :focus-visible, :active) .dk { translate: none; } }
-.sb-drive .dk-roll { width: 46px; height: 28px; background-size: 46px 28px; }
+@media (max-width: 700px) { .hc-ed-a .btn.dk-host { padding-right: 16px; } }
+@media (max-width: 380px) { .hc-ed-a .btn.dk-host { --dk-x: 10px; --dk-g: 10px; font-size: 15px; min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .dk-host .dk-roll { background-image: var(--dk-s) !important; background-size: var(--dk-w, 46px) 100% !important; } .dk-host:is(:hover, :focus-visible, :active) .dk { translate: none; } }
 html.embed .dk { display: none; }
 @media (prefers-reduced-motion: reduce) { .dk, .dk-host { transition: none; } .dk-host .dk-roll { animation: none !important; } .dk-host:hover .dk, .dk-host:active .dk { translate: none; } }
 /* r366 (Daniel, 28 Oct, on a Pixel 9 Pro XL): the page never scrolls sideways; on a phone the street switch stays inside
@@ -1555,6 +1546,32 @@ a.zd:hover b { color: #c10510; text-decoration-thickness: 2.5px; }
 a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
 .zd-off::before { background: #cfcdc8; }
 .zd-off b { text-decoration: none; }
+
+/* r373 (Daniel, 28 Oct: "desktop mai aerisit"): the portfolio on a desktop, three or four works in view at 1440 x 900,
+   not eight. Calm rows on twelve columns (site/render.mjs bentoPlan): a feature beside a companion (7 + 5, the
+   companion takes the feature's height), a pair of equals (6 + 6), one wide card; 40 to 56 px between them. More air
+   around each street's card, and the Zdrovit park breathes too (four columns, wider gaps) */
+@media (min-width: 701px) {
+  .bento.bento-air { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: auto; grid-auto-flow: row; gap: clamp(40px, 3.6vw, 56px) clamp(32px, 3vw, 44px); }
+  .bento-air > .bcard { grid-row: auto; min-height: 0; }
+  .bento-air > .b-d7 { grid-column: span 7; aspect-ratio: 4 / 3; }
+  .bento-air > .b-d5 { grid-column: span 5; }
+  .bento-air > .b-d6 { grid-column: span 6; aspect-ratio: 4 / 3; }
+  .bento-air > .b-d12, .bento-air > .b-full { grid-column: 1 / -1; aspect-ratio: 12 / 5; }
+  .bento-air > .bcard .bc-poster { font-size: clamp(30px, 3.2vw, 52px); inset: 32px 34px auto; }
+  .dom-street { margin-top: clamp(140px, 12vw, 184px); }
+  .dom-street:first-of-type { margin-top: 72px; }
+  .street-band + .street-head { padding: clamp(40px, 3.6vw, 56px) clamp(36px, 4.4vw, 64px); margin-bottom: clamp(48px, 4.4vw, 72px); }
+  .dom-street .bento { margin-top: 0; }
+  .sh-lead { margin-top: 18px; }
+  .sh-more { margin-top: 30px; }
+  .zd-park { margin-top: clamp(64px, 6vw, 96px); padding-top: 40px; }
+  .zd-h { margin-bottom: 36px; }
+  .zd-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 36px clamp(32px, 3.6vw, 56px); }
+  .zd { gap: 6px; }
+}
+@media (min-width: 701px) and (max-width: 1000px) { .zd-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 701px) and (max-width: 900px) { .bento-air > :is(.b-d7, .b-d5) { grid-column: span 6; aspect-ratio: 4 / 3; } }
 
 @media (max-width: 700px) {
   body > main { overflow-x: clip; }
@@ -1605,3 +1622,17 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
   a.bcard:is(:nth-child(6n+3), :nth-child(6n+4)) .bc-name::after { width: 24px; height: 24px; margin-top: -12px; right: 5px; }
 }
 @media (max-width: 340px) { .zd-list { grid-template-columns: 1fr; } }
+/* BETA, CRT v3 (Daniel, 28 Oct): the wall of work as a rig of small 80s sets, drawn by site.js in one WebGL2 canvas
+   under the covers (.crt3). The rig faces you flat, a dark bezel per set and small gaps; the DOM covers stay on top,
+   see-through once their picture is on the glass (.crt-ready), so links, focus, the hover name and the first tap work
+   as before. No lift on hover (the set leans in on the glass instead). The h1 and the link stay flat above it all */
+.pwall.crt3 .pw-gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.pwall.crt3 .pw-rows { position: relative; z-index: 1; gap: 10px; }
+.pwall.crt3 .pw-row { gap: 10px; }
+.pwall.crt3 .pw-case { border-radius: 12px; background: #161513; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
+.pwall.crt3 .pw-case.crt-ready { background: transparent; }
+.pwall.crt3 .pw-case.crt-ready img { opacity: 0; }
+.pwall.crt3 .pw-case::after { display: none; }
+.pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) { translate: none; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
+.pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) img { scale: none; }
+@media (max-width: 700px) { .pwall.crt3 .pw-rows, .pwall.crt3 .pw-row { gap: 8px; } .pwall.crt3 .pw-case { border-radius: 10px; } }
