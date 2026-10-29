@@ -304,6 +304,12 @@
   // after load, once the hero is on screen; never with reduced motion, Save-Data or a 2g connection. Paused off
   // screen, in a background tab, or by its button; it fades in over the still once it plays.
   // r348: the same loop also sits behind the portfolio's "place → facade → brand" fold; each one runs on its own
+  // r382 (Mira's audit): the AV1 files say so (a VP9 label sent a VP9-only browser to an AV1 file), and a band's video
+  // starts only once half of it is on screen (or it fills half the screen), not ahead of it
+  const vType = (u) => (/-av1\.webm(\?|$)/.test(u) ? 'video/webm; codecs="av01.0.05M.08"' : /\.webm(\?|$)/.test(u) ? 'video/webm; codecs="vp9"' : "video/mp4");
+  const vSrc = (list) => list.filter(Boolean).map((u) => `<source src="${u}" type='${vType(u)}'>`).join("");
+  const half = (e) => e.isIntersecting && (e.intersectionRatio >= 0.5 || e.intersectionRect.height >= innerHeight * 0.5);
+  const HALF = [0, 0.25, 0.5, 0.75, 1];
   d.querySelectorAll(".hc-vid").forEach((hv) => {
     const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
     const card = hv.closest(".hc-card, .city-band"), pp = card && card.querySelector(".hc-pp"), mq = matchMedia("(max-width: 700px)");
@@ -311,12 +317,12 @@
       let seen = false, loaded = false, paused = false;
       const set = () => {
         const s = hv.dataset, m = mq.matches;
-        hv.innerHTML = [[m ? s.mw : s.dw, 'video/webm; codecs="vp9"'], [(m && s.m) || s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type='${t}'>`).join("");
+        hv.innerHTML = vSrc([m ? s.mw : s.dw, (m && s.m) || s.d]);
         hv.load();
       };
       const sync = () => { if (!loaded) return; if (seen && !paused && !d.hidden) hv.play().catch(() => {}); else hv.pause(); };
       const start = () => { if (loaded) return; loaded = true; hv.addEventListener("playing", () => { hv.classList.add("on"); pp.hidden = false; }, { once: true }); set(); };
-      const go = () => setTimeout(() => new IntersectionObserver((es) => { seen = es.some((e) => e.isIntersecting); if (seen) start(); sync(); }, { threshold: 0.2 }).observe(card), 300);
+      const go = () => setTimeout(() => new IntersectionObserver((es) => { seen = es.some((e) => e.isIntersecting && e.intersectionRatio >= 0.2); if (es.some(half)) start(); sync(); }, { threshold: HALF }).observe(card), 300);
       if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
       d.addEventListener("visibilitychange", sync);
       mq.addEventListener?.("change", () => { if (loaded) { set(); sync(); } });
@@ -333,11 +339,11 @@
     const mq = matchMedia("(max-width: 700px)");
     if (!reduced && !slow && "IntersectionObserver" in window) {
       const st = new Map(sbs.map((v) => [v, { near: false, seen: false, loaded: false, paused: false, pp: v.closest(".street-band").querySelector(".sb-pp") }]));
-      const set = (v) => { const s = v.dataset, m = mq.matches; v.innerHTML = [[m ? "" : s.dw, 'video/webm; codecs="vp9"'], [(m && s.m) || s.d, "video/mp4"]].filter((x) => x[0]).map(([u, t]) => `<source src="${u}" type='${t}'>`).join(""); v.load(); };
+      const set = (v) => { const s = v.dataset, m = mq.matches; v.innerHTML = vSrc([m ? s.mw : s.dw, (m && s.m) || s.d]); v.load(); };
       const sync = (v) => { const o = st.get(v); if (!o.loaded) return; if (o.seen && !o.paused && !d.hidden) v.play().catch(() => {}); else v.pause(); };
       const start = (v) => { const o = st.get(v); if (o.loaded) return; o.loaded = true; v.addEventListener("playing", () => { v.classList.add("on"); if (o.pp) o.pp.hidden = false; }, { once: true }); set(v); };
       const go = () => {
-        const near = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) start(e.target.querySelector(".sb-vid") || e.target); }), { rootMargin: "60% 0px" });
+        const near = new IntersectionObserver((es) => es.forEach((e) => { if (half(e)) { const v = e.target.querySelector(".sb-vid"); start(v); sync(v); } }), { threshold: HALF }); // r382: was 60% ahead of the screen
         const seen = new IntersectionObserver((es) => es.forEach((e) => { const v = e.target.querySelector(".sb-vid"); st.get(v).seen = e.isIntersecting; sync(v); }), { threshold: 0.05 });
         sbs.forEach((v) => { const b = v.closest(".street-band"); near.observe(b); seen.observe(b); });
       };

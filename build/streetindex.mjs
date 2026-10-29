@@ -177,7 +177,7 @@ ${hub ? `<p class="si-foot"><a href="${hub}">${t.foot} <span aria-hidden="true">
 
     const opts = (o) => Object.entries(o).map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("");
     const poster = m("m:drive-loop/poster"), posterM = m("m:drive-loop/poster-m") || poster;
-    const vids = { mp4: m("m:drive-loop/drive-loop.mp4"), webm: m("m:drive-loop/drive-loop.webm"), m: m("m:drive-loop/drive-loop-m.mp4") };
+    const vids = { mp4: m("m:drive-loop/drive-loop.mp4"), webm: m("m:drive-loop/drive-loop.webm"), m: m("m:drive-loop/drive-loop-m2.mp4") || m("m:drive-loop/drive-loop-m.mp4") }; // r382: the lighter phone cut (Mira's audit)
     const ch = chrome(lang);
     const items = data.filter((r) => r.href).map((r, i) => ({ "@type": "ListItem", position: i + 1, url: SITE + r.href, name: r.name }));
     const ld = { "@context": "https://schema.org", "@graph": [
