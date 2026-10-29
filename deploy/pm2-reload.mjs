@@ -13,29 +13,49 @@
 // timeouts, stop the old one: the site would go down a minute or two later.) Skip it with PREFLIGHT=0.
 // Then `pm2 save` (so a reboot brings back the same app) and a check that /healthz answers 200 on the port.
 // --update-env passes the step's environment (the Bunnyshell Secrets) on to the new process, as pm2 start does.
+// r406: APP may be the release folder itself (Bunnyshell's APP_ROOT): the script then looks for the deploy symlink
+// that points at this release (CZ_APP_LINK, /var/www/cromatic_drive/app, <base>/current/app, <base>/current) and runs
+// pm2 through it, so a later reload starts the new release. In this app's own pm2 home every process that is not a pm2
+// module is ours: all of them are removed on a (re)start, not only "cromatic-drive" (a stray fork app that kept :8081
+// made the cluster app crash-loop on EADDRINUSE while the stray kept serving an old release from memory). After the
+// step, /healthz must name THIS release, or the step fails.
 // Node 16 compatible; prints no environment values.
 import { execFileSync, spawn } from "node:child_process";
+import { realpathSync, lstatSync } from "node:fs";
 import http from "node:http";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 const NAME = "cromatic-drive";
 const PM2 = process.env.PM2_BIN || "pm2";
-const APP = process.env.CZ_APP_PATH || "/var/www/cromatic_drive/app";
+const GIVEN = process.env.CZ_APP_PATH || "/var/www/cromatic_drive/app";
+const real = (p) => { try { return realpathSync(p); } catch { return null; } };
+const isLink = (p) => { try { return lstatSync(p).isSymbolicLink(); } catch { return false; } };
+const RELEASE_DIR = real(GIVEN) || GIVEN; // the release this step deploys
+// the release's short name: /opt/app/cromatic_drive/releases/<id>/app -> <id> (server.js /healthz says the same)
+const relName = (d) => (d.endsWith("/app") ? d.slice(0, -4) : d).split("/").pop();
+const RELEASE = relName(RELEASE_DIR);
+// the deploy symlink that points at this release: pm2 must load the script through it, or a reload restarts an old release
+function findLink() {
+  const up = RELEASE_DIR.replace(/\/releases\/[^/]+(\/app)?$/, "");
+  const cands = [process.env.CZ_APP_LINK, isLink(GIVEN) ? GIVEN : null, "/var/www/cromatic_drive/app", join(up, "current", "app"), join(up, "current"), join(up, "app")].filter(Boolean);
+  for (const c of cands) if (isLink(c) || isLink(dirname(c))) { if (real(c) === RELEASE_DIR) return c; }
+  return null;
+}
+const LINK = findLink();
+const APP = LINK || RELEASE_DIR;
 const ECO = join(APP, "ecosystem.config.cjs");
-const ROOT = dirname(APP); // the deploy root: the symlink, releases/ and shared/ live here
 const PORT = Number(process.env.PORT || 8081);
-const here = dirname(fileURLToPath(import.meta.url));
 
-const pm2 = (...args) => { console.log(`$ pm2 ${args.join(" ")}`); execFileSync(PM2, args, { stdio: "inherit", cwd: APP }); };
+const pm2 = (...args) => { console.log(`$ pm2 ${args.join(" ")}`); execFileSync(PM2, args, { stdio: "inherit", cwd: APP, env: { ...process.env, CZ_APP_PATH: APP } }); };
 function list() {
   const out = execFileSync(PM2, ["jlist"], { cwd: APP, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
   try { return JSON.parse(out.slice(out.indexOf("["))); } catch { return []; }
 }
-const health = (port = PORT) => new Promise((resolve) => {
-  const r = http.get({ host: "127.0.0.1", port, path: "/healthz", timeout: 3000 }, (x) => { x.resume(); resolve(x.statusCode); });
-  r.on("timeout", () => r.destroy()); r.on("error", () => resolve(0));
+const healthJ = (port = PORT) => new Promise((resolve) => {
+  const r = http.get({ host: "127.0.0.1", port, path: "/healthz", timeout: 3000 }, (x) => { let t = ""; x.on("data", (c) => { t += c; }); x.on("end", () => { let j = null; try { j = JSON.parse(t); } catch {} resolve({ code: x.statusCode, j }); }); });
+  r.on("timeout", () => r.destroy()); r.on("error", () => resolve({ code: 0, j: null }));
 });
+const health = async (port = PORT) => (await healthJ(port)).code;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const PREFLIGHT_PORT = Number(process.env.PREFLIGHT_PORT || 18081);
@@ -57,24 +77,29 @@ if (process.env.PREFLIGHT !== "0" && !(await preflight())) {
   console.error("[deploy] the new release does not start: pm2 left as it is, the previous process keeps serving");
   process.exit(1);
 }
+console.log(`[deploy] release ${RELEASE} (${RELEASE_DIR}); pm2 loads it through ${LINK ? "the symlink " + LINK : "the release folder (no symlink found: reloads fall back to delete + start)"}`);
 const procs = list();
-const ours = procs.filter((p) => p.name === NAME);
-const live = ours.length > 0 && ours.every((p) => p.pm2_env && p.pm2_env.exec_mode === "cluster_mode") && ours.some((p) => p.pm2_env.status === "online");
-console.log(`[deploy] release ${here.replace(/\/deploy$/, "")}; pm2 has ${procs.length} process(es), ${NAME}: ${ours.map((p) => `${p.pm2_env.exec_mode}/${p.pm2_env.status}`).join(", ") || "none"}`);
+const apps = procs.filter((p) => !(p.pm2_env && (p.pm2_env.pmx_module || p.pm2_env.axm_options && p.pm2_env.axm_options.isModule)));
+const ours = apps.filter((p) => p.name === NAME);
+const others = apps.filter((p) => p.name !== NAME);
+const sameScript = ours.every((p) => String(p.pm2_env && p.pm2_env.pm_exec_path || "") === join(APP, "deploy", "pm2-entry.cjs"));
+const live = LINK && !others.length && sameScript && ours.length > 0 && ours.every((p) => p.pm2_env && p.pm2_env.exec_mode === "cluster_mode") && ours.some((p) => p.pm2_env.status === "online");
+console.log(`[deploy] pm2 has ${apps.length} app process(es): ${apps.map((p) => `${p.pm_id}:${p.name}/${p.pm2_env.exec_mode}/${p.pm2_env.status}`).join(", ") || "none"}`);
 
 let failed = false;
 if (live) {
   try { pm2("reload", ECO, "--update-env"); } catch (e) { failed = true; console.error(`[deploy] pm2 reload failed (${e.status}): the previous process keeps serving`); }
 } else {
-  // the old setup: `pm2 start app.js` (fork mode, any name) from this app's folder, or a stopped/broken cluster app
-  // (anything pm2 runs from under the deploy root, /var/www/cromatic_drive/: the symlink or a release folder)
-  const old = procs.filter((p) => p.name === NAME || [p.pm2_env && p.pm2_env.pm_exec_path, p.pm2_env && p.pm2_env.pm_cwd].some((x) => String(x || "").startsWith(ROOT + "/")));
-  for (const p of old) { try { pm2("delete", String(p.pm_id)); } catch {} }
+  // a first start, a stray app (the old fork app, any name), a crash-looping or stopped cluster app, or no symlink:
+  // remove every app process in this pm2 home (pm2 modules stay), then start. One short gap.
+  for (const p of apps) { try { pm2("delete", String(p.pm_id)); } catch {} }
   try { pm2("start", ECO, "--update-env"); } catch (e) { failed = true; console.error(`[deploy] pm2 start failed (${e.status})`); }
 }
 try { pm2("save"); } catch {}
 
-let code = 0;
-for (let i = 0; i < 30 && code !== 200; i++) { code = await health(); if (code !== 200) await wait(2000); }
-console.log(`[deploy] /healthz on :${PORT} -> ${code || "no answer"}`);
-process.exit(failed || code !== 200 ? 1 : 0);
+// the process on the port must be THIS release (a stray old process answering 200 is a failure, not a success)
+let h = { code: 0, j: null };
+for (let i = 0; i < 30; i++) { h = await healthJ(); if (h.code === 200 && h.j && h.j.release === RELEASE) break; await wait(2000); }
+const served = h.j && h.j.release;
+console.log(`[deploy] /healthz on :${PORT} -> ${h.code || "no answer"}, release ${served || "?"} (expected ${RELEASE}), beta ${h.j && h.j.beta ? "built" : "NOT built"}`);
+process.exit(failed || h.code !== 200 || served !== RELEASE ? 1 : 0);

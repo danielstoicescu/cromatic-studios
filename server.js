@@ -688,6 +688,9 @@ Canonical: https://${PRIMARY_HOST || "cromaticstudios.com"}/.well-known/security
 // connections are answered (with Connection: close, so each connection closes after its answer), idle connections
 // close on their 5 s keep-alive timeout, then the process exits; after DRAIN_MS it exits anyway (pm2 kill_timeout is longer).
 let ready = false, draining = false;
+// r406: the release's short name (/opt/app/cromatic_drive/releases/<id>/app -> <id>), shown by /healthz
+const RELEASE_NAME = (APP_DIR.endsWith("/app") ? APP_DIR.slice(0, -4) : APP_DIR).split("/").pop();
+const STARTED_AT = new Date().toISOString();
 const DRAIN_MS = Number(process.env.DRAIN_MS || 10000);
 const conns = new Map(); // socket -> requests in flight on it
 function track(req, res) {
@@ -711,7 +714,11 @@ const server = http.createServer((req, res) => {
     if (!ready || draining) return send(res, 503, { ok: false, ready, draining });
     const key = new URL(req.url, "http://x").searchParams.get("key") || "";
     const full = !!process.env.LEADS_KEY && key.length >= 16 && key === process.env.LEADS_KEY;
-    return send(res, 200, full ? { ok: true, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: true, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail, oai: oaiState } : { ok: true, oai: oaiState });
+    // r406: which release answers and whether its beta build is there (names only); with the key also the paths the
+    // process resolved (folders only, never an environment value), for checking a deploy from outside
+    const beta = !!statOr(join(BETA_ROOT, "index.html")), release = RELEASE_NAME;
+    const paths = { appDir: APP_DIR, publicDir: ROOT, betaRoot: BETA_ROOT, cwd: process.cwd(), pid: process.pid, mode: process.env.exec_mode || (process.env.NODE_APP_INSTANCE !== undefined ? "cluster" : "fork"), startedAt: STARTED_AT };
+    return send(res, 200, full ? { ok: true, release, beta, mail: process.env.SMTP_HOST ? "smtp" : "log", leads: true, host: process.env.SMTP_HOST || null, port: process.env.SMTP_PORT || null, lastMail, oai: oaiState, paths } : { ok: true, release, beta, oai: oaiState });
   }
   if (req.url.startsWith("/.well-known/acme-challenge/")) return acme(req, res);
   if (req.url === "/.well-known/security.txt" || req.url === "/security.txt") {
@@ -775,6 +782,7 @@ server.on("connection", (s) => { conns.set(s, 0); s.on("close", () => conns.dele
 server.listen(PORT, process.env.LISTEN_HOST || undefined, () => { // LISTEN_HOST: the deploy's preflight run binds 127.0.0.1 only
   ready = true;
   console.log(`Cromatic Navigation Mode on :${PORT} (${files.size} files, ${Math.round(process.memoryUsage().rss / 1048576)} MB)`);
+  console.log(`[paths] release ${RELEASE_NAME}, app ${APP_DIR}, public ${ROOT}, beta ${BETA_ROOT} (${statOr(join(BETA_ROOT, "index.html")) ? "built" : "NOT built"}), cwd ${process.cwd()}`); // r406: folders only
   if (process.send) process.send("ready"); // pm2 wait_ready: the reload goes on only now
 });
 function shutdown(why) {
