@@ -466,6 +466,109 @@
     streets.forEach((el) => { if (el.getBoundingClientRect().top > innerHeight) el.style.setProperty("--sp", "0"); });
     addEventListener("scroll", q2, { passive: true }); addEventListener("resize", () => { pwRows.forEach((r) => { r._half = 0; }); q2(); }); tick2();
   }
+  // beta (Daniel, 29 Oct, after getlayers.ai's "AI Studio" layer): the four service cards assemble as you scroll from the
+  // wall into them, one take. Each card starts scattered (in depth and turned on desktop, lower and tilted on phones),
+  // and its pose follows the scroll through a critically damped spring, so it glides and settles, never snaps. No
+  // pinning, no hijack: the page scrolls as always. Transforms and opacity only (no CLS); the loop runs only while the
+  // grid is near the screen and stops when the springs settle. Nothing with reduced motion (the cards stay as they are).
+  // r388 (Daniel: the cards "don't have the entry animation"; measured at 1440x900, they had landed while the grid's top
+  // was still ~600 px down, so the whole take ran at the bottom edge or below the fold): the take is timed on the
+  // screen, per row of cards. It starts as the row's top comes up past 95% of the screen's height and is complete when
+  // it reaches 37.5% (desktop: the row is the grid, its top; phones, one card per row: each card's own top). Inside that
+  // window the cards of a row land one after the other (each gets 64% of it, starting 12% apart), the pills last, once
+  // a card is home. More presence than r379: deeper and further out at the start. Time fallback: when the target jumps
+  // while the grid is on screen (an anchor link, a refresh restored mid-page, a fast flick), the cards play one ~700 ms
+  // settle from where they are, staggered, instead of appearing done; while the grid is off screen they simply take
+  // their pose. The first card's slot is the row reference, so the transformed cards are never measured.
+  const asm = d.querySelector("#what .chapters"), asmCards = asm ? [...asm.querySelectorAll(".chap")] : [];
+  if (asm && asmCards.length && !reduced && "IntersectionObserver" in window) {
+    const phone = matchMedia("(max-width: 700px)");
+    // scattered poses: [x px, y px, z px, rotateX, rotateY, rotateZ] (desktop); phones use only y and rotateZ
+    const POSE = [[-190, 260, -760, 22, 28, -10], [-60, 380, -980, 26, 10, 7], [70, 340, -860, 24, -12, -6], [210, 240, -700, 20, -30, 11]];
+    const S = asmCards.map(() => ({ x: 0, v: 0, rel: 0, col: 0, n: 1, tw: null }));
+    const START = 0.95, END = 0.375, STEP = 0.12, SETTLE = 700, JUMP = 0.35;
+    let on = false, raf = 0, last = 0, first = false; // first: a relayout (resize) just takes the pose
+    const slots = () => {
+      const tops = asmCards.map((c) => c.offsetTop), t0 = tops[0], rows = {};
+      asmCards.forEach((c, i) => { S[i].rel = tops[i] - t0; S[i].col = rows[tops[i]] = (rows[tops[i]] ?? -1) + 1; });
+      asmCards.forEach((c, i) => { S[i].n = rows[tops[i]] + 1; });
+    };
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    const paint = (c, s, i) => {
+      const x = Math.min(1, Math.max(0, s.x)), k = 1 - ease(x), P = POSE[i % POSE.length], o = Math.min(1, x / 0.35);
+      if (k < 0.0005) { if (c._asm !== 0) { c.style.transform = ""; c.style.opacity = ""; c._asm = 0; } }
+      else {
+        c._asm = 1;
+        c.style.transform = phone.matches
+          ? `translate3d(0,${(110 * k).toFixed(1)}px,0) rotate(${(P[5] * 0.55 * k).toFixed(2)}deg) scale(${(1 - 0.08 * k).toFixed(4)})`
+          : `translate3d(${(P[0] * k).toFixed(1)}px,${(P[1] * k).toFixed(1)}px,${(P[2] * k).toFixed(1)}px) rotateX(${(P[3] * k).toFixed(2)}deg) rotateY(${(P[4] * k).toFixed(2)}deg) rotateZ(${(P[5] * k).toFixed(2)}deg)`;
+        c.style.opacity = o.toFixed(3);
+      }
+      const land = s.x > 0.94 ? true : s.x < 0.55 ? false : !!s.landed; // hysteresis: pills do not flicker at the edge
+      if (land !== !!s.landed) { s.landed = land; c.classList.toggle("landed", land); }
+    };
+    const frame = (t) => {
+      raf = 0;
+      const dt = last ? Math.min(0.05, (t - last) / 1000) : 0; last = t;
+      const vh = innerHeight, r = asm.getBoundingClientRect(), g = r.top, seen = r.bottom > 0 && r.top < vh;
+      const W = phone.matches ? 9 : 7.5; // spring stiffness (rad/s): critically damped, settles in about half a second after the scroll stops
+      let busy = false;
+      asmCards.forEach((c, i) => {
+        const s = S[i], p = (vh * START - (g + s.rel)) / (vh * (START - END)), span = 1 - (s.n - 1) * STEP;
+        const tgt = Math.min(1, Math.max(0, (p - s.col * STEP) / span));
+        if (first || !seen) { s.x = tgt; s.v = 0; s.tw = null; } // off screen (or a relayout): just take the pose
+        else if (!s.tw && tgt - s.x > JUMP) s.tw = { t0: t + (s.n > 1 ? s.col : i) * 60, from: s.x }; // a jump in view: the timed settle
+        if (s.tw && seen && !first) {
+          const u = Math.min(1, Math.max(0, (t - s.tw.t0) / (SETTLE - 3 * 60)));
+          s.x = s.tw.from + (tgt - s.tw.from) * ease(u); s.v = 0;
+          if (u >= 1) s.tw = null; else busy = true;
+        } else if (!first && seen && dt > 0) {
+          const a = W * W * (tgt - s.x) - 2 * W * s.v; s.v += a * dt; s.x += s.v * dt;
+          if (Math.abs(tgt - s.x) < 0.0008 && Math.abs(s.v) < 0.002) { s.x = tgt; s.v = 0; } else busy = true;
+        } else if (seen && s.x !== tgt) busy = true; // the loop just woke: integrate from the next frame, never snap
+        paint(c, s, i);
+      });
+      first = false;
+      if (busy && on && !d.hidden) raf = requestAnimationFrame(frame); else last = 0;
+    };
+    const go = () => { if (!raf && on && !d.hidden) raf = requestAnimationFrame(frame); };
+    slots();
+    asm.classList.add("asm");
+    new IntersectionObserver((es) => { on = es[es.length - 1].isIntersecting; if (on) go(); }, { rootMargin: "25% 0px 25% 0px" }).observe(asm);
+    addEventListener("scroll", go, { passive: true });
+    addEventListener("resize", () => { slots(); first = true; go(); });
+    d.addEventListener("visibilitychange", go);
+    frame(performance.now()); // the first pose: off screen it is just taken; already on screen, it plays the settle
+  }
+  // r391 (Daniel: "the service cards should get their colour on mobile too as you pass over them, when they're in the
+  // middle area of the screen, because we have no hover"): on a touch screen the card whose centre is in the middle band
+  // of the screen (35-65% of its height) takes the hover colour (.lit), one at a time, the one nearest the middle. The
+  // observer's band (rootMargin) wakes the check; while a card touches the band the scroll re-checks it, once a frame.
+  // With the assemble running, a card colours only once it has landed (its .landed class, watched).
+  const touch = matchMedia("(hover: none), (pointer: coarse)");
+  if (asm && asmCards.length && touch.matches && "IntersectionObserver" in window) {
+    const near = new Set();
+    let litRaf = 0, lit = null;
+    const pick = () => {
+      litRaf = 0;
+      const vh = innerHeight, assembling = asm.classList.contains("asm");
+      let best = null, bd = Infinity;
+      near.forEach((c) => {
+        if (assembling && !c.classList.contains("landed")) return;
+        const r = c.getBoundingClientRect(), cy = (r.top + r.bottom) / 2;
+        if (cy < vh * 0.35 || cy > vh * 0.65) return;
+        const dd = Math.abs(cy - vh / 2); if (dd < bd) { bd = dd; best = c; }
+      });
+      if (best !== lit) { if (lit) lit.classList.remove("lit"); if (best) best.classList.add("lit"); lit = best; }
+    };
+    const q = () => { if (!litRaf && (near.size || lit)) litRaf = requestAnimationFrame(pick); };
+    const io = new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting) near.add(e.target); else near.delete(e.target); }); q(); }, { rootMargin: "-35% 0px -35% 0px" });
+    asmCards.forEach((c) => io.observe(c));
+    addEventListener("scroll", q, { passive: true });
+    addEventListener("resize", q);
+    new MutationObserver((ms) => { if (ms.some((m) => m.target.classList.contains("landed") !== (m.oldValue || "").split(" ").includes("landed"))) q(); })
+      .observe(asm, { subtree: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });
+  }
   // cards tilt a little towards the pointer (TASK-139: the chapters have their own hover now)
   if (matchMedia("(hover: hover)").matches && !reduced) d.querySelectorAll(".svc").forEach((c) => {
     c.addEventListener("pointermove", (e) => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; c.style.transform = `perspective(700px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) translateY(-4px)`; });
@@ -652,4 +755,43 @@
   W.hooks.push(frame);
   window.__czCrt = { cards: cards, get live() { return live; }, R: RK, d: DK };
   W.go();
+})();
+// r380 (beta; Daniel: the intro text, "fine and subtle, very modern"): after the h1's signal lock (the split and the
+// keyframes are in render.mjs + site.css), it lives with the wall. On the wall's own loop (so nothing runs while the
+// wall is off screen): on a desktop pointer it floats ±3 px against the wall, eased; as you scroll the wall away it
+// sinks a little behind the scroll, softens and fades with the scroll's progress (phones: fade and sink only, no
+// blur); and when a CRT set loses its signal, the red and blue guns of "brand experiences" slip apart for a moment (at most every 12 s).
+// At rest every inline style is cleared, so the type stays crisp. Nothing with reduced motion.
+(function () {
+  var W = window.__czWall, h = document.querySelector(".pw-h.si"), wall = h && h.closest(".pwall");
+  if (!W || !W.go || !h || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var phone = matchMedia("(max-width: 700px)").matches, fine = matchMedia("(hover: hover) and (pointer: fine)").matches && !phone;
+  var wh = 1, measure = function () { wh = wall.getBoundingClientRect().height; };
+  measure(); addEventListener("resize", measure); addEventListener("load", measure);
+  var tx = 0, ty = 0, px = 0, py = 0, idle = true, ready = false, lastLive = null, lastGlint = -1e9;
+  setTimeout(function () { ready = true; }, 1000); // the parallax waits for the lock to finish
+  if (fine) addEventListener("pointermove", function (e) { tx = -(e.clientX / innerWidth - 0.5) * 6; ty = -(e.clientY / innerHeight - 0.5) * 6; }, { passive: true });
+  if (fine) document.addEventListener("pointerleave", function () { tx = ty = 0; });
+  var glint = function (t) {
+    if (t - lastGlint < 12000) return; lastGlint = t;
+    h.classList.remove("si-glint"); void h.offsetWidth; h.classList.add("si-glint");
+    setTimeout(function () { h.classList.remove("si-glint"); }, 1600);
+  };
+  W.hooks.push(function (t, dt) {
+    var k = 1 - Math.exp(-(dt || 0.016) / 0.14);
+    if (ready) { px += (tx - px) * k; py += (ty - py) * k; }
+    var p = Math.min(1, Math.max(0, scrollY / (wh * 0.62)));
+    if (p < 0.002 && Math.abs(px) < 0.05 && Math.abs(py) < 0.05) {
+      if (!idle) { h.style.transform = h.style.filter = h.style.opacity = ""; idle = true; }
+    } else {
+      idle = false; var e = p * p * (3 - 2 * p);
+      h.style.transform = "translate3d(" + px.toFixed(2) + "px," + (py + e * (phone ? 26 : 44)).toFixed(2) + "px,0)" + (phone ? "" : " scale(" + (1 - 0.05 * e).toFixed(4) + ")");
+      h.style.filter = !phone && e > 0.01 ? "blur(" + (e * 7).toFixed(2) + "px)" : "";
+      h.style.opacity = e > 0.001 ? (1 - 0.88 * e).toFixed(3) : "";
+    }
+    // the interference: a new glitch on a set, the h1 on screen and not on its way out, the lock done
+    var C = window.__czCrt, live = C && C.live;
+    if (fine && ready && live && live !== lastLive && p < 0.15) glint(t);
+    lastLive = live || null;
+  });
 })();

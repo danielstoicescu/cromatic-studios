@@ -1165,16 +1165,16 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 #what .chap h3::before { content: ""; display: block; width: 46px; height: 12px; margin-bottom: 18px; border-radius: 999px; background: var(--cc); border: var(--line); transition: width .55s var(--bounce); }
 #what .chap p { flex: 1; color: #2e2c27; }
 #what .chap .tags li { background: color-mix(in srgb, var(--cc) 16%, #fff); transition: translate .45s var(--bounce) calc(var(--j, 0) * 45ms), background .3s var(--eoq), rotate .45s var(--bounce); }
-#what .chap:is(:hover, :focus-within)::before { transform: scaleY(1); }
+#what .chap:is(:hover, :focus-within, .lit)::before { transform: scaleY(1); }
 #what .chap { transition: translate .55s var(--bounce), box-shadow .55s var(--bounce), opacity .8s var(--eoq), transform 1s var(--bounce); }
-#what .chap:is(:hover, :focus-within) { box-shadow: 0 10px 0 var(--ink); translate: 0 -6px; }
-#what .chap:is(:hover, :focus-within) .chap-k { opacity: .9; color: #fff; translate: 0 -4px; }
+#what .chap:is(:hover, :focus-within, .lit) { box-shadow: 0 10px 0 var(--ink); translate: 0 -6px; }
+#what .chap:is(:hover, :focus-within, .lit) .chap-k { opacity: .9; color: #fff; translate: 0 -4px; }
 /* r348: white on the brand blue is 2.9:1; the blue chapter keeps ink (6.6:1) */
-#what .chap[style*="#119BFE"]:is(:hover, :focus-within) .chap-k { color: var(--ink); opacity: 1; }
-#what .chap:is(:hover, :focus-within) h3::before { width: 92px; background: #fff; }
-#what .chap:is(:hover, :focus-within) .tags li { background: #fff; translate: 0 -4px; }
-#what .chap:is(:hover, :focus-within) .tags li:nth-child(odd) { rotate: -2deg; }
-#what .chap:is(:hover, :focus-within) .tags li:nth-child(even) { rotate: 1.5deg; }
+#what .chap[style*="#119BFE"]:is(:hover, :focus-within, .lit) .chap-k { color: var(--ink); opacity: 1; }
+#what .chap:is(:hover, :focus-within, .lit) h3::before { width: 92px; background: #fff; }
+#what .chap:is(:hover, :focus-within, .lit) .tags li { background: #fff; translate: 0 -4px; }
+#what .chap:is(:hover, :focus-within, .lit) .tags li:nth-child(odd) { rotate: -2deg; }
+#what .chap:is(:hover, :focus-within, .lit) .tags li:nth-child(even) { rotate: 1.5deg; }
 #what .chap:nth-child(n) { rotate: 0deg; }
 .js #what .chap.rv { transform: translateY(40px) rotate(calc((var(--i) - 1.5) * 1.6deg)); }
 .js #what .chap.rv.in { transform: none; }
@@ -1661,3 +1661,68 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
 .pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) { translate: none; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
 .pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) img { scale: none; }
 @media (max-width: 700px) { .pwall.crt3 .pw-rows, .pwall.crt3 .pw-row { gap: 8px; } .pwall.crt3 .pw-case { border-radius: 10px; } }
+/* beta (Daniel, 29 Oct): the service cards assemble with the scroll (site.js drives each card's transform and opacity
+   inline, so their own reveal and transform transition step aside); the pills pop in once a card has landed, and on
+   desktop one light sweep crosses it. Reduced motion: no .asm, nothing moves */
+#what .chapters.asm { perspective: 1500px; perspective-origin: 50% 30%; }
+/* r381: the scattered fourth card (170 px right, turned -26/10 deg under the perspective) is drawn inside the screen, but
+   Chrome sizes its scrollable overflow from the flattened box, so at 1280 and 1440 the page grew 100-180 px wide and
+   scrolled sideways before the cards landed. The section clips sideways only (clip, not hidden: no scroll container,
+   sticky and the vertical depth untouched); the section is the full screen width and the turned cards are drawn well
+   inside it, so nothing visible is cut */
+#what:has(.chapters.asm) { overflow-x: clip; }
+.js #what .chapters.asm .chap.rv { opacity: 1; transform: none; transition: translate .55s var(--bounce), box-shadow .55s var(--bounce); transition-delay: 0s !important; }
+#what .chapters.asm .chap .tags li { transition: translate .45s var(--bounce) calc(var(--j, 0) * 45ms), background .3s var(--eoq), rotate .45s var(--bounce), opacity .3s var(--eoq) calc(var(--j, 0) * 55ms), scale .45s var(--bounce) calc(var(--j, 0) * 55ms); }
+@media (min-width: 701px) { #what .chapters.asm .chap:not(.landed) .tags li { opacity: 0; scale: .6; } } /* phones: the lighter take, pills stay put */
+#what .chapters.asm .chap::after { content: ""; position: absolute; top: -10%; bottom: -10%; left: -45%; width: 35%; z-index: 3; pointer-events: none; opacity: 0;
+  background: linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.7) 50%, rgba(255,255,255,0)); transform: skewX(-14deg); }
+@keyframes asmSweep { 0% { opacity: 0; transform: translateX(0) skewX(-14deg); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateX(480%) skewX(-14deg); } }
+@media (min-width: 701px) and (hover: hover) { #what .chapters.asm .chap.landed::after { animation: asmSweep .8s var(--eoq) .05s 1 both; } }
+
+/* r380 (beta; Daniel, after the getlayers.ai "AI Studio" layer: a fine, contextual intro for the h1). "Signal lock": the
+   line is there from the first paint, faint; one thin scan passes down it like a set acquiring its picture; the line
+   comes up and settles a hair while, word by word, its red and blue guns (the brand red and blue: two soft, statically
+   blurred copies of each word) converge on it and fade, until it locks sharp; the heart lands last. Only opacity and
+   transform are animated (a filter animation runs on the main thread, which is busy at load, and would stall), and
+   never on the word spans themselves: an animated or positioned span becomes its own text block for LCP, so the fade
+   and the lift are on the h1 and the guns are zero-width inline pseudo-elements (::after set right to left). Fill
+   "backwards": at rest nothing carries a transform, the type stays crisp. Phones, the lighter take: fade, lift and
+   scan only. Reduced motion: no .si at all, the line is just there. */
+.pw-h.si { animation: si-lift .62s cubic-bezier(.16, 1, .3, 1) 40ms backwards; }
+.pw-h.si .si-w { white-space: nowrap; }
+.pw-h.si .pw-heart { animation: si-heart .36s cubic-bezier(.34, 1.56, .64, 1) calc(60ms + var(--n) * 40ms + 160ms) backwards; }
+.pw-h.si .si-w::before, .pw-h.si .si-w::after { content: attr(data-t); display: inline-block; width: 0; pointer-events: none; opacity: 0; filter: blur(4px); }
+.pw-h.si .si-w::after { content: "\2066" attr(data-t) "\2069"; direction: rtl; }
+.pw-h.si .si-w::before { color: #F65342; animation: si-gun-r .64s cubic-bezier(.22, 1, .36, 1) calc(60ms + var(--i) * 40ms) backwards; }
+.pw-h.si .si-w::after { color: #119BFE; animation: si-gun-b .64s cubic-bezier(.22, 1, .36, 1) calc(60ms + var(--i) * 40ms) backwards; }
+.pw-h.si::after { content: ""; position: absolute; z-index: 1; left: -8%; right: -8%; top: 0; bottom: 0; pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg, transparent 0 46%, rgba(255,250,236,.07) 47%, rgba(255,250,236,.22) 49.6%, rgba(255,252,244,.75) 50%, transparent 50.4%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  animation: si-scan .5s cubic-bezier(.45, .05, .35, 1) 20ms; }
+@keyframes si-lift { 0% { opacity: .3; transform: translate3d(0, .12em, 0); } 45% { opacity: 1; } 100% { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes si-gun-r { 0% { opacity: .5; transform: translate3d(.06em, .03em, 0); } 100% { opacity: 0; transform: translate3d(0, 0, 0); } }
+@keyframes si-gun-b { 0% { opacity: .5; transform: translate3d(-.06em, -.02em, 0); } 100% { opacity: 0; transform: translate3d(0, 0, 0); } }
+@keyframes si-heart { 0% { opacity: 0; transform: scale(.4) rotate(-10deg); } 70% { opacity: 1; transform: scale(1.1) rotate(2deg); } 100% { opacity: 1; transform: none; } }
+@keyframes si-scan { 0% { opacity: 0; transform: translate3d(0, -52%, 0); } 18% { opacity: 1; } 82% { opacity: .8; } 100% { opacity: 0; transform: translate3d(0, 54%, 0); } }
+/* after load, desktop with the live CRT wall: when a set loses its signal, the interference reaches the type: the guns of
+   "brand experiences" slip apart for a moment and settle again (at most every 12 s; the words themselves never move) */
+.pw-h.si.si-glint .si-k::before { animation: si-int-r .7s cubic-bezier(.22, 1, .36, 1) calc((var(--i) - var(--k0, 0)) * 70ms) backwards; }
+.pw-h.si.si-glint .si-k::after { animation: si-int-b .7s cubic-bezier(.22, 1, .36, 1) calc((var(--i) - var(--k0, 0)) * 70ms) backwards; }
+@keyframes si-int-r { 0% { opacity: 0; transform: none; } 18% { opacity: .38; transform: translate3d(.05em, 0, 0); } 30% { transform: translate3d(.02em, 0, 0); } 42% { transform: translate3d(.045em, 0, 0); } 100% { opacity: 0; transform: none; } }
+@keyframes si-int-b { 0% { opacity: 0; transform: none; } 18% { opacity: .38; transform: translate3d(-.05em, 0, 0); } 30% { transform: translate3d(-.02em, 0, 0); } 42% { transform: translate3d(-.045em, 0, 0); } 100% { opacity: 0; transform: none; } }
+@media (max-width: 700px) {
+  .pw-h.si .si-w::before, .pw-h.si .si-w::after { content: none; }
+  .pw-h.si .pw-heart { animation-delay: calc(40ms + var(--n) * 32ms + 140ms); }
+}
+@media (prefers-reduced-motion: reduce) { .pw-h.si, .pw-h.si .pw-heart, .pw-h.si::after, .pw-h.si .si-w::before, .pw-h.si .si-w::after { animation: none !important; } }
+/* r391 (Daniel: "the service cards should get their colour on mobile too as you pass over them, when they're in the middle
+   area of the screen, because we have no hover"): on a touch screen the card whose centre crosses the middle band of the
+   screen (35-65% of its height) takes its hover colour (.lit, set by site.js), one card at a time, after it has landed
+   from the assemble. Quicker than the desktop flood (250 ms), so it follows the scroll; transforms and colour only (no
+   layout change). Reduced motion: the colour still changes, at once (the global rule drops the transitions) */
+@media (hover: none), (pointer: coarse) {
+  #what .chap::before { transition-duration: .25s; }
+  #what .chap .chap-k, #what .chap h3::before { transition: opacity .25s var(--eoq), color .25s var(--eoq), translate .25s var(--eoq), width .25s var(--eoq), background .25s var(--eoq); }
+  #what .chapters.asm .chap .tags li { transition: translate .25s var(--eoq), background .25s var(--eoq), rotate .25s var(--eoq), opacity .3s var(--eoq), scale .3s var(--eoq); }
+  .js #what .chapters.asm .chap.rv { transition: translate .25s var(--eoq), box-shadow .25s var(--eoq); }
+}
