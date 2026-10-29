@@ -10,10 +10,10 @@ export const NAV = [
 ];
 
 export const CHAPTERS = [
-  { k: "01", t: "The Dream", sub: "Brand strategy", c: "#28C840", p: "Every brand starts as somebody's dream at a kitchen table. Two cups of coffee and a lot of hard questions later, the dream has a spine: your strategy, positioning, personas, the reason anyone should care.", items: ["Brand strategy", "Positioning", "Persona journeys", "Naming", "Workshop at the table"] },
+  { k: "01", t: "The Dream", sub: "Brand universe", c: "#28C840", p: "Every brand starts as somebody's dream at a kitchen table. Two cups of coffee and a lot of hard questions later, the dream has a spine: your strategy, positioning, personas, the reason anyone should care.", items: ["Brand strategy", "Positioning", "Persona journeys", "Naming", "Workshop at the table"] },
   { k: "02", t: "The Voice", sub: "Brand identity", c: "#B098C8", p: "Then the dream learns to talk. A name, a mark, a tone of voice. The things people repeat about you when you are not in the room.", items: ["Identity design", "Brand book", "Tone of voice", "Content design", "Editorial"] },
-  { k: "03", t: "The World", sub: "Web, apps, packaging, film", c: "#119BFE", p: "A voice needs a world to live in. Websites, apps, packaging, film. Places your customer can walk into and instantly feel who you are, before reading a single word.", items: ["UX & UI", "Rapid prototyping", "Websites & apps", "Design systems", "Video & sound"] },
-  { k: "04", t: "The Crowd", sub: "Content & growth", c: "#F65342", p: "A beautiful world with nobody in it is a museum. We bring the crowd. Content strategy, social design, ad campaigns and Instagram growth with taste, not tricks.", items: ["Content strategy", "Social design", "Ad campaigns", "Instagram growth", "Community"] }
+  { k: "03", t: "The World", sub: "Web & apps", c: "#119BFE", p: "A voice needs a world to live in. Websites and apps. Places your customer can walk into and instantly feel who you are, before reading a single word.", items: ["UX & UI", "Rapid prototyping", "Websites & apps", "Design systems", "Information architecture"] },
+  { k: "04", t: "The Crowd", sub: "Growth & Video production", c: "#F65342", p: "A beautiful world with nobody in it is a museum. We bring the crowd. Social and content strategy, performance campaigns, and films people actually watch, from brand films to reels.", items: ["Social & content strategy", "Performance campaigns", "Instagram growth", "Brand films", "Reels"] }
 ];
 
 export const SERVICES = [
