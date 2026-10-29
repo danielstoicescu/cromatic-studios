@@ -35,6 +35,80 @@ const TYPES = {
 const typeFor = (url, ext) => (ext === ".webm" && url.includes("/polite-radio/") ? "audio/webm" : TYPES[ext]);
 const COMPRESS = new Set([".html", ".js", ".css", ".svg", ".json", ".txt", ".xml", ".webmanifest", ".ico"]);
 
+// TASK-051 + r401 (Mira's audit, finding 12; Daniel approved): the Content-Security-Policy ENFORCES since r401 (it ran
+// report-only from 21 Oct with 0 violations). Sent on every HTML response of every host (live, beta, The Core, /ops,
+// /proposals); violations land in a jsonl file next to the leads backup (POST /api/csp-report below). A response that
+// brings its own policy (The Core's report page, the /ops offer preview) keeps it, and gets ours as report-only, as before.
+// - scripts: our own files, the inline boot/consent snippets ('unsafe-inline' for now), gtag + GA4 after the cookie yes,
+//   the OpenAI Ads pixel after the cookie yes (bzrcdn loads it, bzr receives its events)
+// - styles: ours + inline (lottie, three and the pages set style attributes) + Google Fonts' CSS; fonts: ours + gstatic
+// - images: ours, data: and blob: (canvas/WebGL snapshots, postcards), GA beacons, YouTube posters
+// - media: ours + blob:; workers: ours + blob: (three/lottie helpers); frames: ours + youtube-nocookie
+// - frame-ancestors 'self' (only our own pages may frame us; X-Frame-Options says the same to old browsers)
+// - upgrade-insecure-requests (an http:// link left in old copy loads over https instead of being blocked)
+const CSP_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://bzrcdn.openai.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://i.ytimg.com",
+  "media-src 'self' blob:",
+  "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://bzr.openai.com https://bzrcdn.openai.com",
+  "frame-src 'self' https://www.youtube-nocookie.com",
+  "worker-src 'self' blob:",
+  "child-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  "upgrade-insecure-requests",
+  "report-uri /api/csp-report",
+  "report-to csp"
+];
+const CSP = CSP_POLICY.join("; ");
+// upgrade-insecure-requests only for visitors on https (Cloudflare says so in CF-Visitor; any other proxy in
+// X-Forwarded-Proto). On a plain-http address (the app's own Bunnyshell host BETA_HOST2, which has no certificate, or
+// a local `node server.js`) it would send every picture and script to an https:// that does not answer.
+const CSP_PLAIN = CSP_POLICY.filter((d) => d !== "upgrade-insecure-requests").join("; ");
+const viaHttps = (req) => /"scheme":"https"/.test(String(req.headers["cf-visitor"] || "")) || /^https$/i.test(String(req.headers["x-forwarded-proto"] || ""));
+// The next step, sent alongside as Content-Security-Policy-Report-Only (it blocks nothing, it only reports): scripts
+// without 'unsafe-inline'. Each page's inline <script> blocks are allowed by their sha256, computed here from the built
+// page, and its inline event handlers (onsubmit="return false") by hash with 'unsafe-hashes'. When its reports stay at
+// 0 for 14 days, this script-src replaces the one above. Browsers ignore frame-ancestors and upgrade-insecure-requests in
+// a report-only policy and print a console error for them, so they are left out of this copy.
+const CSP_RO_SKIP = new Set(["frame-ancestors 'self'", "upgrade-insecure-requests"]);
+const sha256b64 = (t) => createHash("sha256").update(t, "utf8").digest("base64");
+const EXEC_TYPE = /^(?:text\/javascript|application\/javascript|module)$/i;
+function cspNextFor(html) {
+  const scripts = new Set(), attrs = new Set();
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
+    if (/\bsrc\s*=/i.test(m[1])) continue;
+    const t = /\btype\s*=\s*["']?([^"'\s>]+)/i.exec(m[1]);
+    if (t && !EXEC_TYPE.test(t[1])) continue; // JSON-LD and other data blocks never run
+    scripts.add(`'sha256-${sha256b64(m[2])}'`);
+  }
+  for (const m of html.matchAll(/<[a-z][^>]*>/gi)) for (const a of m[0].matchAll(/\son[a-z]+\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/gi)) attrs.add(`'sha256-${sha256b64(a[1] ?? a[2] ?? a[3])}'`);
+  const src = ["'self'", ...scripts, ...(attrs.size ? ["'unsafe-hashes'", ...attrs] : []), "https://www.googletagmanager.com", "https://bzrcdn.openai.com"].join(" ");
+  return CSP_POLICY.filter((d) => !CSP_RO_SKIP.has(d)).map((d) => (d.startsWith("script-src ") ? "script-src " + src : d)).join("; ");
+}
+// the old WordPress media pages (/wp-content/uploads/*.html) are not ours to vouch for: no policy there
+const withCsp = (req, res) => {
+  if (req.url.startsWith("/wp-content/uploads/") || req.url.startsWith("/testing/")) return; // r310: nor the clients' demos on beta (their own CDNs)
+  const wh = res.writeHead;
+  res.writeHead = function (code, a, b) {
+    const h = a && typeof a === "object" ? a : b && typeof b === "object" ? b : null;
+    const get = (k) => (h && (h[k] ?? h[k.toLowerCase()])) ?? this.getHeader(k);
+    const put = (k, v) => { if (h) h[k] = v; else this.setHeader(k, v); };
+    if (/^text\/html/i.test(String(get("Content-Type") || ""))) {
+      if (get("Content-Security-Policy")) { if (!get("Content-Security-Policy-Report-Only")) put("Content-Security-Policy-Report-Only", CSP_POLICY.filter((d) => !CSP_RO_SKIP.has(d)).join("; ")); }
+      else put("Content-Security-Policy", viaHttps(req) ? CSP : CSP_PLAIN);
+      put("Reporting-Endpoints", 'csp="/api/csp-report"');
+    }
+    return wh.apply(this, arguments);
+  };
+};
+
 // Text (html, js, css, ...) and small binaries live in memory, compressed once at start. r400 (Mira's audit, finding 9):
 // binaries from 64 KB up (pictures, films) stay on disk and stream, with the same ETag as before (sha1 of the bytes,
 // read in 1 MB chunks). Holding all ~540 MB in memory made one process ~575 MB RSS on a 1 GB box shared with the
@@ -65,6 +139,7 @@ const files = new Map();
       try { f.br = readFileSync(p + ".br"); } catch { f.br = zlib.brotliCompressSync(buf); }
       try { f.gz = readFileSync(p + ".gz"); } catch { f.gz = zlib.gzipSync(buf); }
     }
+    if (ext === ".html") f.cspNext = cspNextFor(buf.toString("utf8")); // r401: the stricter next-step policy, per page
     files.set(url, f);
   }
 })(ROOT);
@@ -271,6 +346,7 @@ function serve(req, res) {
     "Vary": "Accept-Encoding",
     "ETag": f.etag
   };
+  if (f.cspNext) headers["Content-Security-Policy-Report-Only"] = f.cspNext; // r401
   // r140: private client reports: never indexed, never cached by Cloudflare, no referrer leaving the page
   // r322: and the internal process deck (/prezentare/proces-<code>/), the same way
   // r382 (Daniel, 29 Oct): /onboarding/ (and its Romanian copy) stays open to people and its links are followed, but it is
@@ -355,6 +431,16 @@ function proposals(req, res) {
   if (req.method === "HEAD") return res.end();
   createReadStream(full).on("error", () => res.destroy()).pipe(res);
 }
+// r401: beta's pages are read from disk per request; their next-step policy is computed once per file version
+const betaCsp = new Map();
+function betaCspNext(full, st) {
+  const k = `${st.size}-${st.mtimeMs}`, c = betaCsp.get(full);
+  if (c && c.k === k) return c.v;
+  let v = null; try { v = cspNextFor(readFileSync(full, "utf8")); } catch {}
+  if (betaCsp.size > 2000) betaCsp.clear();
+  betaCsp.set(full, { k, v });
+  return v;
+}
 function serveBeta(req, res) {
   const u = new URL(req.url, "http://x");
   let path;
@@ -371,6 +457,7 @@ function serveBeta(req, res) {
   if (!st) { res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "120" }); return res.end("beta 2.0 is not built yet"); }
   const ext = extname(full).toLowerCase(), immutable = status === 200 && path.startsWith("/assets/");
   const headers = { "Content-Type": typeFor(path, ext) || "application/octet-stream", "Cache-Control": immutable ? "public, max-age=31536000, immutable" : "no-cache", "X-Robots-Tag": "noindex, nofollow", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "SAMEORIGIN", "Vary": "Accept-Encoding" };
+  if (ext === ".html") { const ro = betaCspNext(full, st); if (ro) headers["Content-Security-Policy-Report-Only"] = ro; } // r401
   let file = full, size = st.size;
   if (COMPRESS.has(ext)) {
     const ae = String(req.headers["accept-encoding"] || "");
@@ -449,47 +536,6 @@ function legacy(req, res) {
   return false;
 }
 
-// TASK-051: Content-Security-Policy, in Report-Only for now: browsers only REPORT what the policy would block, they
-// block nothing. Sent on every HTML response of every host (live, beta, The Core); the reports land in a jsonl file
-// next to the leads backup. The header name is fixed on purpose (no env switch): enforcing is a code change.
-const CSP_POLICY = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://bzrcdn.openai.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com https://i.ytimg.com",
-  "media-src 'self' blob:",
-  "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://bzr.openai.com https://bzrcdn.openai.com",
-  "frame-src 'self' https://www.youtube-nocookie.com",
-  "worker-src 'self' blob:",
-  "child-src 'self' blob:",
-  "manifest-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'self'",
-  "upgrade-insecure-requests",
-  "report-uri /api/csp-report",
-  "report-to csp"
-];
-// browsers ignore these two in a report-only policy and print a console error on every page for them (Chrome for
-// upgrade-insecure-requests, Safari for frame-ancestors; X-Frame-Options already stops framing): they join the
-// header the day it enforces
-const CSP_ENFORCE_ONLY = ["frame-ancestors 'self'", "upgrade-insecure-requests"];
-const CSP = CSP_POLICY.filter((d) => !CSP_ENFORCE_ONLY.includes(d)).join("; ");
-// the old WordPress media pages (/wp-content/uploads/*.html) are not ours to vouch for: no policy there
-const withCsp = (req, res) => {
-  if (req.url.startsWith("/wp-content/uploads/") || req.url.startsWith("/testing/")) return; // r310: nor the clients' demos on beta (their own CDNs)
-  const wh = res.writeHead;
-  res.writeHead = function (code, a, b) {
-    const h = a && typeof a === "object" ? a : b && typeof b === "object" ? b : null;
-    if (h && /^text\/html/i.test(String(h["Content-Type"] || ""))) {
-      h["Content-Security-Policy-Report-Only"] = CSP;
-      h["Reporting-Endpoints"] = 'csp="/api/csp-report"';
-    }
-    return wh.apply(this, arguments);
-  };
-};
 // POST /api/csp-report: application/csp-report (report-uri: Firefox; Safari's report-to body comes with this type
 // too) or application/reports+json (report-to: Chrome). One compact line per violation: the time, the page's path,
 // the directive, the blocked origin (no query strings, no IPs; the IP only counts requests, in memory). 16 KB per
@@ -524,7 +570,10 @@ function cspLine(r) {
     t: new Date().toISOString(),
     doc: cspPath(r.documentURL ?? r["document-uri"]),
     dir: String(r.effectiveDirective ?? r["effective-directive"] ?? r["violated-directive"] ?? "").split(" ")[0].slice(0, 40),
-    blocked
+    blocked,
+    // r401: which policy spoke: "enforce" (the live Content-Security-Policy, the browser blocked it) or "report" (the
+    // stricter next-step Report-Only copy, nothing was blocked)
+    m: /^(enforce|report)$/.test(String(r.disposition || "")) ? r.disposition : "?"
   };
 }
 async function cspReport(req, res) {
@@ -573,7 +622,10 @@ function cspSummary(req, res) {
 // blocked origin with its firstSeen (the "new source" alert). Our own test reports (example.com/.net/.org, RFC 2606)
 // are left out and only counted; reports the browser makes about itself (Google Translate) are marked noise.
 // CSP_SINCE: the day the current policy went live; a policy change starts the 14-day clock for enforcing again.
-const CSP_SINCE = "2026-10-21";
+// r401: the first policy ran report-only from 2026-10-21 and enforces from r401's deploy; "since" is now the day the
+// stricter next-step report-only copy started (its 14-day clock), so the dashboard's "ready to enforce" bar follows it.
+// Set it to the real deploy day if r401 ships later.
+const CSP_REPORT_ONLY_FROM = "2026-10-21", CSP_SINCE = "2026-10-29";
 const CSP_IGNORE = /^https?:\/\/([a-z0-9-]+\.)*example\.(com|net|org)(:\d+)?$/i;
 const CSP_NOISE = /^https:\/\/(translate\.googleapis\.com|translate\.google\.com|translate-pa\.googleapis\.com)$/i;
 const sha = (x) => createHash("sha256").update(String(x)).digest();
@@ -586,6 +638,7 @@ function cspStats(req, res) {
   const totals = { h24: 0, d7: 0, all: 0 }, real = { h24: 0, d7: 0, d14: 0, all: 0 };
   const dirs = new Map(), origins = new Map(), pages = new Map();
   let ignored = 0, first = null, last = null, lastReal = null;
+  const modes = { enforce: { h24: 0, d7: 0, all: 0 }, report: { h24: 0, d7: 0, all: 0 }, "?": { h24: 0, d7: 0, all: 0 } }; // r401
   const add = (m, k, t) => { const e = m.get(k); if (e) { e.count++; if (t < e.firstSeen) e.firstSeen = t; if (t > e.lastSeen) e.lastSeen = t; } else m.set(k, { key: k, count: 1, firstSeen: t, lastSeen: t }); };
   for (const d of CSP_DIRS) {
     let s; try { s = readFileSync(join(d, CSP_FILE), "utf8"); } catch { continue; }
@@ -597,6 +650,7 @@ function cspStats(req, res) {
       if (CSP_IGNORE.test(blocked)) { ignored++; continue; }
       totals.all++; if (ms >= D7) totals.d7++; if (ms >= H24) totals.h24++;
       if (!first || t < first) first = t; if (!last || t > last) last = t;
+      { const md = modes[x.m] || modes["?"]; md.all++; if (ms >= D7) md.d7++; if (ms >= H24) md.h24++; }
       if (!CSP_NOISE.test(blocked)) { real.all++; if (ms >= D14) real.d14++; if (ms >= D7) real.d7++; if (ms >= H24) real.h24++; if (!lastReal || t > lastReal) lastReal = t; }
       add(dirs, String(x.dir || "?"), t); add(origins, blocked, t); add(pages, String(x.doc || "?"), t);
     }
@@ -606,8 +660,10 @@ function cspStats(req, res) {
   const all = [...origins.values()].sort((a, b) => (a.firstSeen < b.firstSeen ? 1 : -1));
   res.setHeader("X-Robots-Tag", "noindex");
   return send(res, 200, {
-    ok: true, generatedAt: new Date(now).toISOString(), policy: { mode: "report-only", since: CSP_SINCE },
-    totals, real, ignored, firstReport: first, lastReport: last, lastRealReport: lastReal,
+    ok: true, generatedAt: new Date(now).toISOString(),
+    // r401: the policy enforces now; "next" is the stricter report-only copy (scripts by hash) and its 14-day clock
+    policy: { mode: "enforce", since: CSP_SINCE, enforcedSince: CSP_SINCE, firstReportOnlyFrom: CSP_REPORT_ONLY_FROM, next: { mode: "report-only", since: CSP_SINCE, what: "script-src without 'unsafe-inline' (per-page sha256)" } },
+    modes, totals, real, ignored, firstReport: first, lastReport: last, lastRealReport: lastReal,
     top: { directives: top(dirs), origins: top(origins).map((o) => ({ ...o, noise: CSP_NOISE.test(o.key) })), pages: top(pages) },
     origins: all.slice(0, 1000).map((o) => ({ origin: o.key, firstSeen: o.firstSeen, lastSeen: o.lastSeen, count: o.count, noise: CSP_NOISE.test(o.key) })),
     originsTotal: all.length

@@ -110,4 +110,5 @@ Secrets (SMTP, leads key, The Core admin key, ops bridge key, CSP stats key, ...
 
 - Work in a git worktree per task, branched from `origin/main` (or from the current stack branch for beta work). Commit with pathspecs; never `git stash` in shared worktrees.
 - Images get WebP variants cached in `site/.img-cache` (committed, by content hash).
+- **The Content-Security-Policy enforces** (since r401; `CSP_POLICY` in `server.js`): a new third-party script, font, frame, image host or API that a page needs is blocked until its origin is added there. Each page also gets a stricter `Content-Security-Policy-Report-Only` (scripts by per-page sha256, no `'unsafe-inline'`), computed by the server from the built page; its reports show what still needs a hash before it can enforce.
 - The repo is private: `github.com/danielstoicescu/cromatic-studios`.
