@@ -342,13 +342,38 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const WALL_DIR = new URL("./onboarding/media/covers/", import.meta.url).pathname;
     // r349: wall(true) is the first fold: the line over it (white on a soft dark scrim behind the words only), the
     // first covers load at once (they are the first paint now); the rows still only follow the normal scroll
+    // r377 (Daniel, 29 Oct: out with Echo School, Printoteca and Sticker Republic; in with Craft Coffee, Two Minutes,
+    // Steam, Sip and Berero; Altius' logo centred on its cover): the wall's picks are deliberate now, not "every case
+    // page with a cover". WALL_ROWS is the order, row by row. Each row is a loop (it runs on its own copy), so what
+    // matters is the circle: light, dark and colour covers alternate and the streets mix, so two alike never touch, the
+    // wrap-around included. Where each circle starts is set by the first paint: the scroll-linked offset opens row 1
+    // around its 3rd cover, row 2 on its last ones and row 3 around its 4th-5th (1280-1440 wide; a phone sees one of
+    // those), so the five new picks and Altius sit there: Altius + Craft Coffee, Berero + Steam (Investimental is the
+    // phone's middle one), Sip + Two Minutes. WALL_OUT stays off on purpose. A project with a cover in neither list is
+    // reported by the build, so a new cover is never dropped silently. PROJECTS and the case pages are not touched.
+    const WALL_ROWS = [
+      ["antila", "unchain-festival", "altius", "craft-coffee", "bepco", "yoshi-izakaya", "elithia", "techventures-bank", "the-aesthetic-court", "artisan-coffee-gear", "venevo"],
+      ["assetto", "arca-resort", "toskani-med", "kompus", "witanalytica", "clinica-sante", "unde", "investimental", "casa-berero", "steam"],
+      ["oma-coffee", "routine-paris", "patiline", "sip-coffee-wine", "two-minutes", "longshield", "slow-coffee-festival", "infinity-capital", "pain-plaisir", "esd"],
+    ];
+    const WALL_OUT = new Set(["echo-school", "printoteca", "sticker-republic"]);
     const wall = (first = false) => {
-      const seen = new Set(), list = PROJECTS.filter((x) => x.page && !seen.has(x.page) && seen.add(x.page) && existsSync(WALL_DIR + x.page + ".webp"));
-      if (list.length < 6) return "";
-      const per = Math.ceil(list.length / 3);
+      const byPage = new Map();
+      PROJECTS.forEach((x) => { if (x.page && !byPage.has(x.page)) byPage.set(x.page, x); });
+      const cover = (pg) => existsSync(WALL_DIR + pg + ".webp");
+      const rows = WALL_ROWS.map((r) => r.filter((pg) => byPage.has(pg) && cover(pg)).map((pg) => byPage.get(pg)));
+      if (!wall.checked) {
+        wall.checked = true;
+        const picked = new Set(WALL_ROWS.flat());
+        const gone = WALL_ROWS.flat().filter((pg) => !byPage.has(pg) || !cover(pg));
+        const loose = [...byPage.keys()].filter((pg) => !picked.has(pg) && !WALL_OUT.has(pg) && cover(pg));
+        if (gone.length) console.warn(`[wall] picked but without a project or a cover (skipped): ${gone.join(", ")}`);
+        if (loose.length) console.warn(`[wall] cover but not on the wall and not in WALL_OUT: ${loose.join(", ")}`);
+      }
+      if (rows.some((r) => r.length < 3)) return "";
       const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : esc(x.name)}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name" aria-hidden="true">${esc(x.name)}</span></a>`;
       return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
-    <div class="pw-rows">${[0, 1, 2].map((r) => { const l = list.slice(r * per, r * per + per); return `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`; }).join("")}</div>
+    <div class="pw-rows">${rows.map((l) => `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`).join("")}</div>
     ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We’re here for the brand experiences <span class="pw-heart" aria-hidden="true">💛</span></h1></div>
     <p class="pw-alt"><a href="/">Or take the scenic route through the Cromatic City <span aria-hidden="true">→</span></a></p>` : ""}
   </section>`;
