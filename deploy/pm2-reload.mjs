@@ -1,6 +1,6 @@
 // The Bunnyshell post-symlink step (r400, Mira's audit finding 9): start or gracefully reload the site under pm2.
 //
-//   cd /var/www/cromatic_drive/app && node deploy/pm2-reload.mjs
+//   cd ${APP_ROOT} && node deploy/pm2-reload.mjs   (from the new release folder)
 //
 // - "cromatic-drive" already runs in cluster mode -> `pm2 reload ecosystem.config.cjs --update-env`: the new release
 //   starts beside the old one and takes over when it says "ready"; no request sees an error. If the new release
@@ -13,37 +13,39 @@
 // timeouts, stop the old one: the site would go down a minute or two later.) Skip it with PREFLIGHT=0.
 // Then `pm2 save` (so a reboot brings back the same app) and a check that /healthz answers 200 on the port.
 // --update-env passes the step's environment (the Bunnyshell Secrets) on to the new process, as pm2 start does.
-// r406: APP may be the release folder itself (Bunnyshell's APP_ROOT): the script then looks for the deploy symlink
-// that points at this release (CZ_APP_LINK, /var/www/cromatic_drive/app, <base>/current/app, <base>/current) and runs
-// pm2 through it, so a later reload starts the new release. In this app's own pm2 home every process that is not a pm2
-// module is ours: all of them are removed on a (re)start, not only "cromatic-drive" (a stray fork app that kept :8081
-// made the cluster app crash-loop on EADDRINUSE while the stray kept serving an old release from memory). After the
-// step, /healthz must name THIS release, or the step fails.
+// r407: no symlink or server path is needed. The release is the folder this script is in. pm2 runs a fixed launcher,
+// <pm2 home>/cromatic-drive/pm2-entry.cjs, which starts the release named in current.json beside it; after the
+// preflight this step rewrites both, then reloads, so the reload's new process starts THIS release (pm2 keeps an app's
+// script path from its first start: r400 pinned it to the first release, so reloads kept restarting that one). In this
+// app's pm2 home every process that is not a pm2 module is ours: a (re)start removes all of them, whatever the name.
+// After the step, /healthz on :8081 must name THIS release, or the step fails. Run it from the release:
+//   cd ${APP_ROOT} && node deploy/pm2-reload.mjs        (CZ_APP_PATH is no longer read)
 // Node 16 compatible; prints no environment values.
 import { execFileSync, spawn } from "node:child_process";
-import { realpathSync, lstatSync } from "node:fs";
+import { realpathSync, mkdirSync, writeFileSync, renameSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import http from "node:http";
 import { dirname, join } from "node:path";
 
 const NAME = "cromatic-drive";
 const PM2 = process.env.PM2_BIN || "pm2";
-const GIVEN = process.env.CZ_APP_PATH || "/var/www/cromatic_drive/app";
 const real = (p) => { try { return realpathSync(p); } catch { return null; } };
-const isLink = (p) => { try { return lstatSync(p).isSymbolicLink(); } catch { return false; } };
-const RELEASE_DIR = real(GIVEN) || GIVEN; // the release this step deploys
-// the release's short name: /opt/app/cromatic_drive/releases/<id>/app -> <id> (server.js /healthz says the same)
-const relName = (d) => (d.endsWith("/app") ? d.slice(0, -4) : d).split("/").pop();
+// r407: the release is where THIS script lives (deploy/ inside it), whatever CZ_APP_PATH or a symlink says
+const RELEASE_DIR = real(join(dirname(fileURLToPath(import.meta.url)), ".."));
+const relName = (d) => (d.endsWith("/app") ? d.slice(0, -4) : d).split("/").pop(); // server.js /healthz says the same
 const RELEASE = relName(RELEASE_DIR);
-// the deploy symlink that points at this release: pm2 must load the script through it, or a reload restarts an old release
-function findLink() {
-  const up = RELEASE_DIR.replace(/\/releases\/[^/]+(\/app)?$/, "");
-  const cands = [process.env.CZ_APP_LINK, isLink(GIVEN) ? GIVEN : null, "/var/www/cromatic_drive/app", join(up, "current", "app"), join(up, "current"), join(up, "app")].filter(Boolean);
-  for (const c of cands) if (isLink(c) || isLink(dirname(c))) { if (real(c) === RELEASE_DIR) return c; }
-  return null;
-}
-const LINK = findLink();
-const APP = LINK || RELEASE_DIR;
+const APP = RELEASE_DIR;
 const ECO = join(APP, "ecosystem.config.cjs");
+// the fixed folder pm2 runs from (as in ecosystem.config.cjs): the launcher + current.json, outside every release
+const PM2_HOME = process.env.PM2_HOME || join(process.env.HOME || process.env.HOMEPATH || "/tmp", ".pm2");
+const STATE = process.env.CZ_PM2_STATE || join(PM2_HOME, "cromatic-drive");
+const ENTRY = join(STATE, "pm2-entry.cjs");
+function point() { // atomic writes: a restart at any moment reads a whole file
+  mkdirSync(STATE, { recursive: true });
+  const put = (f, data) => { const t = `${f}.tmp-${process.pid}`; writeFileSync(t, data); renameSync(t, f); };
+  put(ENTRY, readFileSync(join(APP, "deploy", "pm2-entry.cjs")));
+  put(join(STATE, "current.json"), JSON.stringify({ release: RELEASE_DIR, at: new Date().toISOString() }) + "\n");
+}
 const PORT = Number(process.env.PORT || 8081);
 
 const pm2 = (...args) => { console.log(`$ pm2 ${args.join(" ")}`); execFileSync(PM2, args, { stdio: "inherit", cwd: APP, env: { ...process.env, CZ_APP_PATH: APP } }); };
@@ -77,20 +79,22 @@ if (process.env.PREFLIGHT !== "0" && !(await preflight())) {
   console.error("[deploy] the new release does not start: pm2 left as it is, the previous process keeps serving");
   process.exit(1);
 }
-console.log(`[deploy] release ${RELEASE} (${RELEASE_DIR}); pm2 loads it through ${LINK ? "the symlink " + LINK : "the release folder (no symlink found: reloads fall back to delete + start)"}`);
+console.log(`[deploy] release ${RELEASE} (${RELEASE_DIR}); pm2 runs ${ENTRY}`);
+point(); // from here on, any (re)start of the pm2 app starts this release
 const procs = list();
 const apps = procs.filter((p) => !(p.pm2_env && (p.pm2_env.pmx_module || p.pm2_env.axm_options && p.pm2_env.axm_options.isModule)));
 const ours = apps.filter((p) => p.name === NAME);
 const others = apps.filter((p) => p.name !== NAME);
-const sameScript = ours.every((p) => String(p.pm2_env && p.pm2_env.pm_exec_path || "") === join(APP, "deploy", "pm2-entry.cjs"));
-const live = LINK && !others.length && sameScript && ours.length > 0 && ours.every((p) => p.pm2_env && p.pm2_env.exec_mode === "cluster_mode") && ours.some((p) => p.pm2_env.status === "online");
+const sameScript = ours.every((p) => String(p.pm2_env && p.pm2_env.pm_exec_path || "") === ENTRY);
+const live = !others.length && sameScript && ours.length > 0 && ours.every((p) => p.pm2_env && p.pm2_env.exec_mode === "cluster_mode") && ours.some((p) => p.pm2_env.status === "online");
 console.log(`[deploy] pm2 has ${apps.length} app process(es): ${apps.map((p) => `${p.pm_id}:${p.name}/${p.pm2_env.exec_mode}/${p.pm2_env.status}`).join(", ") || "none"}`);
 
 let failed = false;
 if (live) {
   try { pm2("reload", ECO, "--update-env"); } catch (e) { failed = true; console.error(`[deploy] pm2 reload failed (${e.status}): the previous process keeps serving`); }
 } else {
-  // a first start, a stray app (the old fork app, any name), a crash-looping or stopped cluster app, or no symlink:
+  // a first start, a stray app (the old fork app, any name), a crash-looping or stopped cluster app, or the r400-r406
+  // setup (script in a release folder):
   // remove every app process in this pm2 home (pm2 modules stay), then start. One short gap.
   for (const p of apps) { try { pm2("delete", String(p.pm_id)); } catch {} }
   try { pm2("start", ECO, "--update-env"); } catch (e) { failed = true; console.error(`[deploy] pm2 start failed (${e.status})`); }
