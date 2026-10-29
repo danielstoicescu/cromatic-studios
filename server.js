@@ -248,9 +248,13 @@ function serve(req, res) {
     "Cache-Control": f.immutable ? "public, max-age=31536000, immutable" : "public, max-age=0, must-revalidate",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Strict-Transport-Security": "max-age=31536000",
+    // r382 (Mira's audit, finding 12; Daniel approved): HSTS covers the subdomains (no preload yet), the page gets its own
+    // browsing context group (COOP), and no page may ask for the location. The subdomains answering on 29 Oct (beta,
+    // www, drive, staging, stagiing, staging1, webmail, cpanel, webdisk, www.eventlocation) all have valid certificates
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Cross-Origin-Opener-Policy": "same-origin",
     "X-Frame-Options": "SAMEORIGIN",
-    "Permissions-Policy": "camera=(), microphone=(), payment=(), usb=()",
+    "Permissions-Policy": "camera=(), microphone=(), payment=(), usb=(), geolocation=()",
     "Vary": "Accept-Encoding",
     "ETag": f.etag
   };
