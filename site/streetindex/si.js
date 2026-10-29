@@ -100,7 +100,12 @@
 
   // the sentence filter + search
   const f = $(".si-filter"), q = f.q, clear = $(".si-clear"), count = $(".si-count"), empty = $(".si-empty");
-  const fmt = (n, s, t) => RO ? `<b>${n} ${n === 1 ? "loc" : "locuri"}</b> pe ${s} ${s === 1 ? "stradă" : "străzi"}, din ${t}` : `<b>${n} ${n === 1 ? "place" : "places"}</b> on ${s} ${s === 1 ? "street" : "streets"}, of ${t}`;
+  // Romanian counts take "de" from 20 on ("44 de locuri"); unfiltered, the count is just the city ("44 places on 4 streets"), as in the mega menu
+  const de = (n) => (n % 100 >= 20 || (n >= 100 && n % 100 === 0) ? "de " : "");
+  // nothing left (a chapter on a street without it): the mega menu's own line, never "0 places on 0 streets"
+  const fmt = (n, s, t, on) => !n ? (RO ? "Nimic aici, deocamdată." : "Nothing for that yet.") : RO
+    ? `<b>${n} ${de(n)}${n === 1 ? "loc" : "locuri"}</b> pe ${s} ${s === 1 ? "stradă" : "străzi"}${on ? `, din ${t}` : ""}`
+    : `<b>${n} ${n === 1 ? "place" : "places"}</b> on ${s} ${s === 1 ? "street" : "streets"}${on ? `, of ${t}` : ""}`;
   const names = new Map($$(".si-a .si-name").map((el) => [el, el.textContent]));
   const cats = new Map($$(".si-a .si-cat").map((el) => [el, el.textContent]));
   const escH = (t) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -122,7 +127,7 @@
     for (const [el, t] of cats) el.innerHTML = mark(t, w);
     idx.classList.toggle("filtering", !!(ch || sk || w));
     clear.hidden = !w;
-    count.innerHTML = fmt(n, ss.size, D.total);
+    count.innerHTML = fmt(n, ss.size, D.total, !!(ch || sk || w));
     empty.hidden = !(w && none.length);
     $(".si-empty-l").textContent = D.nothing.replace("{s}", none.join(" · ")).replace("{q}", q.value.trim());
   };

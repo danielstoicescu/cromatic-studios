@@ -57,10 +57,10 @@ button,select,input{font:inherit;color:inherit}
 /* filter: a sentence */
 .si-index{position:relative}
 .si-filter{position:relative;background:var(--paper);padding:96px 48px 72px;display:grid;grid-template-columns:1fr;gap:18px;align-items:end;grid-column:1/-1}
-.si-sentence{margin:0;font-weight:800;font-size:clamp(34px,4.4vw,64px);line-height:1.05;letter-spacing:-.035em;white-space:nowrap}
+.si-sentence{margin:0;font-weight:800;font-size:clamp(34px,4.4vw,64px);line-height:1.16;letter-spacing:-.035em}
 .si-dim{color:var(--soft)}
-.si-sel{position:relative;display:inline-block}
-.si-sel select{width:var(--w,auto);appearance:none;-webkit-appearance:none;background:transparent;border:0;border-bottom:3px solid var(--ink);border-radius:0;font-weight:800;font-size:inherit;letter-spacing:inherit;line-height:1.05;padding:0 .6em 2px 0;cursor:pointer;max-width:12em;text-overflow:ellipsis}
+.si-sel{position:relative;display:inline-block;max-width:100%;white-space:nowrap}
+.si-sel select{width:var(--w,auto);appearance:none;-webkit-appearance:none;background:transparent;border:0;border-bottom:3px solid var(--ink);border-radius:0;font-weight:800;font-size:inherit;letter-spacing:inherit;line-height:1.05;padding:0 .6em 2px 0;cursor:pointer;max-width:100%;text-overflow:ellipsis}
 .si-sel::after{content:"";position:absolute;right:.12em;top:50%;width:.22em;height:.22em;border:solid var(--ink);border-width:0 3px 3px 0;transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .si-tools{display:flex;align-items:center;gap:24px;justify-content:flex-start;min-width:0}
 .si-view{margin-left:auto!important}
