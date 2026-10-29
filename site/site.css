@@ -1524,7 +1524,30 @@ html { touch-action: manipulation; }
 /* the street banners' ghost pill: the parked still, in the flow, the same inset and room before the words */
 .sb-drive .dk { --dk-w: 46px; position: relative; left: auto; top: auto; display: inline-block; flex: 0 0 var(--dk-w); margin: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
 .sb-drive:has(.dk) { padding-block: 12px; padding-left: 12px; gap: 12px; }
-@media (max-width: 700px) { .sb-drive .dk { --dk-w: 42px; } .sb-drive:has(.dk) { padding-block: 8px; padding-left: 9px; gap: 9px; } }
+.sb-ds { display: none; }
+/* r375: on a desktop "The Shortest Shortcut" broke onto two lines and pushed the number and the pill above the band,
+   where contain: paint cut them off; a long name keeps one line */
+@media (min-width: 701px) { .sb-name.is-long { font-size: clamp(52px, 7vw, 124px); } }
+/* r375 (Daniel, 29 Oct: "The 'Take a drive' buttons on the street headers sit badly on mobile"): on a phone the pill
+   was wedged between the number and the name (right-aligned next to "01" from 390 up, on its own row at 360, 10 px over
+   the title) and outline-only on a busy video. Now: number, name, then the pill under the name, left-aligned with it,
+   auto width, solid paper with the yellow ring of the site's other drive pills, 48 px tall, one line ("Drive this street"),
+   the parked car inside. .sb-top dissolves (display: contents) so the order is set here and desktop keeps its row */
+@media (max-width: 700px) {
+  .sb-copy { display: flex; flex-direction: column; align-items: flex-start; bottom: calc(70px + 6%); }
+  .sb-top { display: contents; }
+  .sb-top .sb-cap { order: 0; margin: 0 0 8px; }
+  .sb-name { order: 1; }
+  .sb-dl { display: none; } .sb-ds { display: inline; }
+  .sb-drive { order: 2; margin-top: 16px; min-height: 48px; box-sizing: border-box; padding: 0 18px 0 10px; gap: 10px; border: 0; background: var(--paper); color: var(--ink);
+    -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 15px; letter-spacing: -.005em;
+    box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38); transition: translate .2s var(--eoq), box-shadow .2s var(--eoq); }
+  .sb-drive:has(.dk) { padding-block: 0; padding-left: 10px; gap: 10px; }
+  .sb-drive .dk { --dk-w: 44px; }
+  .sb-drive:hover { background: var(--paper); color: var(--ink); }
+  .sb-drive:active .dk { translate: 5px 0; transition-duration: .12s; }
+  .sb-drive:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 4px; }
+}
 /* a full-width pill on a phone: the label centred in the paper the car leaves free, on one line in Romanian at 360 too */
 @media (max-width: 700px) { .hc-ed-a .btn.dk-host { padding-right: 16px; } }
 @media (max-width: 380px) { .hc-ed-a .btn.dk-host { --dk-x: 10px; --dk-g: 10px; font-size: 15px; min-height: 44px; } }

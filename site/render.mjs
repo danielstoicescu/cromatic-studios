@@ -271,8 +271,8 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
         <div class="sb-copy">
           <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span></p>
-          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go) */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${DK_STILL()}<span>Take a drive in the Cromatic City</span></a></div>
-          <p class="sb-name" aria-hidden="true">${esc(street)}</p>
+          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go); r375: on a phone the shorter label, under the street name */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${DK_STILL()}<span class="sb-dl">Take a drive in the Cromatic City</span><span class="sb-ds">Drive this street</span></a></div>
+          <p class="sb-name${street.length > 18 ? " is-long" : ""}" aria-hidden="true">${esc(street)}</p>
         </div>
         ${video ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : ""}
       </div>`;
