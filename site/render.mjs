@@ -354,28 +354,34 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     // those), so the five new picks and Altius sit there: Altius + Craft Coffee, Berero + Steam (Investimental is the
     // phone's middle one), Sip + Two Minutes. WALL_OUT stays off on purpose. A project with a cover in neither list is
     // reported by the build, so a new cover is never dropped silently. PROJECTS and the case pages are not touched.
+    // r395 (Daniel, 30 Oct: two paintings from the mural at the studio on the wall): WALL_MURALS are not cases. They take
+    // every effect of the wall (the CRT, its scanlines and glitches, the drift and the scroll) but no link, no name card,
+    // no focus, and the wall's pointer and tap handling (site.js) ignores them. One in row 1, one in row 3, both where
+    // the first paint lands, between a light and a dark cover
+    const WALL_MURALS = new Set(["mural-1", "mural-2"]);
     const WALL_ROWS = [
-      ["antila", "unchain-festival", "altius", "craft-coffee", "bepco", "yoshi-izakaya", "elithia", "techventures-bank", "the-aesthetic-court", "artisan-coffee-gear", "venevo"],
+      ["antila", "unchain-festival", "altius", "craft-coffee", "mural-1", "bepco", "yoshi-izakaya", "elithia", "techventures-bank", "the-aesthetic-court", "artisan-coffee-gear", "venevo"],
       ["assetto", "arca-resort", "toskani-med", "kompus", "witanalytica", "clinica-sante", "unde", "investimental", "casa-berero", "steam"],
-      ["oma-coffee", "routine-paris", "patiline", "sip-coffee-wine", "two-minutes", "longshield", "slow-coffee-festival", "infinity-capital", "pain-plaisir", "esd"],
+      ["oma-coffee", "routine-paris", "patiline", "sip-coffee-wine", "two-minutes", "mural-2", "longshield", "slow-coffee-festival", "infinity-capital", "pain-plaisir", "esd"],
     ];
     const WALL_OUT = new Set(["echo-school", "printoteca", "sticker-republic"]);
     const wall = (first = false) => {
       const byPage = new Map();
       PROJECTS.forEach((x) => { if (x.page && !byPage.has(x.page)) byPage.set(x.page, x); });
       const cover = (pg) => existsSync(WALL_DIR + pg + ".webp");
-      const rows = WALL_ROWS.map((r) => r.filter((pg) => byPage.has(pg) && cover(pg)).map((pg) => byPage.get(pg)));
+      const has = (pg) => (WALL_MURALS.has(pg) || byPage.has(pg)) && cover(pg);
+      const rows = WALL_ROWS.map((r) => r.filter(has).map((pg) => (WALL_MURALS.has(pg) ? { mural: true, page: pg } : byPage.get(pg))));
       if (!wall.checked) {
         wall.checked = true;
         const picked = new Set(WALL_ROWS.flat());
-        const gone = WALL_ROWS.flat().filter((pg) => !byPage.has(pg) || !cover(pg));
+        const gone = WALL_ROWS.flat().filter((pg) => !has(pg)); // a mural needs only its cover
         const loose = [...byPage.keys()].filter((pg) => !picked.has(pg) && !WALL_OUT.has(pg) && cover(pg));
         if (gone.length) console.warn(`[wall] picked but without a project or a cover (skipped): ${gone.join(", ")}`);
         if (loose.length) console.warn(`[wall] cover but not on the wall and not in WALL_OUT: ${loose.join(", ")}`);
       }
       if (rows.some((r) => r.length < 3)) return "";
       if (first) wall.lead = rows[0].slice(0, 2).map((x) => x.page); // r381: preloaded in the head (the first paint shows row 1 from its start)
-      const card = (x, hid, k = 99) => `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name"${hid ? ' aria-hidden="true"' : ""}>${esc(x.name)}</span></a>`; // r387: the card's name names the link, the cover is alt="" (image-redundant-alt)
+      const card = (x, hid, k = 99) => x.mural ? `<div class="pw-case pw-mural" data-k="${x.page}"${hid ? ' aria-hidden="true"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : "Mural at the Cromatic Studios studio"}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}" decoding="async" width="560" height="380"></div>` : `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name"${hid ? ' aria-hidden="true"' : ""}>${esc(x.name)}</span></a>`; // r387: the card's name names the link, the cover is alt="" (image-redundant-alt)
       return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
     <div class="pw-rows">${rows.map((l) => `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`).join("")}</div>
     ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We’re here for the brand experiences <span class="pw-heart" aria-hidden="true">💛</span></h1><script>${/* r380 (beta): the h1's "signal lock". Split into inline word spans before the first paint (no flash, no layout change, the same line breaks, still one text block for LCP); the h1 keeps its real text, read once through aria-label. Never with reduced motion. */ ""}(function(){var h=document.getElementById("pw-h");if(!h||!h.animate||matchMedia("(prefers-reduced-motion: reduce)").matches)return;var t=h.textContent.replace(/\\s+/g," ").replace(/💛/g,"").trim(),i=0,ks=-1,ke=-1,ws=[];h.setAttribute("aria-label",t);[].slice.call(h.childNodes).forEach(function(n){if(n.nodeType===3){var f=document.createDocumentFragment();n.data.split(/(\\s+)/).forEach(function(p){if(!p)return;if(/^\\s+$/.test(p)){f.appendChild(document.createTextNode(p));return;}var s=document.createElement("span");s.className="si-w";s.setAttribute("aria-hidden","true");s.textContent=p;s.setAttribute("data-t",p);s.style.setProperty("--i",i);if(/^(brand|experien)/i.test(p)){if(ks<0)ks=i;ke=i;}ws.push(s);i++;f.appendChild(s);});h.replaceChild(f,n);}else if(n.nodeType===1){n.style.setProperty("--i",i);}});for(var k=ks;k>=0&&k<=ke;k++)ws[k].classList.add("si-k");h.style.setProperty("--n",i);h.style.setProperty("--k0",Math.max(ks,0));h.classList.add("si");})();</script></div>

@@ -1661,6 +1661,12 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
 .pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) { translate: none; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
 .pwall.crt3 .pw-case:is(:hover, :focus-visible, .show) img { scale: none; }
 @media (max-width: 700px) { .pwall.crt3 .pw-rows, .pwall.crt3 .pw-row { gap: 8px; } .pwall.crt3 .pw-case { border-radius: 10px; } }
+/* r395: the studio's mural on the wall: every effect of a cover, none of a link (no lift, no name, no pointer) */
+.pw-mural { cursor: default; }
+.pw-case.pw-mural:hover { translate: none; box-shadow: 0 3px 0 var(--ink); }
+.pwall.crt3 .pw-case.pw-mural:hover { box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
+.pw-case.pw-mural:hover img { scale: none; }
+.pw-case.pw-mural::after { display: none; }
 /* beta (Daniel, 29 Oct): the service cards assemble with the scroll (site.js drives each card's transform and opacity
    inline, so their own reveal and transform transition step aside); the pills pop in once a card has landed, and on
    desktop one light sweep crosses it. Reduced motion: no .asm, nothing moves */

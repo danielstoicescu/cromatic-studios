@@ -365,7 +365,7 @@
   const pwall = d.querySelector(".pwall"), pwRows = pwall ? [...pwall.querySelectorAll(".pw-row")] : [];
   if (pwall) {
     pwall.addEventListener("click", (e) => {
-      const a = e.target.closest(".pw-case");
+      const a = e.target.closest("a.pw-case"); // r395: the murals (div.pw-mural) are no links: no name card, no tap
       if (!a || !matchMedia("(hover: none)").matches || a.classList.contains("show")) return;
       e.preventDefault(); pwall.querySelectorAll(".pw-case.show").forEach((x) => x.classList.remove("show")); a.classList.add("show");
     });
@@ -424,7 +424,7 @@
     new IntersectionObserver((es) => { WALL.on = es[es.length - 1].isIntersecting; WALL.go(); }).observe(pwall);
     d.addEventListener("visibilitychange", WALL.go);
     pwRows.forEach((row, i) => {
-      row.addEventListener("pointerover", (e) => { if (e.pointerType === "mouse" && e.target.closest(".pw-case")) WALL.hold[i] = true; });
+      row.addEventListener("pointerover", (e) => { if (e.pointerType === "mouse" && e.target.closest("a.pw-case")) WALL.hold[i] = true; });
       row.addEventListener("pointerleave", () => { WALL.hold[i] = false; });
       row.addEventListener("focusin", () => { WALL.hold[i] = true; });
       row.addEventListener("focusout", () => { WALL.hold[i] = false; });
@@ -671,7 +671,7 @@
   var PAR = gl.getExtension("KHR_parallel_shader_compile"), ready = false, dead = false, U = {};
   // the covers: one layer each in a texture array, uploaded from the wall's own <img> once it is loaded and decoded
   var rowsEl = wall.querySelector(".pw-rows"), rows = [].slice.call(wall.querySelectorAll(".pw-row")), cards = [], layers = {}, NL = 0, queue = [];
-  rows.forEach(function (row, i) { [].forEach.call(row.querySelectorAll(".pw-case"), function (el) { var k = el.getAttribute("href"); if (!(k in layers)) layers[k] = { i: NL++, up: 0, cards: [] }; var L = layers[k]; var c = { el: el, img: el.querySelector("img"), row: i, L: L, hov: 0 }; L.cards.push(c); cards.push(c); }); });
+  rows.forEach(function (row, i) { [].forEach.call(row.querySelectorAll(".pw-case"), function (el) { var k = el.getAttribute("href") || el.getAttribute("data-k"); if (!(k in layers)) layers[k] = { i: NL++, up: 0, cards: [] }; var L = layers[k]; var c = { el: el, img: el.querySelector("img"), row: i, L: L, hov: 0 }; L.cards.push(c); cards.push(c); }); });
   var tex = null, inst = new Float32Array(cards.length * 16), ibuf = null, vao = null;
   var offs = [], on = function (el, k, f, o) { el.addEventListener(k, f, o); offs.push(function () { el.removeEventListener(k, f, o); }); };
   var lost = function () { if (dead) return; dead = true; wall.classList.remove("crt3"); cv.remove(); setTimeout(function () { var i = W.hooks.indexOf(frame); if (i >= 0) W.hooks.splice(i, 1); }, 0); offs.forEach(function (f) { f(); }); offs = []; queue = []; window.__czCrt = null; };
@@ -704,9 +704,9 @@
   on(window, "load", function () { if (ready && !dead) measure(); });
   // the pointer and the keyboard: the set under them leans in (the DOM decides which one, so it is always the right one)
   var over = null, focus = null;
-  on(wall, "pointerover", function (e) { over = e.target.closest && e.target.closest(".pw-case"); if (live && live.c.el === over) live = null; });
+  on(wall, "pointerover", function (e) { over = e.target.closest && e.target.closest("a.pw-case"); /* r395: never a mural */ if (live && live.c.el === over) live = null; });
   on(wall, "pointerleave", function () { over = null; });
-  on(wall, "focusin", function (e) { focus = e.target.closest && e.target.closest(".pw-case"); });
+  on(wall, "focusin", function (e) { focus = e.target.closest && e.target.closest("a.pw-case"); });
   on(wall, "focusout", function () { focus = null; });
   // the glitches: when, which screen, how the signal goes (a fast loss, a sustain where the tuner fights back, the recovery with a bloom)
   var TYPES = ["snow", "drop", "hsync", "roll"], TID = { snow: 1, drop: 2, hsync: 3, roll: 4 }, DUR = { snow: [520, 900], drop: [620, 950], hsync: [380, 760], roll: [700, 980] };
