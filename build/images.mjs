@@ -7,6 +7,15 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 
 const WIDTHS = [480, 960, 1600];
+// r397: a 720 px step for the portfolio's card pictures (bento .bc-media, .pc-media) and the studio's big photo (.ph-big), which a phone shows at ~355 CSS px
+// (621 px at 1.75x): with only 480/960/1600 it took the 960 file. Only card pictures get it (43 pictures, not all 938),
+// and never an AVIF copy (a case page's AVIF set stays as it was; its WebP source simply has one choice more)
+const MID = 720;
+// r397: a band's phone poster (<picture><source media="(max-width: 700px)" srcset="/assets/m/...-poster-m.jpg">, the hero
+// and the four streets) was its 900-960 px JPEG (46-101 KB, one is the phone's LCP): it gets WebP copies at 480, 720
+// and its own width, with sizes="100vw"
+const PHONE_SRC = /<source media="([^"]+)" srcset="(\/assets\/[^",\s]+\.jpe?g)"([^>]*)>/gi;
+const CARD_IMG = /(?:class="(?:bc|pc)-media"[^>]*|<figure class="ph-big")>\s*(?:<picture\b[^>]*>(?:<source\b[^>]*>)*)?<img\b[^>]*?\bsrc="(\/assets\/[^"]+\.(?:jpe?g|png)|\/assets\/m\/[^"]+\.webp)"/gi;
 // r139a: swaps a film's inline preview poster for its WebP copy once the page has loaded and painted (see optimizeImages)
 // r139a: swaps an animated picture's still first frame for the animation once the page has loaded and painted
 // r139d: both wait for the page's gate (GATE_JS below: loaded, and its largest picture or title painted) when it has one;
@@ -40,9 +49,12 @@ export async function optimizeImages(pub, root, log = console.log) {
   // a size no sizes attribute can say). Video posters get the copies and a tiny inline preview (LQIP below)
   const posters = new Set();
   const caseSrcs = new Set(); // TASK-015: pictures a case page shows get AVIF copies too
+  const cardSrcs = new Set(); // r397: card pictures get the 720 step too
   for (const f of htmls) {
     const t = readFileSync(f, "utf8");
     for (const m of t.matchAll(/<img\b[^>]*?\bsrc="(\/assets\/[^"]+\.(?:jpe?g|png)|\/assets\/m\/[^"]+\.webp)"[^>]*>/gi)) if (!/\bdata-full\b/.test(m[0])) { srcs.add(m[1]); if (isCase(f)) caseSrcs.add(m[1]); }
+    for (const m of t.matchAll(CARD_IMG)) cardSrcs.add(m[1]);
+    for (const m of t.matchAll(PHONE_SRC)) { srcs.add(m[2]); cardSrcs.add(m[2]); }
     for (const m of t.matchAll(/<video\b[^>]*?\bposter="(\/assets\/[^"]+\.(?:jpe?g|png))"/gi)) { srcs.add(m[1]); posters.add(m[1]); }
     // r139d: a case page's hero pictures (shown after the title, see heroAfterTitle) get the tiny preview too
     const hr = heroRange(t, f);
@@ -97,7 +109,8 @@ export async function optimizeImages(pub, root, log = console.log) {
       return;
     }
     // a WebP of ours is already the compressed file at its full size: it stays the largest choice, only smaller copies are made
-    const widths = webp ? WIDTHS.filter((w) => w < W * 0.95) : [...new Set([...WIDTHS.filter((w) => w < W * 0.95), Math.min(W, 1600)])].sort((a, b) => a - b);
+    const WS = cardSrcs.has(src) ? [...WIDTHS, MID].sort((a, b) => a - b) : WIDTHS;
+    const widths = webp ? WS.filter((w) => w < W * 0.95) : [...new Set([...WS.filter((w) => w < W * 0.95), Math.min(W, 1600)])].sort((a, b) => a - b);
     if (!widths.length) return;
     const set = [];
     // r139a: a poster's preview: the picture 40 px wide, inlined as the poster until the page has loaded (a few hundred
@@ -129,7 +142,8 @@ export async function optimizeImages(pub, root, log = console.log) {
     let avif = null;
     if (caseSrcs.has(src) && !avifSkip.has(h)) {
       const list = [];
-      for (const x of set) {
+      const aset = set.filter((x) => x.w !== MID || x.src === src); // r397: no AVIF copy of the 720 step
+      for (const x of aset) {
         const name = `${h}-${x.w}.avif`, cached = join(cacheDir, name);
         let fresh = null; // encoded here, written to the cache only if the set is kept
         if (!existsSync(cached)) {
@@ -139,10 +153,10 @@ export async function optimizeImages(pub, root, log = console.log) {
         list.push({ w: x.w, name, cached, fresh, bytes: fresh ? fresh.length : statSync(cached).size, webp: x.bytes });
       }
       const a = list.reduce((s, x) => s + x.bytes, 0), b = list.reduce((s, x) => s + x.webp, 0);
-      if (list.length === set.length && a < b * 0.8) {
+      if (list.length === aset.length && a < b * 0.8) {
         avif = list.map((x) => { if (x.fresh) { writeFileSync(x.cached, x.fresh); avifMade++; } copyFileSync(x.cached, join(pub, "assets", "w", x.name)); return { w: x.w, src: `/assets/w/${x.name}` }; });
         avifIn += b; avifOut += a; avifN++;
-      } else if (list.length === set.length) newSkip.add(h); // not worth it: remembered in avif-skip.txt, never encoded again
+      } else if (list.length === aset.length) newSkip.add(h); // not worth it: remembered in avif-skip.txt, never encoded again
     }
     out.set(src, { set, src: best.src, h: Math.round((meta.height || 0) * (best.w / W)), lqip, avif, orig: src, webpOrig: webp });
   };
@@ -163,6 +177,11 @@ export async function optimizeImages(pub, root, log = console.log) {
       const lazy = /loading="?lazy/.test(m);
       const sizes = `${lazy ? "auto, " : ""}(max-width: 760px) 100vw, (max-width: 1400px) 80vw, 1400px`;
       return `<img${a}src="${v.src}" srcset="${v.set.map((x) => `${x.src} ${x.w}w`).join(", ")}"${v.anim ? ` data-anim-srcset="${v.anim.map((x) => `${x.src} ${x.w}w`).join(", ")}"` : ""}${/\bsizes=/.test(m) ? "" : ` sizes="${sizes}"`}${b}>`;
+    });
+    next = next.replace(PHONE_SRC, (m, media, src, b) => {
+      const v = out.get(src);
+      if (!v || v.webpOrig) return m;
+      return `<source media="${media}" type="image/webp" srcset="${v.set.map((x) => `${x.src} ${x.w}w`).join(", ")}" sizes="100vw"${b}>`;
     });
     // r139a: a film's poster: its tiny preview inline while the page loads, then the WebP copy for the screen (960 px
     // wide, the 1600 one on a wide or dense screen) once it has loaded; with no preview, the WebP copy straight away
@@ -332,7 +351,8 @@ function pictures(html, avifOf) {
     if (!v) return m;
     const j = v.set.findIndex((x) => x.src === href);
     if (j < 0) return m;
-    return `<link rel="preload" as="image" href="${v.avif[j].src}" type="image/avif"${/imagesrcset=/.test(rest) ? rest.replace(/\simagesrcset="[^"]*"/, ` imagesrcset="${setOf(v.avif)}"`) : rest}>`;
+    const a = v.avif.find((x) => x.w >= v.set[j].w) || v.avif[v.avif.length - 1]; // r397: by width (the 720 step has no AVIF copy)
+    return `<link rel="preload" as="image" href="${a.src}" type="image/avif"${/imagesrcset=/.test(rest) ? rest.replace(/\simagesrcset="[^"]*"/, ` imagesrcset="${setOf(v.avif)}"`) : rest}>`;
   });
   return t.replace(/<\/title>/, "</title>\n<style>picture.av{display:contents}</style>");
 }

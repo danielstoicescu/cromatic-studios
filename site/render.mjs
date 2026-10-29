@@ -196,11 +196,20 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     }
     return out;
   };
-  const bentoGrid = (list, covers, attrs = "") => { const plan = bentoPlan(list); return `<div class="bento bento-air"${attrs}>${list.map((p, i) => bentoCard(p, i, covers, plan[i])).join("")}</div>`; };
-  const bentoCard = (p, i, covers, plan) => {
+  const bentoGrid = (list, covers, attrs = "") => { const plan = bentoPlan(list); return `<div class="bento bento-air"${attrs}>${list.map((p, i) => bentoCard(p, i, covers, plan[i], list.length)).join("")}</div>`; };
+  // r397: a card picture says how wide it shows (site.css .bento-air), so a phone takes the 720 step (build/images.mjs)
+  // and not the 960 file. "auto" first: a browser that knows it measures the lazy picture itself; the rest is for the
+  // others (Safari read 100vw and took 1600 at 3x). Phones: cards 3 and 4 of every six are a pair, the rest take the row
+  const CARD_D = { d7: "min(680px, 56vw)", d5: "min(480px, 40vw)", d6: "min(580px, 48vw)", d12: "min(1200px, 100vw - 40px)", full: "min(1200px, 100vw - 40px)" };
+  const cardSizes = (size, i, n) => {
+    const pair = size !== "full" && (i % 6 === 3 || (i % 6 === 2 && i < n - 1));
+    return `auto, (max-width: 700px) ${pair ? "calc(50vw - 28px)" : "calc(100vw - 40px)"}, (max-width: 900px) ${/^d(7|5|6)$/.test(size) ? "48vw" : "calc(100vw - 40px)"}, ${CARD_D[size] || CARD_D.d12}`;
+  };
+  const bentoCard = (p, i, covers, plan, n = 0) => {
     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
-    const media = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
+    const media0 = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
     const size = p.wip ? "full" : plan || SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
+    const media = media0 && /^<img\b(?![^>]*\bsizes=)[^>]*\bloading="lazy"/.test(media0) ? media0.replace(/^<img\b/, `<img sizes="${cardSizes(size, i, n)}"`) : media0; // r397: the card says its width (cardSizes)
     // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
     // pill itself), the category on a chip at the top, the brief and "Read the case" on a paper note that opens under the
     // pill (site.css). One element more than before per card: the note
