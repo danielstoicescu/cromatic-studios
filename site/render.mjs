@@ -276,7 +276,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const slug = street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), m = (n) => A(`m:streets/${slug}/${n}`);
     // r382 (Mira's audit: phones fetched 5.4 MB of video on a full scroll): the phone cut is the 540 px, 8 s, ~300 KB
     // re-encode (-m2.mp4, H.264) with an AV1 twin first (-m2-av1.webm, ~170-240 KB); the old -m.mp4 only as a fallback
-    const pd = m("poster.jpg"), pm = m("poster-m.jpg"), dm = m(`${slug}.mp4`), dw = m(`${slug}.webm`), mm = m(`${slug}-m2.mp4`) || m(`${slug}-m.mp4`), mw = m(`${slug}-m2-av1.webm`);
+    // r398 (desktop scroll 7.2 -> 8.9 MB once r382 started the bands at half view): the wide cut is AV1 too
+    // (-d2-av1.webm, 1920x800, 190-285 KB, was VP9 540-830 KB at the same SSIM); the H.264 .mp4 stays the fallback
+    const pd = m("poster.jpg"), pm = m("poster-m.jpg"), dm = m(`${slug}.mp4`), dw = m(`${slug}-d2-av1.webm`) || m(`${slug}.webm`), mm = m(`${slug}-m2.mp4`) || m(`${slug}-m.mp4`), mw = m(`${slug}-m2-av1.webm`);
     const media = pd ? `<picture class="sb-pic">${pm ? `<source media="(max-width: 700px)" srcset="${pm.src}" width="${pm.w}" height="${pm.h}">` : ""}<img src="${pd.src}" width="${pd.w}" height="${pd.h}" alt="" loading="lazy" decoding="async"></picture>` : "";
     const video = pd && (dm || dw) ? `<video class="sb-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}${mw ? ` data-mw="${mw.src}"` : ""}></video>` : "";
     return `<div class="street-band${pd ? " has-media" : ""}">
@@ -343,7 +345,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const hv = (n) => A(`m:hero/${n}`);
     const tp = { d: hv("poster.jpg"), m: hv("poster-m.jpg") };
     const heroVideo = (alt = false) => {
-      const dm = alt ? hv("drive-d.mp4") : dl("drive-loop.mp4"), dw = alt ? hv("drive-d-av1.webm") : dl("drive-loop.webm"), mm = alt ? hv("drive-m2.mp4") : dl("drive-loop-m2.mp4"), mw = alt ? hv("drive-m2-av1.webm") : dl("drive-loop-m2-av1.webm"); // r382: the lighter phone cuts (8 s, 480-540 px, AV1 + H.264, <= 310 KB)
+      const dm = alt ? hv("drive-d.mp4") : dl("drive-loop.mp4"), dw = alt ? hv("drive-d2-av1.webm") || hv("drive-d-av1.webm") : dl("drive-loop-d2-av1.webm") || dl("drive-loop.webm"), mm = alt ? hv("drive-m2.mp4") : dl("drive-loop-m2.mp4"), mw = alt ? hv("drive-m2-av1.webm") : dl("drive-loop-m2-av1.webm"); // r382: the lighter phone cuts (8 s, 480-540 px, AV1 + H.264, <= 310 KB); r398: the desktop AV1 cuts (-d2-av1: drive-loop 1920x960 353 KB, was VP9 1.14 MB; hero 1600x900 561 KB, was AV1 1.17 MB)
       if (!dm && !dw) return "";
       return `<video class="hc-vid" muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"${dm ? ` data-d="${dm.src}"` : ""}${dw ? ` data-dw="${dw.src}"` : ""}${mm ? ` data-m="${mm.src}"` : ""}${mw ? ` data-mw="${mw.src}"` : ""}></video>
     <button class="hc-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>`;

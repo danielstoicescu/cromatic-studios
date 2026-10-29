@@ -306,7 +306,9 @@
   // r348: the same loop also sits behind the portfolio's "place → facade → brand" fold; each one runs on its own
   // r382 (Mira's audit): the AV1 files say so (a VP9 label sent a VP9-only browser to an AV1 file), and a band's video
   // starts only once half of it is on screen (or it fills half the screen), not ahead of it
-  const vType = (u) => (/-av1\.webm(\?|$)/.test(u) ? 'video/webm; codecs="av01.0.05M.08"' : /\.webm(\?|$)/.test(u) ? 'video/webm; codecs="vp9"' : "video/mp4");
+  // r398: the desktop AV1 cuts (-d2-av1, 1920 wide) say level 4.0, the phone ones 3.1; and the test reads the hashed
+  // name (/assets/m/<name>-av1-<hash>.webm): r382's /-av1\.webm/ never matched one, so every AV1 file went out as vp9
+  const vType = (u) => (/-d2-av1(-[0-9a-f]{8})?\.webm(\?|$)/.test(u) ? 'video/webm; codecs="av01.0.08M.08"' : /-av1(-[0-9a-f]{8})?\.webm(\?|$)/.test(u) ? 'video/webm; codecs="av01.0.05M.08"' : /\.webm(\?|$)/.test(u) ? 'video/webm; codecs="vp9"' : "video/mp4");
   const vSrc = (list) => list.filter(Boolean).map((u) => `<source src="${u}" type='${vType(u)}'>`).join("");
   const half = (e) => e.isIntersecting && (e.intersectionRatio >= 0.5 || e.intersectionRect.height >= innerHeight * 0.5);
   const HALF = [0, 0.25, 0.5, 0.75, 1];
