@@ -800,7 +800,6 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 
 /* the four chapters as coloured cards */
 #what .wrap { position: relative; }
-.cup-title { --cs: 92px; position: absolute; right: 2%; top: -10px; }
 .chap { background: color-mix(in srgb, var(--cc) 82%, #fff); box-shadow: 0 5px 0 var(--ink); padding: 24px 22px 22px; }
 .chap:nth-child(odd) { rotate: -.6deg; } .chap:nth-child(even) { rotate: .6deg; }
 .chap:hover { transform: translateY(-6px) rotate(0deg); box-shadow: 0 9px 0 var(--ink); }
@@ -845,15 +844,13 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 
 /* the contact section and the footer */
 #contact { position: relative; }
-.cup-contact { --cs: 110px; position: absolute; right: 4%; top: -48px; z-index: 2; }
 .ftr-motto { display: flex; align-items: center; gap: 4px; margin-top: 30px; }
-.ftr-motto .cupspin { --cs: 84px; margin: -16px -6px -16px -12px; }
 .ftr-motto p { margin: 0; font: 900 clamp(30px, 4.4vw, 58px)/1 var(--f); letter-spacing: -.03em; color: var(--ink); max-width: none; }
 .ftr .ftr-note { margin-top: 18px; }
 .logo-card img { width: 100%; max-width: 170px; max-height: 78px; }
 @media (max-width: 700px) { .logo-card img { max-width: 124px; max-height: 58px; } }
 .dom-more { white-space: normal; display: inline-block; }
-@media (max-width: 700px) { .cup-title { --cs: 64px; top: -6px; right: 0; } .cup-contact { --cs: 76px; top: -34px; } .stats { padding: 34px 0; } }
+@media (max-width: 700px) { .stats { padding: 34px 0; } }
 .photos figcaption { display: none; }
 /* r134: the brand canvas fills the screen top to bottom (Daniel: no margins above and below); the hint and the progress
    bar float over its lower edge */

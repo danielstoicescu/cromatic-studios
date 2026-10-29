@@ -18,7 +18,8 @@ const STREET_ICONS = {
   C: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z"/></svg>`,
   D: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c4 0 4-6 8-6s4-6 8-6"/><path d="M16 7h4v4"/><circle cx="4" cy="19" r="1.2" fill="currentColor"/></svg>`,
 };
-const STAR = `<span class="cupspin cup-btn" aria-hidden="true"></span>`;
+// r377 (Daniel: "Scoatem cafeaua"): the spinning cup is off the buttons too; they carry their words alone
+const STAR = "";
 // r365 (Daniel picked variant B, 28 Oct): the drive buttons are a paper pill with a thin yellow ring and a soft shadow,
 // and the city's own Dacia 1300 (rendered from the map's model, three-quarter view from above, site/media/drive-car/)
 // parked over the pill's left edge. The roll is a 10-frame strip (22 KB) moved in steps with a transform on hover; the
@@ -114,7 +115,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       <a href="/">Drive in the Cromatic City</a><a href="${STUDIO.legalUrl}">cromaticstudios.com</a>
     </div>
   </div>
-  <div class="wrap ftr-motto"><span class="cupspin" aria-hidden="true"></span><p>There is always a coffee.</p></div>
+  <div class="wrap ftr-motto"><p>There is always a coffee.</p></div>
   ${/* r139c: the last line is the strip every page ends with (build/footer.mjs fills it in, in the page's language) */ ""}<div class="cz-foot" data-czf></div>
 </footer>
 </body></html>`;
@@ -388,7 +389,7 @@ ${header(true)}
   <section id="what" class="sec">
     <div class="wrap">
       <p class="eyebrow mono">What we bring to the table</p>
-      <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)} ${pill("to a crowd", "#F65342", 1)}</h2><span class="cupspin cup-title" aria-hidden="true"></span>
+      <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)} ${pill("to a crowd", "#F65342", 1)}</h2>
       <div class="chapters">
         ${/* TASK-139 (Daniel): the card's title is what was its subtitle; "The Dream", "The Crowd"... are gone. The four
            sit on one road (site.js fills it with the scroll, --rp) and each lights up as it is pointed at or focused */ ""}<span class="chap-road" aria-hidden="true"><i></i></span>
@@ -488,7 +489,6 @@ ${header(true)}
   </section>
 
   <section id="contact" class="sec sec-ink">
-    <span class="cupspin cup-contact" aria-hidden="true"></span>
     <div class="wrap contact">
       <div class="c-txt">
         <p class="eyebrow mono">Final call · Strada Olari 9</p>
