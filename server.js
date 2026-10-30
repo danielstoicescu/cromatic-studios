@@ -13,6 +13,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
 import { createCore30 } from "./core30/core30.mjs";
+import { isInternalEmail } from "./ops/leads.mjs"; // who counts as us: one list, on the server only
 import { createOps, isOps, PROPOSAL_SLUG_RE, PROPOSAL_FILE_RE } from "./ops/ops.mjs";
 
 const APP_DIR = dirname(fileURLToPath(import.meta.url));
@@ -178,7 +179,7 @@ const OPS_DATA = process.env.OPS_DATA || [join(APP_DIR, "..", "..", "shared", "o
 let opsKeyOk = () => false; // set below, once keyOk exists (the same constant-time compare as the CSP stats key)
 const ops = createOps({
   dataDir: OPS_DATA, wwwDir: join(APP_DIR, "ops", "www"), transport, mailFrom: MAIL_FROM, smtpConfigured: !!process.env.SMTP_HOST,
-  bridgeKeyOk: (k) => opsKeyOk(k),
+  bridgeKeyOk: (k) => opsKeyOk(k), leadsDirs: () => LEADS_DIRS,
 });
 console.log(`[ops] data in ${OPS_DATA}`);
 
@@ -265,7 +266,9 @@ async function boarding(req, res, tag = SUBJECT_TAG) {
   if (limited(ip)) return send(res, 429, { ok: false });
   const t = clean(b);
   if (!t.name || !EMAIL_RE.test(t.email) || t.phone.replace(/\D/g, "").length < 6) return send(res, 422, { ok: false }); // r309: the phone is required (Daniel, 26 Oct)
-  const kept = keepLead(t, ip);
+  const internal = isInternalEmail(t.email); // our own test: mails and the file as usual, but no lead is reported anywhere
+  const kept = keepLead(internal ? { ...t, internal: true } : t, ip);
+  const mark = internal ? { internal: true } : {};
   try {
     await transport.sendMail({
       from: MAIL_FROM, to: MAIL_TO, replyTo: `${t.name} <${t.email}>`,
@@ -278,14 +281,14 @@ async function boarding(req, res, tag = SUBJECT_TAG) {
       html: passHtml(t, "passenger"), text: passText(t, "passenger")
     });
     lastMail = { at: new Date().toISOString(), error: null };
-    oaiLead(req, t.ref); // r149b
-    return send(res, 200, { ok: true, ref: t.ref });
+    if (!internal) oaiLead(req, t.ref); // r149b
+    return send(res, 200, { ok: true, ref: t.ref, ...mark });
   } catch (e) {
     console.error("[mail]", e.message);
     lastMail = { at: new Date().toISOString(), error: String(e.response || e.message || e).replace(/[\w.+-]+@[\w.-]+/g, "<email>").slice(0, 300), code: e.responseCode || e.code || null };
     // the message is safe on the server: the visitor gets their confirmation, the studio reads it from the file
-    if (kept) oaiLead(req, t.ref); // r149b
-    return kept ? send(res, 200, { ok: true, ref: t.ref, mail: false }) : send(res, 502, { ok: false });
+    if (kept && !internal) oaiLead(req, t.ref); // r149b
+    return kept ? send(res, 200, { ok: true, ref: t.ref, mail: false, ...mark }) : send(res, 502, { ok: false });
   }
 }
 

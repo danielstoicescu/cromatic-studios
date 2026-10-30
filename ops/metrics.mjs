@@ -18,6 +18,7 @@ import { createSign } from "node:crypto";
 import { readFileSync, writeFileSync, renameSync, statSync, unlinkSync } from "node:fs";
 import { writeFile, rename } from "node:fs/promises";
 import { join } from "node:path";
+import { makeLeadStore, withStoreLeads } from "./leads.mjs";
 
 const PATHS = [["/", "Homepage EN"], ["/ro/", "Homepage RO"], ["/city/", "Orașul"]];
 const STRATEGIES = ["mobile", "desktop"];
@@ -208,7 +209,8 @@ export function buildSummary(R, now = new Date()) {
 }
 
 // ---------- the service ----------
-export function createMetrics({ dataDir, log = console, env = process.env }) {
+export function createMetrics({ dataDir, log = console, env = process.env, leadsDirs = () => [] }) {
+  const leadStore = makeLeadStore(leadsDirs); // the Leads numbers come from our own store, without our tests; GA4 keeps the rest
   const P = (f) => join(dataDir, f);
   const prod = env.NODE_ENV === "production";
   const dev = (name, real) => (!prod && env[name]) || real; // test stubs only: a production server always talks to Google
@@ -432,7 +434,7 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
     const f = gaFile(), configured = gaConfigured(), age = Date.now() - (Date.parse(f.fetchedAt || 0) || 0);
     if (!configured && !f.data) return null;
     const status = { configured, fetchedAt: f.fetchedAt || null, error: f.lastError ? { code: f.lastError.code, http: f.lastError.http ?? null, message: f.lastError.message } : null, stale: !!f.data && (age > GA_STALE || !!f.lastError) };
-    return f.data ? { ...f.data, status } : { status };
+    return f.data ? { ...withStoreLeads(f.data, leadStore()), status } : { status };
   }
 
   // ---------- the scheduler: light checks, the work is awaited in the background ----------

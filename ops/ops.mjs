@@ -147,7 +147,7 @@ export function videoLink(u) {
  * @param {(given:string)=>boolean} o.bridgeKeyOk  constant-time check of the bridge's Bearer key
  * @param {Array} [o.users]   default: <dataDir>/users.json, else ops/users.json
  */
-export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured, bridgeKeyOk, users, log = console }) {
+export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured, bridgeKeyOk, users, log = console, leadsDirs }) {
   mkdirSync(dataDir, { recursive: true });
   if (!users) {
     for (const f of [join(dataDir, "users.json"), USERS_FILE]) {
@@ -158,7 +158,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   users = users.filter((u) => u && u.id && u.name && (u.role === "admin" || u.role === "member") && Array.isArray(u.emails));
   const P = (f) => join(dataDir, f);
   const prod = process.env.NODE_ENV === "production";
-  const metrics = createMetrics({ dataDir, log }); // TASK-141: PageSpeed + GA4, background jobs only
+  const metrics = createMetrics({ dataDir, log, leadsDirs }); // TASK-141: PageSpeed + GA4, background jobs only
   metrics.start();
   const byEmail = new Map();
   for (const u of users) for (const e of u.emails) byEmail.set(e.toLowerCase(), u);

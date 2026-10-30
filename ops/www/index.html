@@ -1935,6 +1935,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       <div class="ana-full">
         <div class="an-bar"><div class="seg" role="group" aria-label="Perioada"><button type="button" data-ana-r="7" aria-pressed="false">7 zile</button><button type="button" data-ana-r="30" aria-pressed="true">30 de zile</button></div><span class="an-tag" id="ana-mock" hidden>date de test</span></div>
         <div class="an-k" id="ana-k"></div>
+        <div class="muted" id="ana-lead-n" hidden style="font-size:13px;line-height:1.45;max-width:76ch"></div>
         <div class="an-card"><div class="an-ct"><span id="ana-chart-t">Pe zile</span><span class="mono muted">treci peste grafic</span></div><div class="an-chart" id="ana-chart"></div></div>
         <div class="an-2">
           <div class="an-card"><div class="an-ct">Surse de trafic</div><div class="an-tw"><table class="an-tbl"><thead><tr><th>Sursă / mediu</th><th>Sesiuni</th><th class="an-num">Utilizatori</th><th class="an-num">Lead-uri</th><th class="an-num">Conversie</th></tr></thead><tbody id="ana-src"></tbody></table></div></div>
@@ -4261,7 +4262,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     const D = arrA(A.daily), x = (A.kpis || {})[k] || null, r = ANA.range;
     if (r === 7 && A.kpis7 && A.kpis7[k]) { const y = A.kpis7[k]; return { value: Number(y.value), prev: Number(y.prev), deltaPct: y.deltaPct != null ? Number(y.deltaPct) : null, r: 7 }; } // real 7-day totals: users are not a sum of days
     if (r === 7 && D.length >= 14 && ["users", "sessions", "leads"].includes(k)) { const s = (a, b) => D.slice(a, b).reduce((t, d) => t + (Number(d[k]) || 0), 0), v = s(-7), p = s(-14, -7); return { value: v, prev: p, deltaPct: p ? (v - p) / p * 100 : null, r: 7 }; }
-    if (!x) return null; const v = Number(x.value), p = Number(x.prev); return { value: v, prev: p, deltaPct: x.deltaPct != null ? Number(x.deltaPct) : p ? (v - p) / p * 100 : null, r: 30 };
+    if (!x) return null; const v = Number(x.value), p = Number(x.prev); return { value: v, prev: p, deltaPct: x.prevPartial ? null : x.deltaPct != null ? Number(x.deltaPct) : p ? (v - p) / p * 100 : null, r: 30 };
   }
   function delta(dp, inverse) { const s = el("span", "an-dl"); if (dp == null || !isFinite(dp)) { s.textContent = "—"; return s; } const up = dp >= 0, good = inverse ? !up : up; s.classList.add(Math.abs(dp) < .5 ? "eq" : good ? "up" : "dn"); s.append(el("i", "", Math.abs(dp) < .5 ? "＝" : up ? "▲" : "▼"), (up ? "+" : "−") + pctS(Math.abs(dp))); s.title = "față de perioada anterioară"; return s; }
   // the 30-day chart: users (area), sessions (line), leads (bars), with a hover readout
@@ -4304,6 +4305,8 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     const anaSt = (S.analytics && S.analytics.status) || {}, anaWhen = anaSt.fetchedAt ? when(anaSt.fetchedAt) : "";
     $("ana-mock").hidden = !mock; $("ana-mock-h").hidden = !mock && !anaSt.stale;
     $("ana-src-n").hidden = mock;
+    const anaLS = !mock && A.leadsStore, anaLN = $("ana-lead-n"); anaLN.hidden = !anaLS;
+    if (anaLS) anaLN.textContent = "Lead-urile din cardul galben și din grafic vin din serverul nostru, fără testele noastre" + (anaLS.partial ? ", și sunt numărate abia din " + (anaLS.first || "momentul primului lead") + ", de când există arhiva" : "") + ". Cele din Surse și Campanii vin din GA, unde testele vechi nu se pot scoate.";
     $("ana-mock-t").textContent = !mock ? "Ultima citire din GA4 a eșuat" + (anaSt.error && anaSt.error.message ? " (" + anaSt.error.message + ")" : "") + ". Cifrele sunt din " + anaWhen + "." : anaSt.error ? "Date de test · GA4 a refuzat citirea: " + (anaSt.error.message || "eroare") : anaSt.configured ? "Date de test · prima citire din GA4 e pe drum" : "Date de test · GA4 nu e conectat încă, lipsește cheia (TASK-128)";
     const rg = A.range || {}; $("ana-n").textContent = (rg.from && rg.to ? rg.from + " → " + rg.to : "") + (A.generatedAt ? " · generat " + when(A.generatedAt) : "");
     // KPIs
