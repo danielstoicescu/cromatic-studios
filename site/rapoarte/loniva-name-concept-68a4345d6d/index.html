@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
-<head><meta name="robots" content="noindex, nofollow, noarchive">
+<head>
+<meta name="robots" content="noindex, nofollow, noarchive">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Loniva Name Concept</title>
@@ -589,6 +590,12 @@ body{background:#22140b;}
 .srch{border-bottom:1px solid rgba(244,232,216,.12);}
 .srch:last-child{border-bottom:none;}
 .sec--light .srch{border-bottom-color:rgba(36,21,9,.08);}
+
+.scene__burst{display:none;}
+.scene__orb{position:absolute;left:50%;top:50%;width:min(78vw,820px);aspect-ratio:1;translate:-50% -50%;border-radius:50%;pointer-events:none;z-index:0;opacity:0;scale:.45;
+  background:radial-gradient(circle,rgba(255,206,160,.55),rgba(238,138,72,.42) 30%,rgba(156,58,24,.18) 56%,transparent 70%);filter:blur(26px);}
+.scene__rule{position:absolute;left:50%;top:calc(50% + clamp(2.2rem,5.2vw,4.4rem));width:min(46vw,420px);height:1px;translate:-50% 0;transform-origin:center;scale:0 1;z-index:1;
+  background:linear-gradient(90deg,transparent,rgba(255,214,176,.85),transparent);}
 </style>
 </head>
 <body>
@@ -624,8 +631,8 @@ body{background:#22140b;}
 <!-- 1. ASSEMBLY SCENE -->
 <section id="s-asm" data-nav="The name" class="scene" aria-label="Long and Viva assemble into Loniva">
   <div class="scene__pin">
-    <span class="eyebrow scene__kick" id="kick"><svg class="star" style="width:.8rem;height:.8rem;color:var(--move)"><use href="#st"/></svg> Cromatic Studios · Loniva · The name · Scroll</span>
-    <canvas class="scene__burst" id="burst" aria-hidden="true"></canvas>
+    <span class="eyebrow scene__kick" id="kick">Cromatic Studios · Loniva · The name · Scroll</span>
+    <canvas class="scene__burst" id="burst" aria-hidden="true"></canvas><div class="scene__orb" id="orb" aria-hidden="true"></div><span class="scene__rule" id="rule" aria-hidden="true"></span>
     <h1 class="asm" id="asm" aria-label="Loniva, assembled from Long and Viva">
       <span class="w wA" id="wA">Lon<span class="sm" id="smG">g</span></span><span class="gp" id="gp"></span><span class="w wB" id="wB"><span class="sm" id="smV">V</span><span class="lt">i</span><span class="lt">v</span><span class="lt">a</span></span>
     </h1>
@@ -684,7 +691,7 @@ body{background:#22140b;}
 <section id="s-opp" data-nav="Opportunities" class="sec--sand">
   <div class="wrap">
     <span class="chip rv"><svg class="ico"><use href="#i-sparkle"/></svg> Squeezed further</span>
-    <h2 class="h1 rv" style="margin-top:.9rem">What the name unlocks.</h2>
+    <h2 class="h1 rv" style="margin-top:.9rem">What the name opens.</h2>
     <p class="lead rv" style="margin-top:1rem">Four consequences that fall out of the rationale on their own. None of them needs a campaign to exist; they are properties of the word.</p>
     <div class="grid g2" style="margin-top:1.4rem">
       <div class="tc tc--m rv" data-d="1"><i><svg class="ico"><use href="#i-users"/></svg> The voice</i><b><strong>Iva</strong> speaks</b><span>The app, the newsletter and the front desk can all answer to <strong>Iva</strong>: bookings that address you by name, letters signed by her. The brand gets a person before it gets a logo, and loniva.me is already hers.</span></div>
@@ -696,27 +703,43 @@ body{background:#22140b;}
 </section>
 
 <!-- NAMES -->
+<svg class="gdefs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-tok" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD9B0"/><stop offset=".42" stop-color="#EE8A48"/><stop offset=".78" stop-color="#C4512B"/><stop offset="1" stop-color="#5a2410"/></linearGradient>
+    <linearGradient id="g-tik" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b1209"/><stop offset=".45" stop-color="#9c3a18"/><stop offset=".78" stop-color="#EE8A48"/><stop offset="1" stop-color="#FFC690"/></linearGradient>
+    <filter id="gf-soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="gf-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.2"/></filter>
+  </defs>
+  <symbol id="gl-arch" viewBox="0 0 48 48"><path style="fill:var(--gf,url(#g-tok))" d="M10 44V22a14 14 0 0 1 28 0V44Z"/></symbol>
+  <symbol id="gl-sun" viewBox="0 0 48 48"><circle style="fill:var(--gf,url(#g-tok))" cx="24" cy="24" r="16"/></symbol>
+  <symbol id="gl-leaf" viewBox="0 0 48 48"><path style="fill:var(--gf,url(#g-tok))" d="M24 42C9 32 7 18 9 8C18 10 24 17 24 26C24 17 30 10 39 8C41 18 39 32 24 42Z"/></symbol>
+  <symbol id="gl-duo" viewBox="0 0 48 48"><circle style="fill:var(--gf,url(#g-tok))" cx="17" cy="24" r="12"/><circle style="fill:var(--gf,url(#g-tok))" opacity=".8" cx="31" cy="24" r="12"/></symbol>
+  <symbol id="gl-rings" viewBox="0 0 48 48"><g fill="none" style="stroke:var(--gf,url(#g-tok))" stroke-width="3.2"><circle cx="24" cy="24" r="19"/><circle cx="24" cy="24" r="12.5"/></g><circle style="fill:var(--gf,url(#g-tok))" cx="24" cy="24" r="6"/></symbol>
+  <symbol id="gl-hex" viewBox="0 0 48 48"><path style="fill:var(--gf,url(#g-tok))" d="M24 4L41 14V34L24 44L7 34V14Z"/></symbol>
+  <symbol id="gl-shell" viewBox="0 0 48 48"><path style="fill:var(--gf,url(#g-tok))" d="M24 43L4 21A20.5 20.5 0 0 1 44 21Z"/><path fill="none" stroke="#1a0d06" stroke-opacity=".35" stroke-width="1.6" d="M24 43L12 6M24 43L24 3.5M24 43L36 6M24 43L5 16M24 43L43 16"/></symbol>
+  <symbol id="gl-eight" viewBox="0 0 48 48"><circle style="fill:var(--gf,url(#g-tok))" cx="24" cy="14.5" r="10"/><circle style="fill:var(--gf,url(#g-tok))" cx="24" cy="33.5" r="10"/></symbol>
+  <symbol id="gl-pill" viewBox="0 0 48 48"><rect style="fill:var(--gf,url(#g-tok))" x="5" y="15" width="38" height="18" rx="9"/></symbol>
+  <symbol id="gl-drop" viewBox="0 0 48 48"><path style="fill:var(--gf,url(#g-tok))" d="M24 4C24 4 10 20 10 30a14 14 0 0 0 28 0C38 20 24 4 24 4Z"/></symbol>
+  <symbol id="gl-bottle" viewBox="0 0 48 48"><path style="fill:var(--gf,url(#g-tok))" d="M19 3h10v7c0 2.5 6 4.5 6 11v19a5 5 0 0 1-5 5H18a5 5 0 0 1-5-5V21c0-6.5 6-8.5 6-11Z"/></symbol>
+  <symbol id="gl-bow" viewBox="0 0 48 48"><path style="fill:var(--gf,url(#g-tok))" d="M5 10L24 24L5 38ZM43 10L24 24L43 38Z"/></symbol>
+</svg>
 <section id="s-names" data-nav="The names" class="sec--light">
   <div class="wrap">
-    <span class="chip rv"><svg class="ico"><use href="#i-tag"/></svg> Proposal · room by room</span>
-    <h2 class="h1 rv" style="margin-top:.9rem">One house,<br>Romanian rooms.</h2>
-    <p class="lead rv" style="margin-top:1rem">Everything is Loniva. Inside, each room takes one short Romanian word: plain enough for a door sign, warm enough to say out loud, and readable for an English speaker with one line underneath. The bar takes the second half of the name itself.</p>
+    <span class="chip rv"><svg class="ico"><use href="#i-tag"/></svg> Room by room</span>
+    <h2 class="h1 rv" style="margin-top:.9rem">One house,<br>plain rooms.</h2>
+    <p class="lead rv" style="margin-top:1rem">Everything is Loniva. Inside, each room takes one short English word, so a member from Bucharest, Vienna or Dubai reads every door the same way. The bar is the exception: it belongs to Iva.</p>
     <div class="nmgrid">
-      <div class="nm nm--hero rv" data-d="1"><span class="nm__room">The health bar</span><b class="nm__w">Iva's</b><span class="nm__en">health bar</span><p class="nm__why">The woman inside the name gets her own place. People will say <em>ne vedem la Iva</em> after class, as they would about a friend's kitchen, and the brand repeats itself every time they do. No petrol station, café chain or juice bar in Bucharest owns it.</p></div>
-      <div class="nm rv" data-d="2"><span class="nm__room">Pilates studio</span><b class="nm__w">Forma</b><span class="nm__en">reformer studio</span><p class="nm__why">Shape, in Romanian and Latin, and the root inside the word reformer. Every class format sits under it.</p></div>
-      <div class="nm rv" data-d="3"><span class="nm__room">Cryotherapy</span><b class="nm__w">Ger</b><span class="nm__en">cryo</span><p class="nm__why">Frost. One syllable, short as the session itself.</p></div>
-      <div class="nm rv" data-d="1"><span class="nm__room">Red light</span><b class="nm__w">Lumina</b><span class="nm__en">red light</span><p class="nm__why">Light. The softest word for the warmest room.</p></div>
-      <div class="nm rv" data-d="2"><span class="nm__room">Hyperbaric oxygen</span><b class="nm__w">Aer</b><span class="nm__en">oxygen</span><p class="nm__why">Air. Three letters for the room people stay in longest.</p></div>
-      <div class="nm rv" data-d="3"><span class="nm__room">Recovery suite</span><b class="nm__w">Repaus</b><span class="nm__en">recovery</span><p class="nm__why">Rest. Exactly what the integrated recliner is for.</p></div>
-      <div class="nm rv" data-d="1"><span class="nm__room">3D body scan</span><b class="nm__w">Harta</b><span class="nm__en">body scan</span><p class="nm__why">The map. It shows where a member stands today and where the next quarter takes them.</p></div>
+      <div class="nm nm--hero rv" data-d="1"><span class="nm__room">The health bar</span><b class="nm__w">Iva's</b><span class="nm__en">health bar</span><p class="nm__why">The woman inside the name gets her own place. Members will meet "at Iva's" after class, as they would at a friend's kitchen, and the brand repeats itself every time they do.</p></div>
+      <div class="nm rv" data-d="2"><span class="nm__room">Pilates studio</span><b class="nm__w">Form</b><span class="nm__en">reformer studio</span><p class="nm__why">Shape, what a reformer gives you, and the root inside the machine's own name. Every class format sits under it.</p></div>
+      <div class="nm rv" data-d="3"><span class="nm__room">Cryotherapy</span><b class="nm__w">Cryo</b><span class="nm__en">whole-body cold</span><p class="nm__why">The word people already search for. Short as the session itself.</p></div>
+      <div class="nm rv" data-d="1"><span class="nm__room">Red light</span><b class="nm__w">Light</b><span class="nm__en">red &amp; near-infrared</span><p class="nm__why">The softest word for the warmest room.</p></div>
+      <div class="nm rv" data-d="2"><span class="nm__room">Hyperbaric oxygen</span><b class="nm__w">Air</b><span class="nm__en">oxygen</span><p class="nm__why">Three letters for the room people stay in longest.</p></div>
+      <div class="nm rv" data-d="3"><span class="nm__room">Recovery suite</span><b class="nm__w">Rest</b><span class="nm__en">recovery</span><p class="nm__why">Exactly what the integrated recliner is for.</p></div>
+      <div class="nm rv" data-d="1"><span class="nm__room">3D body scan</span><b class="nm__w">Scan</b><span class="nm__en">body scan</span><p class="nm__why">Where every member starts, and how their progress is shown back to them each quarter.</p></div>
       <div class="nm rv" data-d="2"><span class="nm__room">The host</span><b class="nm__w"><strong>Iva</strong></b><span class="nm__en">bar · app · screens · letter</span><p class="nm__why">One person, everywhere. The bar is her place, and the app, the menu screens and the monthly letter all speak in her voice. <strong>Iva</strong>'s pick is the drink of the day.</p></div>
-      <div class="nm rv" data-d="3"><span class="nm__room">Circuits</span><b class="nm__w">Loniva 30 · 60 · 90</b><span class="nm__en">plus Forma+ after class</span><p class="nm__why">Named by their length, so the menu explains itself and a booking never needs a glossary.</p></div>
+      <div class="nm rv" data-d="3"><span class="nm__room">Circuits</span><b class="nm__w">Loniva 30 · 60 · 90</b><span class="nm__en">plus After Class</span><p class="nm__why">Named by their length, so the menu explains itself and a booking never needs a glossary.</p></div>
     </div>
-    <div class="grid g2" style="margin-top:1rem">
-      <div class="card rv" data-d="1"><span class="klabel"><svg class="ico"><use href="#i-frame"/></svg> On the doors</span><p class="body" style="margin-top:.55rem">Two lines on every sign: the Romanian word large, the English word small beneath it. <strong>AER</strong> over <em>oxygen</em>, <strong>GER</strong> over <em>cryo</em>. Loniva appears once, on the façade and at reception; the rooms never repeat it.</p></div>
-      <div class="card rv" data-d="2"><span class="klabel"><svg class="ico"><use href="#i-globe"/></svg> If the client wants English on the doors</span><p class="body" style="margin-top:.55rem">The same system works with plain words: Bar, Studio, Cold, Light, Oxygen, Rest, Scan. Clearer for tourists, less ownable. The Romanian set gives the house a voice; the English set only gives it directions.</p></div>
-    </div>
-    <p class="tiny rv" style="margin-top:.8rem">Room names live under Loniva and need no trademark of their own. Ger was chosen over frig, which is a slang word in British English.</p>
+    <div class="card rv" style="margin-top:1rem"><span class="klabel"><svg class="ico"><use href="#i-frame"/></svg> On the doors</span><p class="body" style="margin-top:.55rem">One word per door, set large: <strong>FORM</strong>, <strong>CRYO</strong>, <strong>LIGHT</strong>, <strong>AIR</strong>, <strong>REST</strong>, <strong>SCAN</strong>. Loniva appears once, on the façade and at reception; the rooms never repeat it.</p></div>
   </div>
 </section>
 
@@ -947,7 +970,7 @@ secs.forEach(function(s){ nio.observe(s); });
   var wA=document.getElementById("wA"), wB=document.getElementById("wB");
   var gp=document.getElementById("gp"), smG=document.getElementById("smG"), smV=document.getElementById("smV");
   var tag=document.getElementById("tag"), kick=document.getElementById("kick");
-  var canvas=document.getElementById("burst");
+  var canvas=document.getElementById("burst"), orb=document.getElementById("orb"), rule=document.getElementById("rule");
 
   if(reduce){
     scene.classList.add("scene--static");
@@ -955,7 +978,7 @@ secs.forEach(function(s){ nio.observe(s); });
     smV.style.maxWidth="0"; smV.style.opacity="0";
     gp.style.width="0";
     asm.classList.add("lit");
-    tag.style.opacity="1";
+    tag.style.opacity="1"; orb.style.opacity="1"; orb.style.scale="1"; rule.style.scale="1 1";
     return;
   }
 
@@ -1038,8 +1061,8 @@ secs.forEach(function(s){ nio.observe(s); });
     /* kicker fades */
     kick.style.opacity=String(1-seg(p,.05,.2));
     /* burst once */
-    if(p>.8 && !burstDone && performance.now()>deadline){ burstDone=true; burst(); }
-    if(p<.5 && burstDone){ burstDone=false; deadline=performance.now()+400; }
+    var po=ease(seg(p,.45,.85)); orb.style.opacity=String(po); orb.style.scale=String(.45+.55*po); rule.style.scale=ease(seg(p,.62,.82))+" 1";
+    
   }
   window.addEventListener("scroll",function(){ if(tick) return; tick=true; requestAnimationFrame(paint); },{passive:true});
   paint();
