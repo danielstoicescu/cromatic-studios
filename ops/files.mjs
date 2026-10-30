@@ -59,7 +59,7 @@ export function fileType(head, sniff) {
   const known = sniff(head);
   if (known) return TYPES[known] ? known : null;
   const t = head.toString("utf8").replace(/^﻿/, "").replace(/^(?:\s|<!--[\s\S]*?-->)+/, "");
-  return /^(?:<!doctype\s+html[\s>]|<html[\s>])/i.test(t) ? "html" : null;
+  return /^(?:<!doctype\s+html[\s>]|<(?:html|head|title|meta|style|body)[\s>])/i.test(t) ? "html" : null; // a browser reads a file that starts at <title> as HTML too (Daniel's Loniva deck)
 }
 
 /** the name in the link: ascii, no dots but the one before the extension, and that extension always follows the real type */
