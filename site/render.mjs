@@ -207,7 +207,8 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   };
   const bentoCard = (p, i, covers, plan, n = 0) => {
     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
-    const media0 = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.vidPoster || p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
+    // the card's pill already says the name: a cover with the same alt is read twice (Lighthouse image-redundant-alt)
+    const media0 = own ? `<img src="${own}" alt="" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.vidPoster || p.img) : p.img ? img(p.img, "") : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="" loading="lazy" decoding="async">` : ""; })();
     const size = p.wip ? "full" : plan || SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
     const media = media0 && /^<img\b(?![^>]*\bsizes=)[^>]*\bloading="lazy"/.test(media0) ? media0.replace(/^<img\b/, `<img sizes="${cardSizes(size, i, n)}"`) : media0; // r397: the card says its width (cardSizes)
     // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
