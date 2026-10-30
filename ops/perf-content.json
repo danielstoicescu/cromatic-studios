@@ -1,0 +1,21 @@
+{
+  "writtenAt": "2026-10-30",
+  "conclusions": [
+    { "tone": "good", "lead": true, "text": "Homepage-ul e **rapid**. 98 până la 100 la Google, pe telefon și pe desktop." },
+    { "tone": "good", "text": "Vizitatorii reali de pe telefon văd conținutul principal în 2,3 s la percentila 75, adică Rapid. Pagina nu sare deloc: CLS 0." },
+    { "tone": "watch", "text": "Cel mai slab punct e răspunsul serverului: TTFB 842 ms la percentila 75, pe 28 de zile. HTML-ul de azi nu stă în cache la Cloudflare (cf-cache-status: DYNAMIC) și răspunde în 90 până la 235 ms din București." },
+    { "tone": "note", "text": "Datele pe 28 de zile includ încă perioada dinainte de ultimele reparații, deci rămân în urma site-ului de azi." },
+    { "tone": "watch", "text": "Orașul n-are scor Google, pentru că Lighthouse eșuează pe el. Nu e un scor mic. E o măsurătoare care lipsește." },
+    { "tone": "note", "text": "Cu orașul ca primă pagină, ajungi să conduci după 19 până la 30 s, în laborator. Homepage-ul de azi arată conținut real în 0,3 până la 1,7 s, iar drumul prin Drive costă doar 0,5 până la 2,6 s în plus față de orașul deschis direct." }
+  ],
+  "cityFirst": {
+    "title": "Dacă orașul ar fi prima pagină",
+    "measuredAt": "2026-10-30T10:40:26.397Z",
+    "caveat": "Laborator local, cu WebGL software. Timpii până la „gata de condus” sunt doar pentru comparație între rute, nu ce trăiește un vizitator cu placă video.",
+    "routes": [
+      { "name": "Homepage-ul de azi", "note": "Conținut real imediat. Orașul vine doar dacă îl ceri.", "mobile": { "contentMs": 1672, "readyMs": null, "mb": 0.517 }, "desktop": { "contentMs": 340, "readyMs": null, "mb": 0.761 } },
+      { "name": "Orașul deschis direct", "note": "Dacă /city/ ar fi prima pagină.", "mobile": { "contentMs": 896, "readyMs": 30192, "mb": 1.527 }, "desktop": { "contentMs": 304, "readyMs": 19214, "mb": 1.574 } },
+      { "name": "Homepage, apoi Drive", "note": "Drumul de azi spre oraș.", "mobile": { "contentMs": null, "readyMs": 30748, "mb": 2.044 }, "desktop": { "contentMs": null, "readyMs": 21828, "mb": 2.881 } }
+    ]
+  }
+}

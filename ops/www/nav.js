@@ -3,7 +3,7 @@
 // Phone: the bottom bar keeps Acasă, Conversația, Progres, Echipa + "Mai mult", a sheet with every section by group.
 (() => {
   "use strict";
-  const ADMIN_ONLY = new Set(["core", "sec", "offer"]); // the server never sends members their data either
+  const ADMIN_ONLY = new Set(["core", "sec", "offer", "perf"]); // the server never sends members their data either
   const side = document.getElementById("side");
   if (!side) return;
   const isAdmin = () => document.body.classList.contains("ops-admin");
