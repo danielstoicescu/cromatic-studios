@@ -795,22 +795,23 @@
 // r408 (Daniel: "câte o literă care se glitchuiască conform glitch-urilor de pe TV, dar mult mai specific pentru literă, câte
 // una pe rând sau câte un rând întreg"). The interference reaches the h1: when a set on the wall loses its signal, the letter
 // nearest to that set loses its own a beat later, the same way: snow inside the letter, a drop, the hold slipping in bands,
-// or the letter's picture rolling once in its cell. Now and then, on a hold slip, a whole line tears instead. Three wall
-// glitches out of four at most, never two skipped in a row, one at a time. Where the wall has no CRT (software GL, a lost
-// context) it keeps its own 6-10 s clock on the wall's loop, with the same four. Nothing runs off screen or in a hidden tab
+// or the letter's picture rolling once in its cell; sometimes one or two more letters follow, one at a time, and a slip or
+// snow can take a whole line. Round 2 (Daniel: "mai mult glitch pe text, acum e rar si putin, si poate si randuri intregi"):
+// every wall glitch counts, the slips reach further, and between them the type has its own clock (a letter every 2.2-4.2 s,
+// shorter; a line at most every 7 s). Without the CRT only that clock runs. Nothing runs off screen or in a hidden tab
 // (the wall's loop stops), only a compare per frame between glitches; the motion is WAAPI on transform and opacity, so it
-// leaves the main thread (snow alone steps a background on one letter).
+// leaves the main thread (snow alone steps a background on the letter or line).
 // The h1's DOM is never touched: no letter is split, kerning, wrapping and diacritics stay the browser's own and nothing
 // can shift. The letter's place is read from a Range; the real letter is hidden through a CSS highlight (paint only, its
 // shadow stays); the copies are absolute, aria-hidden, in generated content (attr), so no extra text ever exists for a
 // screen reader, a selection or a crawler. Copies are solid fills. No Highlight API (Safari < 17.2, Firefox < 140): no
 // glitches. Never with reduced motion (no .si). One switch: window.__czH1.off() / .on(). QA, no UI: ?h1g=1 cycles all
-// every 1.6 s, ?h1g=roll|snow|drop|hsync|line only that one; __czH1.fire(type, letterIndex).
+// every 1.6 s, ?h1g=roll|snow|drop|hsync|line|lsnow only that one; __czH1.fire(type, letterIndex).
 (function () {
   var W = window.__czWall, h = document.querySelector(".pw-h.si");
   if (!W || !W.go || !h || !window.CSS || !CSS.highlights || typeof Highlight !== "function" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   var KIND = { 1: "snow", 2: "drop", 3: "hsync", 4: "roll" }, ALL = ["snow", "drop", "hsync", "roll"], gq = new URLSearchParams(location.search).get("h1g");
-  var off = false, busy = false, pend = null, lastLive = null, skipped = false, first = true, lastIdx = -1, lastLine = -1e9, own = 0, cyc = 0, noise = null, hook;
+  var off = false, busy = false, q = [], lastLive = null, lastIdx = -1, lastLine = -1e9, own = 0, cyc = 0, noise = null, hook, QA = ALL.concat("line", "lsnow");
   // every letter and where it is now (read at the moment of a glitch: a clean layout, about 40 ranges)
   var letters = function () {
     var hb = h.getBoundingClientRect(), out = [];
@@ -825,31 +826,38 @@
   var AT = [0, 0.1, 0.22, 0.38, 0.55, 0.7, 0.86, 1], SL = [0, 1, 0.55, 0.95, 0.4, 0.75, 0.12, 0];
   var kf = function (vals, fn, ease) { return vals.map(function (v, i) { var f = fn(v); f.offset = AT[i]; if (ease) f.easing = ease; return f; }); };
   // the hold slipping: bands sliding in turn against each other, the red and blue guns showing where they part
-  var slip = function (o, a, txt, x, y, W2, H, nb, amp, gun, dur) {
+  var slip = function (o, a, txt, x, y, W2, H, nb, amp, gun, dur, lag) {
     var em = parseFloat(getComputedStyle(h).fontSize);
     [["h1g-r", gun], ["h1g-b", -gun]].forEach(function (g) { var e = piece(o, txt, x, y, W2, H, g[0]); a.push(e.animate(kf(SL, function (v) { return { transform: "translate3d(" + (g[1] * em * v).toFixed(2) + "px,0,0)", opacity: v > 0.05 ? 1 : 0 }; }), { duration: dur, fill: "both" })); });
     for (var i = 0; i < nb; i++) (function (i) {
       var e = piece(o, txt, x, y, W2, H), s = (i % 2 ? 1 : -1) * amp * em * (0.65 + 0.35 * Math.random()), t = H * 0.1, band = (H - 2 * t) / nb;
       e.style.clipPath = "inset(" + (i ? t + band * i : -9) + "px -30% " + (i < nb - 1 ? t + band * (nb - i - 1) : -9) + "px -30%)";
-      a.push(e.animate(kf(SL, function (v) { return { transform: "translate3d(" + (s * v).toFixed(2) + "px,0,0)" }; }, "steps(2)"), { duration: dur, fill: "both" }));
+      a.push(e.animate(kf(SL, function (v) { return { transform: "translate3d(" + (s * v).toFixed(2) + "px,0,0)" }; }, "steps(2)"), { duration: dur, delay: i * lag, fill: "both" }));
     })(i);
   };
   var bloom = function (o, a, L, dur) { var e = piece(o, L.c, L.x, L.y, L.W, L.H, "h1g-g"); a.push(e.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.68 }, { opacity: 1, offset: 0.78 }, { opacity: 0, offset: 1 }], { duration: dur, fill: "both" })); };
   var snow = function () {
     if (noise) return noise;
-    var c = document.createElement("canvas"); c.width = c.height = 96; var x = c.getContext("2d"), d = x.createImageData(96, 96);
+    var c = document.createElement("canvas"); c.width = c.height = 64; var x = c.getContext("2d"), d = x.createImageData(64, 64);
     // the shader's snow: scanlines of grain, some lines hotter; never dark enough to lose the letter
-    for (var y = 0; y < 96; y++) { var ln = 0.65 + 0.5 * Math.random(); for (var i = 0; i < 96; i++) { var v = Math.min(255, 96 + 190 * Math.random() * ln), k = (y * 96 + i) * 4; d.data[k] = d.data[k + 1] = d.data[k + 2] = v; d.data[k + 3] = 255; } }
+    for (var y = 0; y < 64; y++) { var ln = 0.6 + 0.6 * Math.random(), run = 0, v = 0; for (var i = 0; i < 64; i++) { if (run-- <= 0) { v = Math.min(255, 58 + 230 * Math.random() * ln); run = Math.floor(Math.random() * 3); } var k = (y * 64 + i) * 4; d.data[k] = d.data[k + 1] = d.data[k + 2] = v; d.data[k + 3] = 255; } }
     x.putImageData(d, 0, 0); return (noise = c.toDataURL("image/png"));
   };
-  var run = function (type, L, all) {
+  var run = function (type, L, all, quick) {
     var o = document.createElement("span"); o.className = "h1g-o"; o.setAttribute("aria-hidden", "true");
-    var a = [], rs = [L.r], dur = 640;
-    if (type === "hsync") { dur = 560; slip(o, a, L.c, L.x, L.y, L.W, L.H, 5, 0.085, 0.045, dur); }
-    else if (type === "line") {
-      var line = all.filter(function (q) { return Math.abs(q.y - L.y) < 2; }), end = line[line.length - 1], txt = "", w0 = -1;
-      line.forEach(function (q) { if (w0 >= 0 && q.w !== w0) txt += " "; txt += q.c; w0 = q.w; });
-      rs = line.map(function (q) { return q.r; }); dur = 480; slip(o, a, txt, line[0].x, L.y, end.x + end.W - line[0].x + 8, L.H, 5, 0.05, 0.014, dur);
+    var a = [], rs = [L.r], dur = 640, k = quick ? 0.72 : 1;
+    if (type === "line" || type === "lsnow") {
+      var line = all.filter(function (q0) { return Math.abs(q0.y - L.y) < 2; }), end = line[line.length - 1], txt = "", w0 = -1, lw;
+      line.forEach(function (q0) { if (w0 >= 0 && q0.w !== w0) txt += " "; txt += q0.c; w0 = q0.w; });
+      rs = line.map(function (q0) { return q0.r; }); lw = end.x + end.W - line[0].x + 8;
+    }
+    if (type === "hsync") { dur = 560 * k; slip(o, a, L.c, L.x, L.y, L.W, L.H, 5, 0.15, 0.06, dur, 0); }
+    else if (type === "line") { dur = 540 * k; slip(o, a, txt, line[0].x, L.y, lw, L.H, 5, 0.085, 0.018, dur, 22); }
+    else if (type === "lsnow") {
+      dur = 460 * k; var ln = piece(o, txt, line[0].x, L.y, lw, L.H, "h1g-n"), lt = piece(o, txt, line[0].x, L.y, lw, L.H);
+      ln.style.setProperty("--n", "url(" + snow() + ")");
+      a.push(ln.animate([{ backgroundPosition: "0 0" }, { backgroundPosition: "-1120px 770px" }], { duration: dur, easing: "steps(9)", pseudoElement: "::before", fill: "both" }));
+      a.push(lt.animate([{ opacity: 1, offset: 0 }, { opacity: 0, offset: 0.12 }, { opacity: 0.25, offset: 0.4, easing: "steps(2)" }, { opacity: 0, offset: 0.55 }, { opacity: 1, offset: 0.9 }, { opacity: 1, offset: 1 }], { duration: dur, fill: "both" }));
     } else if (type === "roll") {
       // the letter's own picture rolls once in its cell, as the set's does, and settles with a small bounce
       var cell = document.createElement("span"); cell.className = "h1g-c"; cell.style.cssText = "left:" + L.x + "px;top:" + L.y + "px;width:" + L.W + "px;height:" + L.H + "px"; o.appendChild(cell);
@@ -858,52 +866,60 @@
       fr[14].transform = "translate3d(0," + (L.H * 1.06).toFixed(2) + "px,0)";
       a.push(A.animate(fr, { duration: dur, fill: "both" }), B.animate(fr, { duration: dur, fill: "both" }));
     } else if (type === "snow") {
-      dur = 700; var n = piece(o, L.c, L.x, L.y, L.W, L.H, "h1g-n"), top = piece(o, L.c, L.x, L.y, L.W, L.H);
+      dur = 700 * k; var n = piece(o, L.c, L.x, L.y, L.W, L.H, "h1g-n"), top = piece(o, L.c, L.x, L.y, L.W, L.H);
       n.style.setProperty("--n", "url(" + snow() + ")");
-      a.push(n.animate([{ backgroundPosition: "0 0" }, { backgroundPosition: "-1680px 1190px" }], { duration: dur, easing: "steps(14)", pseudoElement: "::before", fill: "both" }));
+      a.push(n.animate([{ backgroundPosition: "0 0" }, { backgroundPosition: "-1680px 1190px" }], { duration: dur, easing: "steps(" + Math.round(14 * k) + ")", pseudoElement: "::before", fill: "both" }));
       a.push(top.animate([{ opacity: 1, offset: 0 }, { opacity: 0, offset: 0.1 }, { opacity: 0, offset: 0.7 }, { opacity: 1, offset: 0.92 }, { opacity: 1, offset: 1 }], { duration: dur, fill: "both" }));
       bloom(o, a, L, dur);
     } else {
-      dur = 620; var e = piece(o, L.c, L.x, L.y, L.W, L.H);
-      a.push(e.animate([{ opacity: 1, offset: 0 }, { opacity: 0.42, offset: 0.12 }, { opacity: 0.62, offset: 0.3, easing: "steps(2)" }, { opacity: 0.42, offset: 0.46 }, { opacity: 0.58, offset: 0.6 }, { opacity: 0.45, offset: 0.7 }, { opacity: 1, offset: 0.86 }, { opacity: 1, offset: 1 }], { duration: dur, fill: "both" }));
+      dur = 620 * k; var e = piece(o, L.c, L.x, L.y, L.W, L.H);
+      a.push(e.animate([{ opacity: 1, offset: 0 }, { opacity: 0.3, offset: 0.12 }, { opacity: 0.58, offset: 0.3, easing: "steps(2)" }, { opacity: 0.3, offset: 0.46 }, { opacity: 0.55, offset: 0.6 }, { opacity: 0.34, offset: 0.7 }, { opacity: 1, offset: 0.86 }, { opacity: 1, offset: 1 }], { duration: dur, fill: "both" }));
       bloom(o, a, L, dur);
     }
     busy = true; h.appendChild(o); CSS.highlights.set("h1g", new Highlight(...rs));
     var done = false, end2 = function () { if (done) return; done = true; a.forEach(function (x) { x.cancel(); }); o.remove(); CSS.highlights.delete("h1g"); busy = false; };
-    if (a[0]) a[0].finished.then(end2, end2);
+    Promise.all(a.map(function (x) { return x.finished; })).then(end2, end2);
     setTimeout(end2, dur + 500);
     run.stop = end2;
   };
-  var fire = function (type, idx, near) {
+  var fire = function (type, idx, near, quick) {
     if (off || busy) return false;
-    var all = letters(), pool = all.filter(function (q, i) { q.i = i; return q.wide && i !== lastIdx; }); if (!pool.length) return false;
+    var all = letters(), pool = all.filter(function (q0, i) { q0.i = i; return q0.wide && i !== lastIdx; }); if (!pool.length) return false;
     var L;
     if (idx != null && all[idx]) L = all[idx];
     else if (near) { pool.sort(function (a, b) { return Math.hypot(a.cx - near[0], a.cy - near[1]) - Math.hypot(b.cx - near[0], b.cy - near[1]); }); L = pool[Math.floor(Math.random() * Math.min(3, pool.length))]; }
     else L = pool[Math.floor(Math.random() * pool.length)];
-    lastIdx = L.i; run(type, L, all); return true;
+    lastIdx = L.i; run(type, L, all, quick); return true;
   };
-  var when = function (t, type, near) {
-    // one line now and then, on a slip of the hold
-    if (type === "hsync" && t - lastLine > 28000 && Math.random() < 0.6) { type = "line"; lastLine = t; }
-    if (!first && !skipped && Math.random() < 0.25) { skipped = true; return; }
-    skipped = false; first = false; pend = { t: t + 110, type: type, near: near };
+  // a set lost its signal: the letters near it go too (or the whole line), the same way
+  var hit = function (t, type, near) {
+    var pl = type === "hsync" ? 0.6 : type === "snow" ? 0.35 : 0;
+    if (t - lastLine > 7000 && Math.random() < pl) { lastLine = t; q.push({ gap: 110, type: type === "snow" ? "lsnow" : "line", near: near }); }
+    else { q.push({ gap: 110, type: type, near: near }); var n = Math.random() < 0.55 ? 1 + Math.floor(Math.random() * 2) : 0; while (n--) q.push({ gap: 70 + Math.random() * 90, type: type, near: near, quick: true }); }
+    own = Math.max(own, t + 1800);
+  };
+  // between the sets, the type's own clock
+  var tick = function (t) {
+    if (t - lastLine > 7000 && Math.random() < 0.38) { lastLine = t; q.push({ gap: 0, type: Math.random() < 0.72 ? "line" : "lsnow", quick: true }); return; }
+    var r = Math.random(); q.push({ gap: 0, type: r < 0.45 ? "hsync" : r < 0.65 ? "snow" : r < 0.85 ? "roll" : "drop", quick: true });
   };
   hook = function (t) {
     if (busy) return;
-    if (scrollY > innerHeight * 0.12) { pend = null; return; }
-    if (pend) { if (t >= pend.t) { var q = pend; pend = null; fire(q.type, null, q.near); } return; }
-    if (gq) { if (t > own) { own = t + 1600; fire(ALL.indexOf(gq) >= 0 || gq === "line" ? gq : ALL.concat("line")[cyc++ % 5]); } return; }
+    if (scrollY > innerHeight * 0.12) { q.length = 0; return; }
+    if (q.length) { var j = q[0]; if (j.t == null) j.t = t + j.gap; if (t >= j.t) { q.shift(); fire(j.type, null, j.near, j.quick); } return; }
+    if (gq) { if (t > own) { own = t + 1600; fire(QA.indexOf(gq) >= 0 ? gq : QA[cyc++ % QA.length]); } return; }
     var C = window.__czCrt;
     if (C) {
       var live = C.live;
-      if (live && live !== lastLive) { var b = live.c.el.getBoundingClientRect(); when(t, KIND[live.type], [b.left + b.width / 2, b.top + b.height / 2]); }
+      if (live && live !== lastLive) { var b = live.c.el.getBoundingClientRect(); hit(t, KIND[live.type], [b.left + b.width / 2, b.top + b.height / 2]); }
       lastLive = live || null;
-    } else { if (!own) own = t + 6000 + Math.random() * 4000; else if (t > own) { own = t + 6000 + Math.random() * 4000; when(t, ALL[Math.floor(Math.random() * 4)]); } }
+    }
+    if (!own) own = t + 2200 + Math.random() * 1500;
+    else if (t > own) { own = t + 2200 + Math.random() * 2000; tick(t); }
   };
   W.hooks.push(hook);
   window.__czH1 = {
-    off: function () { off = true; pend = null; var i = W.hooks.indexOf(hook); if (i >= 0) W.hooks.splice(i, 1); if (run.stop) run.stop(); },
+    off: function () { off = true; q.length = 0; var i = W.hooks.indexOf(hook); if (i >= 0) W.hooks.splice(i, 1); if (run.stop) run.stop(); },
     on: function () { if (!off) return; off = false; W.hooks.push(hook); W.go(); },
     fire: function (type, idx) { return fire(type, idx); }
   };
