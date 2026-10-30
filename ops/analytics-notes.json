@@ -3,10 +3,10 @@
   "through": "2026-10-30",
   "items": [
     {"title": "Prea devreme pentru concluzii", "text": "Funnel-ul are doar două zile: 18 au venit, 14 au ajuns la pass, 2 au început să-l completeze. Mira estimează cam 550 de sesiuni abia spre sfârșitul lui noiembrie."},
-    {"title": "Cea mai mare cerere a venit pe mail", "text": "Pe 29 oct cineva a scris direct la adresa de contact, după „o privire pe site”, fără pass. Mailurile directe nu apar în funnel, deci cifrele de aici arată doar o parte din cereri."},
-    {"title": "Lead-ul din funnel pare testul nostru", "text": "GA numără 1 pass trimis pe 28–29 oct, iar în server nu există niciun lead real în zilele astea. Din 30 oct, testele noastre nu mai ajung în GA."},
     {"title": "Lead nou pe 30 oct, la 17:36", "text": "Cere un logotip. Sursa nu se știe încă: a venit înainte ca serverul să rețină pagina, iar GA nu l-a raportat. Dacă omul n-a acceptat cookie-urile, nu o vom ști deloc."},
+    {"title": "Cea mai mare cerere a venit pe mail", "text": "Pe 29 oct cineva a scris direct la adresa de contact, după „o privire pe site”, fără pass. Mailurile directe nu apar în funnel, deci cifrele de aici arată doar o parte din cereri."},
+    {"title": "Lead-ul din funnel pare testul nostru", "text": "GA numără 1 pass trimis în primele două zile, iar în server nu există niciun lead real pe 28–29 oct. Din 30 oct, testele noastre nu mai ajung în GA."},
     {"title": "Instagram aduce oameni implicați", "text": "41 de sesiuni în 30 de zile, 88% implicate, 0 lead-uri. De la mutarea din 28 oct, nimeni venit de acolo n-a citit încă un caz."},
-    {"title": "Google se implică, dar cifra de lead-uri e umflată", "text": "143 de sesiuni, 76% implicate. Cele 10 lead-uri atribuite de GA pot include încă testele noastre."}
+    {"title": "Cei de pe Google se implică, dar cifra de lead-uri e umflată", "text": "143 de sesiuni, 76% implicate. Cele 10 lead-uri atribuite de GA pot include încă testele noastre."}
   ]
 }
