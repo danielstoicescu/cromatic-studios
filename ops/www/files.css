@@ -1,0 +1,90 @@
+/* TASK-142 · /ops Fișiere. Same system as the rest of /ops: black, white, greys carry the page; yellow is the one moment
+   a link is ready, red only says "this cannot be undone". */
+.fil-body { display: grid; gap: 36px; margin-top: 18px; min-width: 0; }
+
+/* the place to drop: one big quiet target; it answers the whole page's drag */
+.fil-zone { display: grid; justify-items: center; text-align: center; gap: 12px; padding: 52px 24px; border: 2px dashed var(--g2); border-radius: 24px; background: var(--card); cursor: pointer; transition: border-color .15s, background .15s; }
+.fil-zone:hover { border-color: var(--g3); }
+.fil-zone.over { border: 2px solid var(--ink); background: var(--yellow); color: var(--code-ink); }
+.fil-zone.over .fil-hint { color: inherit; }
+.fil-zone > .ic { width: 30px; height: 30px; }
+.fil-zone b { font: 800 27px/1.1 var(--f-d); letter-spacing: -.01em; }
+.fil-hint { font-size: 14px; line-height: 1.45; color: var(--muted); margin: 0; }
+.fil-zone .btn { margin-top: 4px; }
+.fil-in { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.fil-phone { display: none; }
+
+/* on its way */
+.fil-q { display: grid; gap: 12px; }
+.fil-q:empty { display: none; }
+.fil-qi { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: baseline; font-size: 14px; }
+.fil-qi span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.fil-qi .fil-pc { font: 500 12.5px var(--f-m); color: var(--muted); }
+.fil-bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--g1); overflow: hidden; }
+.fil-bar i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .15s linear; }
+.fil-qi.err .fil-msg { grid-column: 1 / -1; color: #b3261a; font-weight: 600; line-height: 1.4; }
+html[data-theme="dark"] .fil-qi.err .fil-msg { color: var(--c-dropped); }
+
+/* the link is ready: the one yellow thing on the page */
+.fil-ready { background: var(--yellow); color: var(--code-ink); border: 1px solid #000; box-shadow: 0 2px 0 #000; border-radius: 24px; padding: 24px 26px 26px; display: grid; gap: 18px; min-width: 0; }
+.fil-ready-h { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.fil-ready-h p { margin: 0; font: 900 clamp(26px, 3vw, 36px)/1.06 var(--f-d); letter-spacing: -.02em; }
+.fil-ready em { font-style: italic; }
+.fil-ready-x { border: 0; background: none; color: inherit; font-size: 24px; line-height: 1; width: 44px; height: 44px; margin: -10px -12px 0 0; border-radius: 50%; cursor: pointer; }
+.fil-ready-x:hover { background: rgba(0,0,0,.08); }
+.fil-ready-i { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; }
+.fil-ready-i b { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fil-ready-i a { grid-column: 1; font: 500 13px/1.45 var(--f-m); color: inherit; overflow-wrap: anywhere; }
+.fil-ready-i .btn { grid-column: 2; grid-row: 1 / span 2; background: #000; color: #fff; border-color: #000; box-shadow: none; }
+.fil-ready-i .btn:hover { box-shadow: none; }
+
+/* the list */
+.fil-list-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.fil-list-h h3 { font: 800 21px/1.15 var(--f-d); margin: 0; }
+.fil-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.fil-row { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 22px 0; border-top: var(--line); min-width: 0; }
+.fil-row:first-child { border-top: 0; }
+.fil-th { width: 60px; height: 60px; border-radius: 14px; background: var(--g1); display: grid; place-items: center; font: 700 12px var(--f-m); letter-spacing: .04em; overflow: hidden; }
+.fil-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fil-txt { min-width: 0; display: grid; gap: 4px; }
+.fil-nm { font-weight: 700; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.fil-me { font-size: 13.5px; color: var(--muted); }
+.fil-lk { font: 500 12.5px/1.4 var(--f-m); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fil-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.fil-acts .btn .ic { width: 15px; height: 15px; }
+.fil-acts a.btn { color: inherit; text-decoration: none; }
+.fil-del { color: #b3261a; }
+html[data-theme="dark"] .fil-del { color: var(--c-dropped); }
+.fil-ask { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: flex-end; font-size: 14.5px; font-weight: 600; }
+.fil-ask span { flex: 1 1 240px; }
+.fil-sure { background: #b3261a; color: #fff; border-color: #000; }
+.fil-row .fil-bar { grid-column: 2 / -1; }
+.fil-empty { font-size: 15px; color: var(--muted); padding: 22px 0; margin: 0; }
+
+.fil-note { font-size: 13.5px; line-height: 1.55; color: var(--muted); max-width: 68ch; margin: 0; display: grid; gap: 6px; }
+.fil-note p { margin: 0; }
+
+.fil-zone:focus-within { border-color: var(--ink); }
+.fil-ready-x:focus-visible, .fil-acts .btn:focus-visible, .fil-ask .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+@media (max-width: 760px), (hover: none) {
+  .fil-desk { display: none; }
+  .fil-phone { display: inline; }
+  .fil-zone { padding: 36px 20px; }
+  .fil-zone .btn { min-height: 48px; padding-inline: 24px; }
+}
+@media (max-width: 760px) {
+  .fil-body { gap: 32px; }
+  .fil-row { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 24px 0; align-items: start; }
+  .fil-th { width: 52px; height: 52px; }
+  .fil-lk { white-space: normal; overflow-wrap: anywhere; }
+  .fil-acts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .fil-acts .btn { justify-content: center; min-height: 44px; padding-inline: 4px; min-width: 0; }
+  .fil-copy { grid-column: 1 / -1; }
+  .fil-ask .btn { min-height: 44px; flex: 1 1 40%; justify-content: center; }
+  .fil-ask span { flex-basis: 100%; }
+  .fil-row .fil-bar { grid-column: 1 / -1; }
+  .fil-ready { padding: 20px 20px 22px; }
+  .fil-ready-i { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .fil-ready-i .btn { grid-column: 1; grid-row: auto; justify-content: center; min-height: 48px; margin-top: 4px; }
+}

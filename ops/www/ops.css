@@ -14,6 +14,8 @@ body.ops-member #core, body.ops-member #sec, body.ops-member .box:has(#approvals
 body.ops-member .nav-i[data-cat="offer"], body.ops-member #ofr, body:not(.ops-admin) #ofr, body[data-cat="home"] #ofr { display: none !important; }
 /* TASK-141: Performance is for admins only too (the server answers members 403); on Home it stays in the rail only */
 body.ops-member .nav-i[data-cat="perf"], body.ops-member #prf, body:not(.ops-admin) #prf, body[data-cat="home"] #prf { display: none !important; }
+/* TASK-142: Fișiere, the same (the server answers members 403) */
+body.ops-member .nav-i[data-cat="files"], body.ops-member #fil, body:not(.ops-admin) #fil, body[data-cat="home"] #fil { display: none !important; }
 
 /* bug report in the mirror: one checkbox instead of Normal / Panică */
 .ops-imp { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.35; cursor: pointer; border: 1px solid var(--g2); border-radius: 14px; padding: 10px 12px; }

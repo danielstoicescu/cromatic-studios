@@ -95,6 +95,7 @@ function cspNextFor(html) {
 // the old WordPress media pages (/wp-content/uploads/*.html) are not ours to vouch for: no policy there
 const withCsp = (req, res) => {
   if (req.url.startsWith("/wp-content/uploads/") || req.url.startsWith("/testing/")) return; // r310: nor the clients' demos on beta (their own CDNs)
+  if (req.url.startsWith("/f/")) return; // TASK-142: /ops Fișiere brings its own policy (the sandbox); ours as report-only would only fill the CSP log
   const wh = res.writeHead;
   res.writeHead = function (code, a, b) {
     const h = a && typeof a === "object" ? a : b && typeof b === "object" ? b : null;
@@ -735,7 +736,7 @@ const server = http.createServer((req, res) => {
   if (BETA_HOSTS.has(host)) {
     if (/"scheme":"http"/.test(String(req.headers["cf-visitor"] || ""))) { res.writeHead(301, { Location: `https://${host}${req.url}` }); return res.end(); }
     // TASK-124: /ops lives on cromaticstudios.com only (Daniel, 26 Oct: no beta copy); 308 keeps the method for the API
-    if (isOps(req.url)) { res.writeHead(308, { Location: `https://${PRIMARY_HOST || "cromaticstudios.com"}${req.url}` }); return res.end(); }
+    if (isOps(req.url) || req.url.startsWith("/f/")) { res.writeHead(308, { Location: `https://${PRIMARY_HOST || "cromaticstudios.com"}${req.url}` }); return res.end(); } // TASK-142: the /f/ links too
     if (req.url.startsWith("/proposals/") || req.url.startsWith("/testing/ina-sosoaca/")) { const to = req.url.startsWith("/testing/ina-sosoaca/") ? "/proposals/ina-sosoaca-728691ea47/" + req.url.slice(21) : req.url; res.writeHead(301, { Location: `https://${PRIMARY_HOST || "cromaticstudios.com"}${to}` }); return res.end(); } // r312: proposals live on cromaticstudios.com
     if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
     if (req.url === "/api/boarding" && req.method === "POST") return void boarding(req, res, "[beta 2.0]").catch(() => send(res, 500, { ok: false }));
@@ -757,6 +758,7 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
   if (req.url.startsWith("/proposals/")) return proposals(req, res); // r312: client proposals (Daniel, 27 Oct)
+  if (req.url.startsWith("/f/")) return ops.serveFile(req, res); // TASK-142: /ops Fișiere, the links (sandboxed, see ops/files.mjs)
   if (isOps(req.url)) return void ops(req, res).then((done) => { if (!done) { res.writeHead(404); res.end(); } }).catch(() => send(res, 500, { ok: false })); // TASK-124: on live too (Daniel, 23 Oct: "deploy /ops si pe live")
   if (isCore30(req.url)) return void core30(req, res).catch(() => send(res, 500, { ok: false }));
   if ((req.method === "GET" || req.method === "HEAD") && legacy(req, res)) return;
