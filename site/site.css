@@ -1737,7 +1737,16 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
 .h1g-r { color: #F65342; opacity: 0; }
 .h1g-b { color: #119BFE; opacity: 0; }
 .h1g-g { opacity: 0; text-shadow: 0 0 .1em rgba(255,255,255,.75), 0 0 .28em rgba(255,255,255,.4); }
-.h1g-n::before { color: transparent; background-image: var(--n); background-size: 96px 96px; -webkit-background-clip: text; background-clip: text; image-rendering: pixelated; }
+.h1g-n::before { color: transparent; background-image: var(--n); background-size: 128px 128px; -webkit-background-clip: text; background-clip: text; image-rendering: pixelated; }
+/* r410 (Daniel: "textul cu numele brandului pe ecran sa fie mai mic si sa fie si el analogic, poate cu galben"). The set's name as a
+   teletext caption, in the first wall only: small yellow mono on its own black box (square, a caption's box, not a pill),
+   a soft phosphor glow, the guns a hair apart, the tube's scanlines through it (the mask, same 3 px pitch as the shader),
+   and it comes up with a short flicker. Solid fill; the guns are offset copies with no blur on one side each, no stroke. */
+.pw-first .pw-name { left: clamp(20px, 1.8vw, 26px); right: auto; bottom: clamp(16px, 1.5vw, 22px); max-width: calc(100% - 2 * clamp(20px, 1.8vw, 26px)); width: fit-content; padding: 3px 6px 2px; background: #0d0c09; color: #FED012; font: 700 clamp(10.5px, .82vw, 12.5px)/1.25 var(--mono); letter-spacing: .07em; text-transform: uppercase;
+  text-shadow: .6px 0 0 rgba(246,83,66,.55), -.6px 0 0 rgba(17,155,254,.55), 0 0 5px rgba(254,208,18,.55);
+  -webkit-mask-image: repeating-linear-gradient(180deg, #000 0 1.6px, rgba(0,0,0,.72) 1.6px 3px); mask-image: repeating-linear-gradient(180deg, #000 0 1.6px, rgba(0,0,0,.72) 1.6px 3px); }
+.pw-first .pw-case:is(:hover, :focus-visible, .show) .pw-name { animation: pw-osd .2s linear both; }
+@keyframes pw-osd { 0% { opacity: 0; } 20% { opacity: .85; } 40% { opacity: .25; } 60% { opacity: 1; } 75% { opacity: .6; } 100% { opacity: 1; } }
 /* r391 (Daniel: "the service cards should get their colour on mobile too as you pass over them, when they're in the middle
    area of the screen, because we have no hover"): on a touch screen the card whose centre crosses the middle band of the
    screen (35-65% of its height) takes its hover colour (.lit, set by site.js), one card at a time, after it has landed
