@@ -7,6 +7,8 @@
 //                      (plus "Măsoară acum", at most one run per 15 min). PSI takes 10-60 s per URL. History in <OPS_DATA>/perf.json.
 //   GA_SA_JSON_B64     the GA4 service account's key JSON, base64. Signed here with crypto (JWT, RS256), no dependency.
 //   GA_PROPERTY        the GA4 property id. Reports cached in <OPS_DATA>/ga.json, refreshed every 4 h, never per page view.
+//                      TASK-144: two funnels through v1alpha :runFunnelReport, each with its own try/catch: the alpha call may change or
+//                      fail, and then the rest of the page still refreshes and the funnel card falls back to separate counts, labelled so.
 //   OPS_JOBS=off       no scheduler (a run can still be started by hand).
 //
 // Keys never reach the client or the log: every message that leaves this file goes through scrub().
@@ -18,7 +20,7 @@ import { createSign } from "node:crypto";
 import { readFileSync, writeFileSync, renameSync, statSync, unlinkSync, mkdirSync } from "node:fs";
 import { writeFile, rename } from "node:fs/promises";
 import { join } from "node:path";
-import { makeLeadStore, withStoreLeads, bucharestDay } from "./leads.mjs";
+import { makeLeadStore, withStoreLeads, bucharestDay, shift } from "./leads.mjs";
 
 const PATHS = [["/", "Homepage EN"], ["/ro/", "Homepage RO"], ["/city/", "Orașul"]];
 const STRATEGIES = ["mobile", "desktop"];
@@ -30,7 +32,7 @@ const GA_EVERY = 4 * 3600e3, GA_RETRY = 30 * 60e3, GA_STALE = 24 * 3600e3;
 const TICK = 10 * 60e3, FIRST_TICK = 90e3;
 const GA_TOKEN_URL = "https://oauth2.googleapis.com/token", GA_API = "https://analyticsdata.googleapis.com", PSI_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const GA_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
-const LEAD = "generate_lead", PLACE = "map_place_open", GAME = "gloves_start"; // the site's real GA4 events (build/consent.mjs, src/app.js, src/minigame.js)
+const LEAD = "generate_lead", PLACE = "map_place_open"; // the site's real GA4 events (build/consent.mjs, src/app.js, src/minigame.js)
 const SHOT_SLUG = { "/": "home", "/ro/": "ro", "/city/": "city" }, SHOT_DIR = "perf-shots", SHOT_MAX = 400 * 1024; // the screenshot PSI returns, already a small JPEG: kept as it comes, latest only per page and device
 const SHOT_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 export const SHOT_KEY_RE = /^(home|ro|city)-(mobile|desktop)$/;
@@ -167,24 +169,98 @@ const eventIs = (name) => ({ filter: { fieldName: "eventName", stringFilter: { m
 const isoDay = (d) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
 function regionRo(id, fallback) { try { return new Intl.DisplayNames(["ro"], { type: "region" }).of(id) || fallback; } catch { return fallback; } }
 
-/** every number of the section, for one period (13 reports, one at a time) */
-export function gaReports(p = "30") {
-  const { both: RANGES, one: MONTH } = periodRanges(p), step = p === "today" ? "hour" : "date", rows = p === "today" ? 30 : GA_PERIODS[p] + 5;
+// r356 moved the homepage on 28 Oct: before it "/" was the map and "/site/" the website. Anything by page, and the funnels, start there.
+export const PAGE_FROM = "2026-10-28";
+export function pageStart(p, now = new Date()) {
+  const today = bucharestDay(now); if (p === "today") return today;
+  const from = shift(today, -GA_PERIODS[p]); return from < PAGE_FROM ? PAGE_FROM : from;
+}
+const pageRange = (p, now) => [{ startDate: pageStart(p, now), endDate: p === "today" ? "today" : "yesterday" }];
+const CASE_RE = "^/(work|ro/proiecte)/[^/]+";
+const isCase = { filter: { fieldName: "pagePath", stringFilter: { matchType: "PARTIAL_REGEXP", value: CASE_RE } } };
+const GAME_STEPS = ["gloves_open", "gloves_start", "gloves_pick", "gloves_match_end", "gloves_voucher_shown"];
+const FUNNEL_EVENTS = ["session_start", "scroll", "boarding_open", "pass_view", "form_start", "generate_lead", "map_place_open", "stop_view"];
+const fe = (eventName) => ({ funnelEventFilter: { eventName } });
+const anyOf = (...names) => ({ orGroup: { expressions: names.map(fe) } });
+// F1's second step: 90% scroll is the proxy for "reached the pass" on the website, boarding_open the map's card, pass_view (T2) the real thing from its first deploy on.
+// Once pass_view has a month of data, take scroll out of this list.
+export const FUNNELS = {
+  f1: [["start", fe("session_start")], ["pass", anyOf("scroll", "boarding_open", "pass_view")], ["form", fe("form_start")], ["lead", fe(LEAD)]],
+  f2: [["city", { andGroup: { expressions: [fe("page_view"), { funnelFieldFilter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: "/city" } } }] } }], ["open", anyOf(PLACE, "stop_view")], ["form", fe("form_start")], ["lead", fe(LEAD)]],
+};
+export function funnelBody(name, p, now = new Date()) {
+  return { dateRanges: pageRange(p, now), funnel: { isOpenFunnel: false, steps: FUNNELS[name].map(([key, filterExpression]) => ({ name: key, filterExpression })) } };
+}
+/** a :runFunnelReport answer -> [{key, users}] in step order. Throws when the shape is not the documented one: the caller then falls back */
+export function parseFunnel(j, name) {
+  const t = j && j.funnelTable, keys = FUNNELS[name].map(([k]) => k);
+  const m = t && (t.metricHeaders || []).findIndex((h) => h.name === "activeUsers"), d = t && (t.dimensionHeaders || []).findIndex((h) => h.name === "funnelStepName");
+  if (!t || m < 0 || d < 0) throw Object.assign(new Error("Funnel: răspuns neașteptat."), { code: "shape" });
+  const users = keys.map(() => 0);
+  for (const r of t.rows || []) {
+    const dv = (r.dimensionValues || []).map((v) => v.value), other = dv.filter((_, i) => i !== d);
+    if (other.some((v) => v !== "RESERVED_TOTAL")) continue; // a breakdown's row, should one ever be asked for
+    const i = keys.indexOf(String(dv[d] || "").replace(/^\d+\.\s*/, "")); // "1. start"
+    if (i >= 0) users[i] = nOf((r.metricValues[m] || {}).value);
+  }
+  const sampled = !!(t.metadata && (t.metadata.samplingMetadatas || []).length);
+  return { ok: true, sampled, steps: keys.map((key, i) => ({ key, users: users[i] })) };
+}
+/** every number of the section, for one period, one report at a time. SOFT ones are new or depend on the property's setup: if one fails the others stay, and its card says so */
+export const SOFT = new Set(["caseReads", "eventUsers", "cityUsers", "pages", "caseClicks", "caseLeads", "landing"]);
+export function gaReports(p = "30", now = new Date()) {
+  const { both: RANGES, one: MONTH } = periodRanges(p), step = p === "today" ? "hour" : "date", rows = p === "today" ? 30 : GA_PERIODS[p] + 5, PAGES = pageRange(p, now);
   return {
   totals: { dateRanges: RANGES, returnPropertyQuota: true, metrics: ["activeUsers", "sessions", "engagementRate", "userEngagementDuration"] },
   leads: { dateRanges: RANGES, metrics: ["eventCount"], dimensionFilter: eventIs(LEAD) },
   daily: { dateRanges: MONTH, dimensions: [step], metrics: ["activeUsers", "sessions"], orderBys: [{ dimension: { dimensionName: step } }], limit: rows },
   dailyLeads: { dateRanges: MONTH, dimensions: [step], metrics: ["eventCount"], dimensionFilter: eventIs(LEAD), limit: rows },
-  sources: { dateRanges: MONTH, dimensions: ["sessionSource", "sessionMedium"], metrics: ["sessions", "activeUsers"], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 12 },
+  sources: { dateRanges: MONTH, dimensions: ["sessionSource", "sessionMedium"], metrics: ["sessions", "engagementRate"], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 60 },
   sourceLeads: { dateRanges: MONTH, dimensions: ["sessionSource", "sessionMedium"], metrics: ["eventCount"], dimensionFilter: eventIs(LEAD), limit: 100 },
-  events: { dateRanges: MONTH, dimensions: ["eventName"], metrics: ["eventCount"], dimensionFilter: { filter: { fieldName: "eventName", inListFilter: { values: [PLACE, GAME] } } } },
-  city: { dateRanges: MONTH, metrics: ["sessions"], dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: "/city" } } } },
-  pages: { dateRanges: MONTH, dimensions: ["pagePath", "pageTitle"], metrics: ["screenPageViews", "activeUsers", "userEngagementDuration"], orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }], limit: 40 },
+  caseReads: { dateRanges: PAGES, dimensions: ["sessionSource", "sessionMedium"], metrics: ["sessions"], dimensionFilter: isCase, limit: 100 },
+  eventUsers: { dateRanges: PAGES, dimensions: ["eventName"], metrics: ["activeUsers"], dimensionFilter: { filter: { fieldName: "eventName", inListFilter: { values: [...GAME_STEPS, ...FUNNEL_EVENTS] } } } },
+  cityUsers: { dateRanges: PAGES, metrics: ["activeUsers"], dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: "/city" } } } },
+  pages: { dateRanges: PAGES, dimensions: ["pagePath", "pageTitle"], metrics: ["screenPageViews", "activeUsers", "userEngagementDuration"], dimensionFilter: isCase, orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }], limit: 100 },
+  caseClicks: { dateRanges: PAGES, dimensions: ["customEvent:case_path"], metrics: ["eventCount"], dimensionFilter: eventIs("case_study_click"), limit: 100 },
+  caseLeads: { dateRanges: PAGES, dimensions: ["pagePath"], metrics: ["eventCount"], dimensionFilter: { andGroup: { expressions: [eventIs(LEAD), isCase] } }, limit: 100 },
+  landing: { dateRanges: PAGES, dimensions: ["landingPage"], metrics: ["sessions", "engagementRate"], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 40 },
   countries: { dateRanges: MONTH, dimensions: ["country", "countryId"], metrics: ["activeUsers"], orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }], limit: 8 },
   devices: { dateRanges: MONTH, dimensions: ["deviceCategory"], metrics: ["activeUsers"], orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }] },
   campaigns: { dateRanges: MONTH, dimensions: ["sessionCampaignName"], metrics: ["sessions"], dimensionFilter: { filter: { fieldName: "sessionCampaignName", stringFilter: { matchType: "FULL_REGEXP", value: ".+-[abAB]" } } }, limit: 40 },
   campaignLeads: { dateRanges: MONTH, dimensions: ["sessionCampaignName"], metrics: ["eventCount"], dimensionFilter: { andGroup: { expressions: [eventIs(LEAD), { filter: { fieldName: "sessionCampaignName", stringFilter: { matchType: "FULL_REGEXP", value: ".+-[abAB]" } } }] } }, limit: 40 },
   };
+}
+const SUMMARY_V = 2; // a cached summary of an older shape is refreshed as soon as the retry rule allows
+/** a case page, in either language, as one row */
+const caseSlug = (path) => { const m = /^\/(?:work|ro\/proiecte)\/([^/?#]+)/.exec(String(path || "").replace(/^https?:\/\/[^/]+/, "")); return m ? m[1] : null; };
+const caseTitle = (t) => { const x = String(t || "").split(/\s[|·–-]\s/)[0].trim(); return x && x !== "(not set)" ? x : ""; };
+/** l.instagram.com, instagram.com and the utm spellings are one place */
+const isInstagram = (s) => /(^|\.)instagram\.com$|^(ig|instagram)$/i.test(String(s || ""));
+function buildSources(R) {
+  const key = (s, m) => (isInstagram(s) ? "Instagram\n" : s + "\n" + m), rows = new Map();
+  const at = (s, m) => { const k = key(s, m); if (!rows.has(k)) rows.set(k, isInstagram(s) ? { source: "Instagram", medium: "", sessions: 0, engaged: 0, leads: 0, caseSessions: 0 } : { source: s, medium: m, sessions: 0, engaged: 0, leads: 0, caseSessions: 0 }); return rows.get(k); };
+  for (const r of rowsOf(R.sources)) { const x = at(r.sessionSource, r.sessionMedium); x.sessions += r.sessions; x.engaged += Math.round((r.engagementRate || 0) * r.sessions); }
+  for (const r of rowsOf(R.sourceLeads)) { const k = key(r.sessionSource, r.sessionMedium); if (rows.has(k)) rows.get(k).leads += r.eventCount; }
+  for (const r of rowsOf(R.caseReads)) { const k = key(r.sessionSource, r.sessionMedium); if (rows.has(k)) rows.get(k).caseSessions += r.sessions; }
+  return [...rows.values()].sort((a, b) => b.sessions - a.sessions);
+}
+function buildCases(R) {
+  const rows = new Map(), at = (slug) => { if (!rows.has(slug)) rows.set(slug, { slug, title: "", best: -1, views: 0, users: 0, dur: 0, clicks: 0, leads: 0 }); return rows.get(slug); };
+  for (const r of rowsOf(R.pages)) { const s = caseSlug(r.pagePath); if (!s) continue; const x = at(s); if (r.screenPageViews > x.best && caseTitle(r.pageTitle)) { x.best = r.screenPageViews; x.title = caseTitle(r.pageTitle); } x.views += r.screenPageViews; x.users += r.activeUsers; x.dur += r.userEngagementDuration; }
+  for (const r of rowsOf(R.caseClicks)) { const s = caseSlug(r["customEvent:case_path"]); if (s && rows.has(s)) rows.get(s).clicks += r.eventCount; }
+  for (const r of rowsOf(R.caseLeads)) { const s = caseSlug(r.pagePath); if (s && rows.has(s)) rows.get(s).leads += r.eventCount; }
+  return [...rows.values()].sort((a, b) => b.views - a.views).map(({ slug, title, views, users, dur, clicks, leads }) => ({ slug, title, views, avgSec: users ? Math.round(dur / users) : 0, clicks, leads }));
+}
+/** the funnels as GA answered them, or the same steps counted separately (eventUsers), which is not the same people and says so */
+function buildFunnels(R) {
+  const ev = new Map(rowsOf(R.eventUsers).map((r) => [r.eventName, r.activeUsers])), n = (x) => ev.get(x) || 0, city = (rowsOf(R.cityUsers)[0] || {}).activeUsers || 0;
+  const fb = {
+    f1: [{ key: "start", users: n("session_start") }, { key: "pass", users: Math.max(n("scroll"), n("boarding_open"), n("pass_view")) }, { key: "form", users: n("form_start") }, { key: "lead", users: n(LEAD) }],
+    f2: [{ key: "city", users: city }, { key: "open", users: Math.max(n(PLACE), n("stop_view")) }], // form and lead counted apart say nothing about the city: left out
+  };
+  const out = {};
+  for (const name of ["f1", "f2"]) { const f = (R.funnels || {})[name]; out[name] = f && f.ok ? f : { ok: false, separate: true, steps: R.eventUsers ? fb[name] : [] }; }
+  return out;
 }
 /** Only the cards the site really measures: The Core Lite, CTA clicks and postcards send no GA event, so those keys stay absent and the UI skips them */
 export function buildSummary(R, now = new Date(), period = "30") {
@@ -209,17 +285,7 @@ export function buildSummary(R, now = new Date(), period = "30") {
       daily.push({ date: isoDay(k), users: r.activeUsers || 0, sessions: r.sessions || 0, leads: leadsByDay.get(k) || 0 });
     }
   }
-  const skey = (r) => r.sessionSource + "\n" + r.sessionMedium, sLeads = new Map(rowsOf(R.sourceLeads).map((r) => [skey(r), r.eventCount]));
-  const sources = rowsOf(R.sources).map((r) => ({ source: r.sessionSource, medium: r.sessionMedium, sessions: r.sessions, users: r.activeUsers, leads: sLeads.get(skey(r)) || 0 }));
-  const ev = new Map(rowsOf(R.events).map((r) => [r.eventName, r.eventCount]));
-  const cityRow = rowsOf(R.city)[0] || {};
-  const pages = new Map();
-  for (const r of rowsOf(R.pages)) {
-    const p = pages.get(r.pagePath) || { path: r.pagePath, title: "", views: 0, users: 0, dur: 0, best: -1 };
-    if (r.screenPageViews > p.best) { p.best = r.screenPageViews; p.title = r.pageTitle && r.pageTitle !== "(not set)" ? r.pageTitle : ""; }
-    p.views += r.screenPageViews; p.users += r.activeUsers; p.dur += r.userEngagementDuration; pages.set(r.pagePath, p);
-  }
-  const topPages = [...pages.values()].sort((a, b) => b.views - a.views).slice(0, 10).map((p) => ({ path: p.path, title: p.title, views: p.views, avgSec: p.users ? Math.round(p.dur / p.users) : 0 }));
+  const evUsers = new Map(rowsOf(R.eventUsers).map((r) => [r.eventName, r.activeUsers]));
   const cLeads = new Map(rowsOf(R.campaignLeads).map((r) => [r.sessionCampaignName, r.eventCount]));
   const campaigns = rowsOf(R.campaigns).map((r) => {
     const name = r.sessionCampaignName, m = /^(.+)-([ab])$/i.exec(name || ""); if (!m) return null;
@@ -228,9 +294,12 @@ export function buildSummary(R, now = new Date(), period = "30") {
   }).filter(Boolean);
   return {
     generatedAt: now.toISOString(), source: "ga4", range: daily.length ? { from: daily[0].date, to: daily[daily.length - 1].date } : null,
-    period, ...(period === "today" ? { noCompare: true } : {}), kpis: pick(T.cur, T.prev, L.cur, L.prev), daily, sources, campaigns,
-    map: { driveSessions: cityRow.sessions || 0, cardOpens: ev.get(PLACE) || 0, gameStarts: ev.get(GAME) || 0 },
-    topPages,
+    period, ...(period === "today" ? { noCompare: true } : {}), kpis: pick(T.cur, T.prev, L.cur, L.prev), daily, campaigns, v: SUMMARY_V,
+    pageFrom: pageStart(period, now), // the report by page and the funnels start here; the UI says so
+    sources: buildSources(R), cases: buildCases(R), funnels: buildFunnels(R),
+    landing: rowsOf(R.landing).map((r) => ({ path: r.landingPage, sessions: r.sessions, engaged: Math.round((r.engagementRate || 0) * r.sessions) })),
+    game: GAME_STEPS.map((event) => ({ event, users: evUsers.get(event) || 0 })),
+    missing: [...SOFT].filter((k) => !R[k]), // the reports that failed this time: their cards say so, instead of showing zero
     countries: rowsOf(R.countries).map((r) => ({ country: regionRo(r.countryId, r.country), users: r.activeUsers })),
     devices: rowsOf(R.devices).map((r) => ({ device: r.deviceCategory, users: r.activeUsers })),
   };
@@ -440,7 +509,10 @@ export function createMetrics({ dataDir, log = console, env = process.env, leads
   }
   async function gaReport(body) {
     const req = { ...body, ...(body.dimensions ? { dimensions: body.dimensions.map((name) => ({ name })) } : {}), metrics: body.metrics.map((name) => ({ name })) };
-    const url = dev("OPS_GA_API", GA_API) + "/v1beta/properties/" + encodeURIComponent(gaProperty()) + ":runReport";
+    return gaPost("/v1beta/properties/" + encodeURIComponent(gaProperty()) + ":runReport", req);
+  }
+  async function gaPost(path, req) {
+    const url = dev("OPS_GA_API", GA_API) + path;
     for (let i = 1; ; i++) {
       const token = await gaAccessToken();
       const r = await call(url, { method: "POST", timeout: 60e3, headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify(req) });
@@ -451,6 +523,18 @@ export function createMetrics({ dataDir, log = console, env = process.env, leads
       await wait(dev("OPS_PSI_RETRY_MS", 5000) * 1);
     }
   }
+  /** one funnel. Never throws: a failure here must not stop the refresh (the alpha API can change without notice) */
+  async function gaFunnel(name, p) {
+    try {
+      const j = await gaPost("/v1alpha/properties/" + encodeURIComponent(gaProperty()) + ":runFunnelReport", funnelBody(name, p));
+      const out = parseFunnel(j, name);
+      if (out.sampled) say("GA4 funnel " + name + " (" + p + "): sampled");
+      return out;
+    } catch (e) {
+      warn("GA4 funnel " + name + " failed (" + p + "): " + (e.code || "network") + " " + (e.http || "") + " " + e.message);
+      return { ok: false, code: e.code || "network" };
+    }
+  }
   // one report at a time across all periods: 30 days refreshes by itself, the others only when someone opens them
   const gaQueue = []; let gaBusy = false, gaNow = null;
   async function refreshOne(p) {
@@ -458,7 +542,11 @@ export function createMetrics({ dataDir, log = console, env = process.env, leads
     if (!/^\d{3,20}$/.test(gaProperty())) { await saveJson(file, { ...prev, lastAttemptAt: at, lastError: { code: "property", message: "GA_PROPERTY trebuie să fie doar cifre." } }); return; }
     try {
       const R = {};
-      for (const [name, body] of Object.entries(gaReports(p))) R[name] = await gaReport(body);
+      for (const [name, body] of Object.entries(gaReports(p))) {
+        try { R[name] = await gaReport(body); }
+        catch (e) { if (!SOFT.has(name)) throw e; R[name] = null; warn("GA4 report " + name + " failed (" + p + "): " + (e.code || "network") + " " + (e.http || "") + " " + e.message); }
+      }
+      R.funnels = { f1: await gaFunnel("f1", p), f2: await gaFunnel("f2", p) };
       const q = R.totals && R.totals.propertyQuota;
       await saveJson(file, { data: buildSummary(R, new Date(), p), fetchedAt: new Date().toISOString(), lastAttemptAt: at, lastError: null, ...(q ? { quota: { dayLeft: q.tokensPerDay && q.tokensPerDay.remaining, hourLeft: q.tokensPerHour && q.tokensPerHour.remaining } } : {}) });
       say("GA4 refreshed (" + p + ")" + (q && q.tokensPerDay ? ", tokens left today " + q.tokensPerDay.remaining : ""));
@@ -480,7 +568,8 @@ export function createMetrics({ dataDir, log = console, env = process.env, leads
   function gaDue(now = Date.now(), p = "30") {
     if (!gaConfigured() || gaPending(p)) return false;
     const f = gaFile(p), fetched = Date.parse(f.fetchedAt || 0) || 0, tried = Date.parse(f.lastAttemptAt || 0) || 0;
-    return now - fetched >= GA_EVERY && now - tried >= GA_RETRY;
+    const old = !!f.data && f.data.v !== SUMMARY_V; // an answer of an older shape, right after a deploy
+    return (now - fetched >= GA_EVERY || old) && now - tried >= GA_RETRY;
   }
   function gaStatus(f) {
     const age = Date.now() - (Date.parse(f.fetchedAt || 0) || 0);
@@ -521,5 +610,5 @@ export function createMetrics({ dataDir, log = console, env = process.env, leads
     timer = setInterval(tick, TICK); if (timer.unref) timer.unref();
     say(`jobs on (PageSpeed ${psiKey() ? "yes" : "no key"}, GA4 ${gaConfigured() ? "yes" : "no key"})`);
   }
-  return { start, tick, perfView, shotOf, startManual, analyticsDoc, analyticsPeriod, refreshGa, autoDue, gaDue, scrub, flush: () => saving };
+  return { start, tick, perfView, shotOf, startManual, analyticsDoc, analyticsPeriod, refreshGa, autoDue, gaDue, scrub, flush: () => saving, leads: leadStore };
 }
