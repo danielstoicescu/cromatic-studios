@@ -65,16 +65,76 @@
     box.append(b, t); return box;
   }
 
+  // ---------- the lead conclusion: the live median for one page, phone and desktop ----------
+  // The numbers come from the same headline as the score panels below, never from the content file. They count up from 01
+  // once per visit to this section. The node is reused across re-renders, so a data refresh neither restarts nor cuts the count.
+  const COUNT_MS = 900, COUNT_FROM = 1;
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const stillMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const heroState = { key: "", node: null, nums: [], counted: false, raf: 0, guard: 0, io: null };
+  function heroFinish() {
+    cancelAnimationFrame(heroState.raf); clearTimeout(heroState.guard); heroState.raf = 0;
+    for (const x of heroState.nums) x.el.textContent = pad2(x.to);
+  }
+  function heroCount() {
+    if (heroState.counted) return;
+    heroState.counted = true;
+    if (heroState.io) heroState.io.disconnect();
+    if (stillMotion() || !heroState.nums.length) return heroFinish();
+    const t0 = performance.now();
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / COUNT_MS), e = 1 - Math.pow(1 - k, 3);
+      for (const x of heroState.nums) x.el.textContent = pad2(Math.max(COUNT_FROM, Math.round(COUNT_FROM + (x.to - COUNT_FROM) * e)));
+      if (k < 1) heroState.raf = requestAnimationFrame(step); else heroFinish();
+    };
+    heroState.raf = requestAnimationFrame(step);
+    heroState.guard = setTimeout(heroFinish, COUNT_MS + 600); // a hidden tab has no animation frames: the real number still lands
+  }
+  function heroArm() {
+    if (heroState.io) heroState.io.disconnect();
+    if (heroState.counted || !heroState.nums.length) return;
+    if (stillMotion() || !("IntersectionObserver" in window)) { heroState.counted = true; return heroFinish(); }
+    for (const x of heroState.nums) x.el.textContent = pad2(COUNT_FROM);
+    heroState.io = new IntersectionObserver((list) => { if (list.some((i) => i.isIntersecting)) heroCount(); }, { threshold: .6, rootMargin: "0px 0px -72px 0px" }); // when the numbers themselves are in view, clear of the phone's bottom bar
+    heroState.io.observe(heroState.node.querySelector(".prf-figs"));
+  }
+  function heroLeave() { cancelAnimationFrame(heroState.raf); clearTimeout(heroState.guard); heroState.raf = 0; heroState.counted = false; if (heroState.node) heroArm(); }
+  function hero(lead) {
+    const F = lead.figures, P = (data.pages || []).find((p) => p.path === F.path), of = (st) => { const h = P && P.strategies[st] && P.strategies[st].headline; return h && h.performance != null ? { v: Math.round(h.performance), n: h.n } : null; };
+    const m = of("mobile"), d = of("desktop"), vals = [m, d].filter(Boolean), low = vals.some((x) => x.v < F.goodFrom);
+    const text = !vals.length ? F.textNone : low ? F.textBelow : lead.text, prov = vals.some((x) => x.n < data.window);
+    const key = JSON.stringify([m, d, text, F.path]);
+    if (heroState.key === key && heroState.node) return heroState.node;
+    if (heroState.io) heroState.io.disconnect();
+    if (heroState.raf) { heroFinish(); heroState.counted = true; } // the numbers changed during a count: land on the new ones
+    const card = el("div", "prf-verdict"), head = el("div", "prf-verdict-h"), mark = el("span", "prf-verdict-i"), figs = el("div", "prf-figs" + (vals.some((x) => x.v >= 100) ? " d3" : ""));
+    mark.append(ic("i-gauge"));
+    head.append(mark, rich(el("p"), text));
+    const nums = [];
+    for (const [st, x] of [["mobile", m], ["desktop", d]]) {
+      const f = el("div", "prf-fig"); f.append(el("span", "prf-fig-l", STRAT[st]));
+      if (!x) { f.append(el("span", "prf-fig-none", "Fără scor Google")); figs.append(f); continue; }
+      const n = el("b", "", pad2(x.v)); n.style.width = Math.max(2, String(x.v).length) + "ch"; n.setAttribute("aria-hidden", "true");
+      const sr = el("span", "prf-sr", "scor " + x.v + " din 100");
+      f.append(n, sr); figs.append(f); nums.push({ el: n, to: x.v });
+    }
+    const cap = el("div", "prf-verdict-c", !vals.length ? "Google n-a reușit încă să măsoare " + F.path + "." : prov ? "Provizoriu pentru " + F.path + ": încă nu sunt " + data.window + " măsurători." : "Scorul de performanță pentru " + (P ? P.label + " (" + F.path + ")" : F.path) + ", mediana ultimelor " + data.window + " măsurători.");
+    card.append(head, figs, cap);
+    heroState.key = key; heroState.node = card; heroState.nums = nums;
+    heroArm();
+    return card;
+  }
+
   // ---------- Concluzii ----------
   function conclusions(C) {
     const list = Array.isArray(C.conclusions) ? C.conclusions : [];
     if (!list.length) return null;
     const s = sec("Concluzii"), lead = list.find((x) => x.lead), rest = list.filter((x) => x !== lead);
-    if (lead) { const v = el("div", "prf-verdict"); v.append(rich(el("p"), lead.text)); s.append(v); }
+    if (lead) s.append(lead.figures ? hero(lead) : rich(el("p", "prf-verdict-t"), lead.text));
     const ul = el("ul", "prf-cons");
     for (const c of rest) { const li = el("li"); li.append(dot({ good: "good", watch: "mid", bad: "bad" }[c.tone] || "none"), rich(el("span"), c.text)); ul.append(li); }
     s.append(ul);
-    if (C.writtenAt) s.append(el("div", "prf-asof", "Scrise pe " + day(C.writtenAt) + ", din măsurătorile de atunci. Cifrele de mai jos se actualizează singure, textul nu."));
+    if (C.writtenAt) s.append(el("div", "prf-asof", "Scrise pe " + day(C.writtenAt) + ", din măsurătorile de atunci. Cifrele din cardul galben și cele de mai jos se actualizează singure, restul textului nu."));
     return s;
   }
 
@@ -268,7 +328,7 @@
   const on = () => document.body.dataset.cat === "perf";
   function schedule() { clearTimeout(timer); if (!on()) return; timer = setTimeout(() => { if (on() && !document.hidden) refresh(); else schedule(); }, data && data.running ? 6000 : 60000); }
   let was = false;
-  function watch() { const now = on(); if (now && !was) refresh(true); if (!now) clearTimeout(timer); was = now; }
+  function watch() { const now = on(); if (now && !was) refresh(true); if (!now) { clearTimeout(timer); if (was) heroLeave(); } was = now; }
   new MutationObserver(watch).observe(document.body, { attributes: true, attributeFilter: ["data-cat"] });
   document.addEventListener("visibilitychange", () => { if (!document.hidden && on()) refresh(); });
   NARROW.addEventListener("change", () => { if (on() && data) render(true); });

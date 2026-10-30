@@ -11,10 +11,23 @@
 .prf-act-t { font-size: 13.5px; color: var(--muted); min-width: 0; }
 
 /* Concluzii: one sentence carries the page, the rest sit quietly under it */
-.prf-verdict { background: var(--yellow); color: var(--code-ink); border: var(--st); box-shadow: var(--sh); border-radius: 24px; padding: 26px 28px 28px; }
-.prf-verdict p { margin: 0; font: 900 clamp(27px, 3.5vw, 44px)/1.06 var(--f-d); letter-spacing: -.02em; max-width: 24ch; text-wrap: balance; }
-.prf-verdict em { font-style: italic; padding-right: .05em; }
-.prf-cons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 40px; }
+.prf-verdict { background: var(--yellow); color: var(--code-ink); border: var(--st); box-shadow: var(--sh); border-radius: 24px; padding: 30px 36px 30px 32px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head figs" "cap figs"; gap: 18px 48px; align-items: center; }
+.prf-verdict-h { grid-area: head; display: grid; gap: 18px; align-self: end; }
+.prf-verdict-i { width: 56px; height: 56px; border-radius: 50%; background: var(--code-ink); color: var(--yellow); display: grid; place-items: center; }
+.prf-verdict-i .ic { width: 32px; height: 32px; }
+.prf-verdict p, .prf-verdict-t { margin: 0; font: 900 clamp(26px, 3vw, 44px)/1.08 var(--f-d); letter-spacing: -.02em; text-wrap: balance; }
+.prf-verdict em, .prf-verdict-t em { font-style: italic; padding-right: .05em; }
+.prf-verdict-c { grid-area: cap; align-self: start; font-size: 14px; line-height: 1.4; text-wrap: balance; }
+.prf-figs { grid-area: figs; display: grid; grid-template-columns: auto auto; }
+.prf-fig { display: grid; gap: 6px; align-content: start; padding: 2px 36px; min-width: 0; }
+.prf-fig + .prf-fig { border-left: 1px solid var(--code-ink); padding-right: 0; }
+.prf-fig:first-child { padding-left: 0; }
+.prf-fig-l { font: 800 17px/1.2 var(--f-d); }
+.prf-fig b { display: block; font: 900 clamp(112px, 11.5vw, 172px)/.92 var(--f-d); font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; letter-spacing: -.03em; white-space: nowrap; }
+.prf-figs.d3 .prf-fig b { font-size: clamp(88px, 8.5vw, 132px); }
+.prf-fig-none { font: 800 23px/1.15 var(--f-d); max-width: 8em; margin-top: 8px; }
+.prf-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.prf-cons { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 40px; }
 .prf-cons li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 12px; font-size: 15px; line-height: 1.5; }
 .prf-cons em { font-style: italic; font-weight: 700; }
 .prf-asof { font-size: 12.5px; color: var(--muted); }
@@ -107,9 +120,16 @@
 .prf-runs { font: 500 12px/1.5 var(--f-m); color: var(--muted); }
 
 @media (max-width: 1180px) { .prf-pg { grid-template-columns: minmax(0, 1fr); gap: 10px; } .prf-pg-n b, .prf-pg-n span { display: inline; } .prf-pg-n span { margin-left: 8px; } .prf-routes { grid-template-columns: minmax(0, 1fr); } .prf-rt-d { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+@media (min-width: 761px) and (max-width: 1100px) { .prf-verdict { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "figs" "cap"; } }
 @media (max-width: 760px) {
   .prf-body { gap: 38px; }
-  .prf-verdict { padding: 20px 20px 22px; border-radius: 20px; }
+  .prf-verdict { padding: 20px 20px 20px; border-radius: 20px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "figs" "cap"; gap: 18px; }
+  .prf-verdict-h { gap: 14px; }
+  .prf-verdict-i { width: 46px; height: 46px; } .prf-verdict-i .ic { width: 26px; height: 26px; }
+  .prf-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 16px; border-top: 1px solid var(--code-ink); }
+  .prf-fig { padding: 0 0 0 16px; } .prf-fig:first-child { padding-left: 0; padding-right: 12px; }
+  .prf-fig b { font-size: min(27vw, 112px); }
+  .prf-figs.d3 .prf-fig b { font-size: min(18vw, 84px); }
   .prf-cons { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .prf-2 { grid-template-columns: minmax(0, 1fr); }
   .prf-st, .prf-rt { padding: 16px 16px 18px; }
