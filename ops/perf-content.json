@@ -2,8 +2,8 @@
   "writtenAt": "2026-10-30",
   "conclusions": [
     { "tone": "good", "lead": true, "text": "Homepage-ul e **rapid** la Google, pe telefon și pe desktop.", "figures": { "path": "/", "goodFrom": 90, "textBelow": "Homepage-ul a coborât sub 90 la Google.", "textNone": "Homepage-ul n-are încă un scor Google." } },
-    { "tone": "good", "text": "Vizitatorii reali de pe telefon văd conținutul principal în 2,3 s la percentila 75, adică Rapid. Pagina nu sare deloc: CLS 0." },
-    { "tone": "watch", "text": "Cel mai slab punct e răspunsul serverului: TTFB 842 ms la percentila 75, pe 28 de zile. HTML-ul de azi nu stă în cache la Cloudflare (cf-cache-status: DYNAMIC) și răspunde în 90 până la 235 ms din București." },
+    { "toneFrom": "mobile.LCP", "text": "Vizitatorii reali de pe telefon văd conținutul principal în {{mobile.LCP}} la percentila 75, adică {{mobile.LCP.cat}}. Cât sare pagina: CLS {{mobile.CLS}}." },
+    { "toneFrom": "mobile.TTFB", "text": "Răspunsul serverului: TTFB {{mobile.TTFB}} la percentila 75, pe 28 de zile, adică {{mobile.TTFB.cat}}. HTML-ul de azi nu stă în cache la Cloudflare (cf-cache-status: DYNAMIC) și răspunde în 90 până la 235 ms din București." },
     { "tone": "note", "text": "Datele pe 28 de zile includ încă perioada dinainte de ultimele reparații, deci rămân în urma site-ului de azi." },
     { "tone": "watch", "text": "Orașul n-are scor Google, pentru că Lighthouse eșuează pe el. Nu e un scor mic. E o măsurătoare care lipsește." },
     { "tone": "note", "text": "Cu orașul ca primă pagină, ajungi să conduci după 19 până la 30 s, în laborator. Homepage-ul de azi arată conținut real în 0,3 până la 1,7 s, iar drumul prin Drive costă doar 0,5 până la 2,6 s în plus față de orașul deschis direct." }

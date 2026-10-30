@@ -15,7 +15,7 @@
 import http from "node:http";
 import https from "node:https";
 import { createSign } from "node:crypto";
-import { readFileSync, writeFileSync, renameSync, statSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, statSync, unlinkSync, mkdirSync } from "node:fs";
 import { writeFile, rename } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -30,6 +30,9 @@ const TICK = 10 * 60e3, FIRST_TICK = 90e3;
 const GA_TOKEN_URL = "https://oauth2.googleapis.com/token", GA_API = "https://analyticsdata.googleapis.com", PSI_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const GA_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
 const LEAD = "generate_lead", PLACE = "map_place_open", GAME = "gloves_start"; // the site's real GA4 events (build/consent.mjs, src/app.js, src/minigame.js)
+const SHOT_SLUG = { "/": "home", "/ro/": "ro", "/city/": "city" }, SHOT_DIR = "perf-shots", SHOT_MAX = 400 * 1024; // the screenshot PSI returns, already a small JPEG: kept as it comes, latest only per page and device
+const SHOT_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+export const SHOT_KEY_RE = /^(home|ro|city)-(mobile|desktop)$/;
 const FIELD_KEYS = { LCP: "LARGEST_CONTENTFUL_PAINT_MS", FCP: "FIRST_CONTENTFUL_PAINT_MS", CLS: "CUMULATIVE_LAYOUT_SHIFT_SCORE", TTFB: "EXPERIMENTAL_TIME_TO_FIRST_BYTE", INP: "INTERACTION_TO_NEXT_PAINT" };
 
 const wait = (ms) => new Promise((r) => { const t = setTimeout(r, ms); if (t.unref) t.unref(); });
@@ -97,14 +100,26 @@ const num = (a) => (a && finite(a.numericValue) ? a.numericValue : null);
 export function rowFromPsi(j, base) {
   const lh = (j && j.lighthouseResult) || {}, cats = lh.categories || {}, au = lh.audits || {};
   if (lh.runtimeError && lh.runtimeError.code && lh.runtimeError.code !== "NO_ERROR") return { ...base, ok: false, error: { code: "lighthouse", http: 200, message: String(lh.runtimeError.message || lh.runtimeError.code) } };
+  const work = (au["mainthread-work-breakdown"] && au["mainthread-work-breakdown"].details && au["mainthread-work-breakdown"].details.items) || [];
   const row = {
     ...base, ok: true, fetchTime: lh.fetchTime || j.analysisUTCTimestamp || null,
     performance: score(cats.performance), accessibility: score(cats.accessibility), bestPractices: score(cats["best-practices"]), seo: score(cats.seo),
     lcpMs: num(au["largest-contentful-paint"]), fcpMs: num(au["first-contentful-paint"]), tbtMs: num(au["total-blocking-time"]), cls: num(au["cumulative-layout-shift"]), speedIndexMs: num(au["speed-index"]),
     field: { page: fieldOf(j.loadingExperience), origin: fieldOf(j.originLoadingExperience) },
+    ...(work.length ? { work: Object.fromEntries(work.filter((x) => x && x.group && finite(x.duration)).map((x) => [x.group, Math.round(x.duration)])) } : {}), // where the main thread's time went, per run: what TBT can be compared against later
   };
   if (row.performance == null) return { ...base, ok: false, error: { code: "no-score", http: 200, message: "Lighthouse a terminat fără scor de performanță." } };
   return row;
+}
+/** the page as Lighthouse last saw it, and the filmstrip: only what is really an image, under the size cap */
+export function shotFromPsi(j) {
+  const au = (j && j.lighthouseResult && j.lighthouseResult.audits) || {}, fin = au["final-screenshot"] && au["final-screenshot"].details && au["final-screenshot"].details.data;
+  if (typeof fin !== "string" || !SHOT_RE.test(fin)) return null;
+  const items = (au["screenshot-thumbnails"] && au["screenshot-thumbnails"].details && au["screenshot-thumbnails"].details.items) || [];
+  const thumbs = items.filter((x) => x && typeof x.data === "string" && SHOT_RE.test(x.data) && finite(x.timing)).map((x) => ({ ms: Math.round(x.timing), data: x.data }));
+  const size = fin.length + thumbs.reduce((a, x) => a + x.data.length, 0);
+  if (fin.length > SHOT_MAX) return null;
+  return { final: fin, thumbs: size > SHOT_MAX ? [] : thumbs };
 }
 /** before.json (refs/psi, the 30 Oct audit), shape-converted: the first entry of the history */
 export function seedRun(seed) {
@@ -277,6 +292,7 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
         if (r.status === 200 && j) {
           const row = rowFromPsi(j, { ...row0, ms: r.ms, tries: i });
           if (row.ok) {
+            Object.defineProperty(row, "shot", { value: shotFromPsi(j), enumerable: false }); // goes to its own file, never into perf.json
             const ft = Date.parse(row.fetchTime || "") || 0;
             row.cached = r.ms < dev("OPS_PSI_CACHED_MS", CACHED_MS) * 1 || (!!row.fetchTime && seen.has(row.fetchTime)) || (ft > 0 && ft < t0 - 300e3);
             if (row.fetchTime) seen.add(row.fetchTime);
@@ -292,6 +308,17 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
     return { ...row0, ok: false, ms: last.ms, tries, error: { code: last.code, http: last.http, message: last.message } };
   }
 
+  // ---------- the latest screenshot per page and device, one small file each (never per run)
+  async function saveShot(path, st, row) {
+    const key = SHOT_SLUG[path] + "-" + st;
+    try {
+      mkdirSync(P(SHOT_DIR), { recursive: true });
+      const body = JSON.stringify({ at: row.at, final: row.shot.final, thumbs: row.shot.thumbs }), f = P(join(SHOT_DIR, key + ".json")), tmp = f + ".tmp-" + process.pid;
+      await writeFile(tmp, body, { mode: 0o600 }); await rename(tmp, f);
+      const s = load(); s.job.shots = { ...(s.job.shots || {}), [key]: { at: row.at, thumbs: row.shot.thumbs.length } };
+    } catch (e) { warn("perf shot: " + e.message); } // a missing picture never costs the measurement
+  }
+  function shotOf(key) { if (!SHOT_KEY_RE.test(String(key))) return null; const j = readJson(join(SHOT_DIR, key + ".json"), null); return j && j.final ? j : null; }
   async function runPsi(trigger, by) {
     const s = load(), id = "run-" + Date.now().toString(36);
     const run = { id, at: new Date().toISOString(), trigger, ...(by ? { by } : {}), state: "running", results: [] };
@@ -304,7 +331,9 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
       for (const [path] of PATHS) for (const st of STRATEGIES) {
         run.current = { path, strategy: st };
         const row = await psiOne(path, st, seen);
-        run.results.push(row); await saveStore();
+        run.results.push(row);
+        if (row.ok && row.shot) await saveShot(path, st, row); // a cached answer is still Google's latest picture of the page
+        await saveStore();
         await wait(BETWEEN);
       }
       run.state = "done";
@@ -348,10 +377,11 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
         const all = rowsOfPair(path, st), fresh = all.filter((r) => r.ok && !r.cached), win = fresh.slice(0, WINDOW), last = all[0] || null;
         const headline = win.length ? {
           performance: med(win, "performance"), accessibility: med(win, "accessibility"), bestPractices: med(win, "bestPractices"), seo: med(win, "seo"),
-          lcpMs: med(win, "lcpMs"), fcpMs: med(win, "fcpMs"), tbtMs: med(win, "tbtMs"), cls: med(win, "cls"), n: win.length,
+          lcpMs: med(win, "lcpMs"), fcpMs: med(win, "fcpMs"), tbtMs: med(win, "tbtMs"), cls: med(win, "cls"), speedIndexMs: med(win, "speedIndexMs"), n: win.length,
           samples: win.map((r) => r.performance),
         } : null;
-        strategies[st] = { headline, measuredAt: win[0] ? win[0].at : null, last: last ? { at: last.at, ok: !!last.ok, cached: !!last.cached, ms: last.ms ?? null, error: last.error || null } : null, failures: all.filter((r) => !r.ok).length };
+        const shotMeta = (s.job.shots || {})[SHOT_SLUG[path] + "-" + st] || null;
+        strategies[st] = { headline, shot: shotMeta ? { at: shotMeta.at, thumbs: shotMeta.thumbs } : null, measuredAt: win[0] ? win[0].at : null, last: last ? { at: last.at, ok: !!last.ok, cached: !!last.cached, ms: last.ms ?? null, error: last.error || null } : null, failures: all.filter((r) => !r.ok).length };
       }
       return { path, label, strategies };
     });
@@ -450,5 +480,5 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
     timer = setInterval(tick, TICK); if (timer.unref) timer.unref();
     say(`jobs on (PageSpeed ${psiKey() ? "yes" : "no key"}, GA4 ${gaConfigured() ? "yes" : "no key"})`);
   }
-  return { start, tick, perfView, startManual, analyticsDoc, refreshGa, autoDue, gaDue, scrub, flush: () => saving };
+  return { start, tick, perfView, shotOf, startManual, analyticsDoc, refreshGa, autoDue, gaDue, scrub, flush: () => saving };
 }

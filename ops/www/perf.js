@@ -11,7 +11,8 @@
   const CAT = { FAST: ["good", "Rapid"], AVERAGE: ["mid", "Mediu"], SLOW: ["bad", "Lent"] };
   const FIELD = [["LCP", "Conținut principal", "LCP"], ["FCP", "Primul conținut", "FCP"], ["CLS", "Stabilitatea paginii", "CLS"], ["TTFB", "Răspunsul serverului", "TTFB"], ["INP", "Răspuns la atingeri și clicuri", "INP"]];
   const NARROW = matchMedia("(max-width: 760px)"); // the chart is drawn for its width, so its labels stay readable on a phone
-  const ui = { field: "origin", trendS: "mobile", trendM: "performance" };
+  const SLUG = { "/": "home", "/ro/": "ro", "/city/": "city" };
+  const ui = { repPage: "/", repSt: "mobile", field: "origin", trendS: "mobile", trendM: "performance" };
   let data = null, lastJson = "", timer = 0, message = "", busy = false;
 
   const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
@@ -71,70 +72,94 @@
   const COUNT_MS = 900, COUNT_FROM = 1;
   const pad2 = (n) => String(n).padStart(2, "0");
   const stillMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const heroState = { key: "", node: null, nums: [], counted: false, raf: 0, guard: 0, io: null };
-  function heroFinish() {
-    cancelAnimationFrame(heroState.raf); clearTimeout(heroState.guard); heroState.raf = 0;
-    for (const x of heroState.nums) x.el.textContent = pad2(x.to);
-  }
-  function heroCount() {
-    if (heroState.counted) return;
-    heroState.counted = true;
-    if (heroState.io) heroState.io.disconnect();
-    if (stillMotion() || !heroState.nums.length) return heroFinish();
-    const t0 = performance.now();
-    const step = (now) => {
-      const k = Math.min(1, (now - t0) / COUNT_MS), e = 1 - Math.pow(1 - k, 3);
-      for (const x of heroState.nums) x.el.textContent = pad2(Math.max(COUNT_FROM, Math.round(COUNT_FROM + (x.to - COUNT_FROM) * e)));
-      if (k < 1) heroState.raf = requestAnimationFrame(step); else heroFinish();
+  // one counter per card: rings and figures run on the same clock, once per visit to the section
+  function makeCounter(targetSel) {
+    const c = { key: "", node: null, nums: [], counted: false, raf: 0, guard: 0, io: null };
+    const put = (x, v) => { x.el.textContent = pad2(v); if (x.arc) x.arc.setAttribute("stroke-dashoffset", String(100 - v)); };
+    const finish = () => { cancelAnimationFrame(c.raf); clearTimeout(c.guard); c.raf = 0; for (const x of c.nums) put(x, x.to); };
+    function count() {
+      if (c.counted) return;
+      c.counted = true;
+      if (c.io) c.io.disconnect();
+      if (stillMotion() || !c.nums.length) return finish();
+      const t0 = performance.now();
+      const step = (now) => {
+        const k = Math.min(1, (now - t0) / COUNT_MS), e = 1 - Math.pow(1 - k, 3);
+        for (const x of c.nums) put(x, Math.max(COUNT_FROM, Math.round(COUNT_FROM + (x.to - COUNT_FROM) * e)));
+        if (k < 1) c.raf = requestAnimationFrame(step); else finish();
+      };
+      c.raf = requestAnimationFrame(step);
+      c.guard = setTimeout(finish, COUNT_MS + 600); // a hidden tab has no animation frames: the real number still lands
+    }
+    function arm() {
+      if (c.io) c.io.disconnect();
+      if (c.counted || !c.nums.length) return;
+      if (stillMotion() || !("IntersectionObserver" in window)) { c.counted = true; return finish(); }
+      for (const x of c.nums) put(x, COUNT_FROM);
+      c.io = new IntersectionObserver((list) => { if (list.some((i) => i.isIntersecting)) count(); }, { threshold: .6, rootMargin: "0px 0px -72px 0px" }); // when the numbers themselves are in view, clear of the phone's bottom bar
+      c.io.observe(c.node.querySelector(targetSel));
+    }
+    return {
+      // the node is reused while its data is the same, so a refresh neither restarts nor cuts the count
+      keep(key, build) {
+        if (c.key === key && c.node) return c.node;
+        if (c.io) c.io.disconnect();
+        if (c.raf) { finish(); c.counted = true; } // the numbers changed during a count: land on the new ones
+        const made = build();
+        c.key = key; c.node = made.node; c.nums = made.nums;
+        arm();
+        return c.node;
+      },
+      leave() { cancelAnimationFrame(c.raf); clearTimeout(c.guard); c.raf = 0; c.counted = false; if (c.node) arm(); },
     };
-    heroState.raf = requestAnimationFrame(step);
-    heroState.guard = setTimeout(heroFinish, COUNT_MS + 600); // a hidden tab has no animation frames: the real number still lands
   }
-  function heroArm() {
-    if (heroState.io) heroState.io.disconnect();
-    if (heroState.counted || !heroState.nums.length) return;
-    if (stillMotion() || !("IntersectionObserver" in window)) { heroState.counted = true; return heroFinish(); }
-    for (const x of heroState.nums) x.el.textContent = pad2(COUNT_FROM);
-    heroState.io = new IntersectionObserver((list) => { if (list.some((i) => i.isIntersecting)) heroCount(); }, { threshold: .6, rootMargin: "0px 0px -72px 0px" }); // when the numbers themselves are in view, clear of the phone's bottom bar
-    heroState.io.observe(heroState.node.querySelector(".prf-figs"));
-  }
-  function heroLeave() { cancelAnimationFrame(heroState.raf); clearTimeout(heroState.guard); heroState.raf = 0; heroState.counted = false; if (heroState.node) heroArm(); }
+  const heroC = makeCounter(".prf-figs");
   function hero(lead) {
     const F = lead.figures, P = (data.pages || []).find((p) => p.path === F.path), of = (st) => { const h = P && P.strategies[st] && P.strategies[st].headline; return h && h.performance != null ? { v: Math.round(h.performance), n: h.n } : null; };
     const m = of("mobile"), d = of("desktop"), vals = [m, d].filter(Boolean), low = vals.some((x) => x.v < F.goodFrom);
     const text = !vals.length ? F.textNone : low ? F.textBelow : lead.text, prov = vals.some((x) => x.n < data.window);
     const key = JSON.stringify([m, d, text, F.path]);
-    if (heroState.key === key && heroState.node) return heroState.node;
-    if (heroState.io) heroState.io.disconnect();
-    if (heroState.raf) { heroFinish(); heroState.counted = true; } // the numbers changed during a count: land on the new ones
+    return heroC.keep(key, () => {
     const card = el("div", "prf-verdict"), head = el("div", "prf-verdict-h"), mark = el("span", "prf-verdict-i"), figs = el("div", "prf-figs" + (vals.some((x) => x.v >= 100) ? " d3" : ""));
     mark.append(ic("i-gauge"));
     head.append(mark, rich(el("p"), text));
     const nums = [];
     for (const [st, x] of [["mobile", m], ["desktop", d]]) {
-      const f = el("div", "prf-fig"); f.append(el("span", "prf-fig-l", STRAT[st]));
-      if (!x) { f.append(el("span", "prf-fig-none", "Fără scor Google")); figs.append(f); continue; }
+      if (!x) { const f = el("div", "prf-fig"); f.append(el("span", "prf-fig-l", STRAT[st]), el("span", "prf-fig-none", "Fără scor Google")); figs.append(f); continue; }
+      const f = el("button", "prf-fig"); f.type = "button"; f.title = "Arată raportul pentru " + STRAT[st].toLowerCase(); f.onclick = () => openReport(F.path, st); f.append(el("span", "prf-fig-l", STRAT[st]));
       const n = el("b", "", pad2(x.v)); n.style.width = Math.max(2, String(x.v).length) + "ch"; n.setAttribute("aria-hidden", "true");
       const sr = el("span", "prf-sr", "scor " + x.v + " din 100");
       f.append(n, sr); figs.append(f); nums.push({ el: n, to: x.v });
     }
     const cap = el("div", "prf-verdict-c", !vals.length ? "Google n-a reușit încă să măsoare " + F.path + "." : prov ? "Provizoriu pentru " + F.path + ": încă nu sunt " + data.window + " măsurători." : "Scorul de performanță pentru " + (P ? P.label + " (" + F.path + ")" : F.path) + ", mediana ultimelor " + data.window + " măsurători.");
     card.append(head, figs, cap);
-    heroState.key = key; heroState.node = card; heroState.nums = nums;
-    heroArm();
-    return card;
+    return { node: card, nums };
+    });
   }
 
   // ---------- Concluzii ----------
+  // {{mobile.LCP}} and {{mobile.LCP.cat}} in the content file read the newest CrUX data for the whole site; a conclusion whose numbers are missing is left out, never shown half
+  function crux(tok) {
+    const [st, key, part] = tok.split("."), m = data.field && data.field.origin && data.field.origin[st] && data.field.origin[st].metrics && data.field.origin[st].metrics[key];
+    if (!m) return null;
+    if (part === "cat") return CAT[m.cat] ? CAT[m.cat][1] : null;
+    return key === "CLS" ? cls(m.p75) : ms(m.p75);
+  }
+  function fillText(t) { let miss = false; const out = String(t || "").replace(/\{\{([\w.]+)\}\}/g, (_, k) => { const v = crux(k); if (v == null) miss = true; return v == null ? "" : v; }); return miss ? null : out; }
+  const leadOf = (C) => (Array.isArray(C.conclusions) ? C.conclusions : []).find((x) => x.lead);
+  function verdict(C) { const lead = leadOf(C); return lead ? (lead.figures ? hero(lead) : rich(el("p", "prf-verdict-t"), lead.text)) : null; }
   function conclusions(C) {
-    const list = Array.isArray(C.conclusions) ? C.conclusions : [];
-    if (!list.length) return null;
-    const s = sec("Concluzii"), lead = list.find((x) => x.lead), rest = list.filter((x) => x !== lead);
-    if (lead) s.append(lead.figures ? hero(lead) : rich(el("p", "prf-verdict-t"), lead.text));
-    const ul = el("ul", "prf-cons");
-    for (const c of rest) { const li = el("li"); li.append(dot({ good: "good", watch: "mid", bad: "bad" }[c.tone] || "none"), rich(el("span"), c.text)); ul.append(li); }
+    const rest = (Array.isArray(C.conclusions) ? C.conclusions : []).filter((x) => !x.lead);
+    if (!rest.length) return null;
+    const s = sec("Concluzii"), ul = el("ul", "prf-cons");
+    for (const c of rest) {
+      const text = fillText(c.text); if (text == null) continue;
+      let tone = { good: "good", watch: "mid", bad: "bad" }[c.tone] || "none";
+      if (c.toneFrom) { const [st, key] = c.toneFrom.split("."), m = data.field.origin[st] && data.field.origin[st].metrics[key]; tone = m && CAT[m.cat] ? CAT[m.cat][0] : "none"; }
+      const li = el("li"); li.append(dot(tone), rich(el("span"), text)); ul.append(li);
+    }
     s.append(ul);
-    if (C.writtenAt) s.append(el("div", "prf-asof", "Scrise pe " + day(C.writtenAt) + ", din măsurătorile de atunci. Cifrele din cardul galben și cele de mai jos se actualizează singure, restul textului nu."));
+    if (C.writtenAt) s.append(el("div", "prf-asof", "Scrise pe " + day(C.writtenAt) + ". Cifrele din cardul galben și cele de la vizitatorii reali se actualizează singure, restul textului nu."));
     return s;
   }
 
@@ -143,45 +168,123 @@
     const e = last && last.error; if (!e) return "Google n-a întors încă un scor pentru pagina asta.";
     const secs = last.ms ? " după circa " + Math.round(last.ms / 1000) + " s" : "";
     if (e.http && e.http >= 400 && e.http < 500) return "Google a refuzat cererea (HTTP " + e.http + (e.message ? ": „" + e.message + "”" : "") + "). Nu e o problemă a paginii.";
-    if (e.http && e.http < 400 || e.http >= 500) return "Lighthouse eșuează pe pagina asta" + secs + (e.http ? ", HTTP " + e.http : "") + (e.message ? ": „" + e.message + "”" : "") + ".";
+    if (e.http && e.http < 400 || e.http >= 500) return "Lighthouse eșuează pe pagina asta" + secs + (e.http ? ", HTTP " + e.http : "") + (e.message ? ": „" + String(e.message).replace(/\.$/, "") + "”" : "") + ".";
     return e.message || "Google n-a răspuns" + secs + ".";
   }
-  function panel(st, S) {
-    const H = S.headline, p = el("article", "prf-st" + (H ? "" : " none")), head = el("div", "prf-st-h"); head.append(STRAT[st]);
-    const at = S.measuredAt || (S.last && S.last.at); if (at) head.append(el("span", "", when(at)));
-    p.append(head);
-    if (!H) {
-      p.append(el("div", "prf-none", "Fără scor Google"), el("div", "prf-why", reason(S.last)), el("div", "prf-why", "Nu e 0 și nu e un scor mic. Google n-a reușit să măsoare."));
-      return p;
-    }
-    const prov = H.n < data.window, sc = el("div", "prf-sc" + (prov ? " prov" : "")), bar = el("div", "prf-bar"), fill = el("i", band(H.performance));
-    const perf = Math.round(H.performance); fill.style.width = perf + "%"; bar.append(fill); bar.setAttribute("aria-hidden", "true");
-    const num = el("b", "", String(perf)); num.setAttribute("aria-label", "Scor de performanță " + perf + " din 100");
-    sc.append(num, bar); p.append(sc);
-    const how = el("div", "prf-how");
-    if (prov) { how.append(el("strong", "", "Provizoriu. "), H.n === 1 ? "O singură măsurătoare din cele " + data.window + " care fac cifra sigură." : H.n + " măsurători din cele " + data.window + " care fac cifra sigură: " + H.samples.join(" și ") + "."); }
-    else how.append("Mediana din " + H.samples.join(", ") + ", ultimele " + data.window + " măsurători.");
-    p.append(how);
-    const sub = el("dl", "prf-sub");
-    [["Accesibilitate", H.accessibility], ["Bune practici", H.bestPractices], ["SEO", H.seo]].forEach(([k, v]) => { const d = el("div"); d.append(el("dt", "", k), el("dd", "", v == null ? "–" : String(Math.round(v)))); sub.append(d); });
-    p.append(sub);
-    const vit = el("dl", "prf-vit");
-    [["Conținut principal (LCP)", ms(H.lcpMs)], ["Primul conținut (FCP)", ms(H.fcpMs)], ["Blocaj (TBT)", ms(H.tbtMs)], ["Salt de pagină (CLS)", cls(H.cls)]].forEach(([k, v]) => { const d = el("div"); d.append(el("dt", "", k), el("dd", "", v)); vit.append(d); });
-    p.append(vit);
-    if (S.last && !S.last.ok) { const w = el("div", "prf-warn"); w.append(dot("mid"), el("span", "", "Ultima încercare a eșuat (" + when(S.last.at) + "). Cifra vine din măsurătorile reușite.")); p.append(w); }
-    return p;
+  // Google's own limits, per device, the same ones behind its colours: good up to the first number, poor over the second
+  const TH = {
+    mobile: { fcpMs: [1800, 3000], lcpMs: [2500, 4000], tbtMs: [200, 600], cls: [.1, .25], speedIndexMs: [3400, 5800] },
+    desktop: { fcpMs: [934, 1600], lcpMs: [1200, 2400], tbtMs: [150, 350], cls: [.1, .25], speedIndexMs: [1311, 2300] },
+  };
+  const METRICS = [["fcpMs", "Primul conținut", "FCP"], ["lcpMs", "Conținut principal", "LCP"], ["tbtMs", "Blocaj", "TBT"], ["cls", "Salt de pagină", "CLS"], ["speedIndexMs", "Viteza de afișare", "Speed Index"]];
+  const WORD = { good: "Bun", mid: "De îmbunătățit", bad: "Slab" };
+  const mk = (k) => el("span", "prf-mk " + k);
+  const shotCache = new Map();
+  function ring(v, cls) {
+    const w = el("div", "prf-ring " + cls + " " + band(v)), svg = document.createElementNS(NS, "svg"), R = cls === "big" ? 45 : 42;
+    svg.setAttribute("viewBox", "0 0 100 100"); svg.setAttribute("aria-hidden", "true");
+    const c = (k) => { const n = document.createElementNS(NS, "circle"); n.setAttribute("cx", 50); n.setAttribute("cy", 50); n.setAttribute("r", R); n.setAttribute("class", k); n.setAttribute("pathLength", 100); return n; };
+    const arc = c("prf-ring-a"); arc.setAttribute("transform", "rotate(-90 50 50)"); arc.setAttribute("stroke-dasharray", "100 100"); arc.setAttribute("stroke-dashoffset", String(100 - v));
+    svg.append(c("prf-ring-t"), arc);
+    const b = el("b", "", pad2(v)); b.setAttribute("aria-hidden", "true");
+    w.append(svg, b);
+    return { w, num: { el: b, to: v, arc } };
   }
-  function scores(D) {
-    const s = sec("Scorurile Google", "Măsurate în laborator de Lighthouse, cu aceeași pagină și același telefon simulat de fiecare dată. O singură rulare poate ieși pe lângă, așa că cifra mare e mediana ultimelor " + D.window + ". Un răspuns venit din cache-ul Google nu se numără.");
-    const key = el("div", "prf-key"); [["good", "90 sau peste"], ["mid", "50 până la 89"], ["bad", "sub 50"], ["none", "fără scor"]].forEach(([k, t]) => { const x = el("span"); x.append(dot(k), t); key.append(x); }); s.append(key);
-    const box = el("div", "prf-pages");
+  function small(label, v, nums) {
+    const f = el("div", "prf-sring");
+    if (v == null) { f.append(el("div", "prf-ring small none"), el("span", "", label + ": fără scor")); return f; }
+    const r = ring(Math.round(v), "small"); nums.push(r.num);
+    f.append(r.w, el("span", "", label), el("span", "prf-sr", "scor " + Math.round(v) + " din 100")); return f;
+  }
+  function metricRow(key, name, code, v, st) {
+    const row = el("div", "prf-m"), head = el("div", "prf-m-h"), n = el("span", "prf-m-n"); n.append(name, el("small", "", code));
+    const [g, m] = TH[st][key], f = key === "cls" ? cls : ms;
+    if (v == null) { head.append(n, el("span", "prf-m-w", "fără date")); row.append(head); return row; }
+    const k = v <= g ? "good" : v <= m ? "mid" : "bad", w = el("span", "prf-m-w"); w.append(mk(k), WORD[k]);
+    head.append(n, w, el("b", "", f(v)));
+    const pos = v <= g ? v / g / 3 : v <= m ? (1 + (v - g) / (m - g)) / 3 : (2 + Math.min(1, (v - m) / m)) / 3;
+    const bar = el("div", "prf-m-b"); bar.setAttribute("aria-hidden", "true"); bar.append(el("i", "good"), el("i", "mid"), el("i", "bad"));
+    const dot = el("span", "prf-m-d " + k); dot.style.left = (pos * 100).toFixed(1) + "%"; bar.append(dot);
+    const ticks = el("div", "prf-m-t"); ticks.setAttribute("aria-hidden", "true"); ticks.append(el("span", "", f(g)), el("span", "", f(m)));
+    row.append(head, bar, ticks); return row;
+  }
+  function deviceFrame(path, st, S) {
+    const box = el("figure", "prf-dev " + st), screen = el("div", "prf-dev-s"), cap = el("figcaption", "prf-dev-c");
+    if (st === "desktop") box.append(el("div", "prf-dev-b", "cromaticstudios.com" + path));
+    box.append(screen, cap);
+    if (!S.shot) { screen.append(el("span", "prf-dev-e", "Captura apare după următoarea măsurătoare. Cele vechi n-au păstrat-o.")); cap.textContent = "Fără captură încă."; return { box }; }
+    cap.textContent = "Captură din ultima măsurătoare, " + when(S.shot.at) + ".";
+    const img = el("img"); img.alt = "Cum arată " + path + " pe " + STRAT[st].toLowerCase() + " la finalul încărcării"; img.decoding = "async"; screen.append(img);
+    return { box, img };
+  }
+  async function fillShot(key, S, img, film) {
+    const id = key + "@" + S.shot.at;
+    try {
+      if (!shotCache.has(id)) { const r = await fetch("/api/ops/perf/shot/" + key, { credentials: "same-origin", cache: "no-store" }); const j = await r.json(); if (!j.ok) throw new Error("shot"); shotCache.set(id, j); }
+      const j = shotCache.get(id);
+      img.src = j.final;
+      if (film) for (const t of j.thumbs || []) { const f = el("figure"), i = el("img"); i.src = t.data; i.alt = ""; f.append(i, el("figcaption", "", fx(t.ms / 1000, 1) + " s")); film.append(f); }
+    } catch { img.replaceWith(el("span", "prf-dev-e", "Captura nu s-a putut citi acum.")); }
+  }
+  const repC = makeCounter(".prf-ring.big");
+  function repCard(D) {
+    const P = D.pages.find((p) => p.path === ui.repPage) || D.pages[0], st = ui.repSt, S = P.strategies[st], H = S.headline;
+    const key = JSON.stringify([P.path, st, H, S.shot, S.last && S.last.ok, D.window]);
+    return repC.keep(key, () => {
+      const card = el("div", "prf-rep " + st), nums = [];
+      if (!H) {
+        card.classList.add("none");
+        card.append(el("div", "prf-none", "Fără scor Google"), el("p", "prf-why", reason(S.last)), el("p", "prf-why", "Nu e 0 și nu e un scor mic. Google n-a reușit să măsoare, deci nu desenăm nimic."));
+        return { node: card, nums };
+      }
+      const left = el("div", "prf-rep-l"), v = Math.round(H.performance), big = ring(v, "big"), prov = H.n < D.window; nums.push(big.num);
+      if (prov) big.w.classList.add("prov");
+      const title = el("div", "prf-rep-t"); title.append(el("b", "", "Performance"), el("span", "prf-sr", "scor " + v + " din 100"));
+      const smalls = el("div", "prf-srings"); smalls.append(small("Accesibilitate", H.accessibility, nums), small("Bune practici", H.bestPractices, nums), small("SEO", H.seo, nums));
+      const key2 = el("div", "prf-key"); [["bad", "0 până la 49"], ["mid", "50 până la 89"], ["good", "90 până la 100"]].forEach(([k, t]) => { const x = el("span"); x.append(mk(k), t); key2.append(x); });
+      left.append(big.w, title, smalls, key2);
+      const mid = el("div", "prf-rep-m"); for (const [k, n, c] of METRICS) mid.append(metricRow(k, n, c, H[k], st));
+      const dev = deviceFrame(P.path, st, S);
+      const foot = el("div", "prf-rep-f"), how = el("p");
+      if (prov) how.append(el("strong", "", "Provizoriu. "), (H.n === 1 ? "O singură măsurătoare" : H.n + " măsurători") + " din cele " + D.window + " care fac cifrele sigure.");
+      else how.append("Mediana ultimelor " + D.window + " măsurători (" + H.samples.join(", ") + "). Fiecare cifră de aici e mediana ei, deci nu vin toate din aceeași rulare. Doar captura e din ultima.");
+      foot.append(how, el("p", "", st === "mobile" ? "Telefon emulat, pe 4G lent, în laboratorul Lighthouse. Nu e telefonul unui vizitator." : "Desktop emulat, pe o conexiune rapidă, în laboratorul Lighthouse."));
+      if (S.last && !S.last.ok) { const w = el("p", "prf-warn"); w.append(mk("mid"), el("span", "", "Ultima încercare a eșuat (" + when(S.last.at) + "). Cifrele vin din măsurătorile reușite.")); foot.append(w); }
+      const film = S.shot && S.shot.thumbs ? el("div", "prf-film") : null;
+      card.append(left, mid, dev.box);
+      if (film) card.append(film);
+      card.append(foot);
+      if (dev.img) fillShot(SLUG[P.path] + "-" + st, S, dev.img, film);
+      return { node: card, nums };
+    });
+  }
+  function report(D) {
+    const s = sec("Raportul Google"); s.id = "prf-rep";
+    const ctl = el("div", "prf-ctl");
+    ctl.append(seg("Pagina", D.pages.map((p) => [p.path, p.path]), ui.repPage, (v) => { ui.repPage = v; render(true); }), seg("Dispozitiv", [["mobile", "Telefon"], ["desktop", "Desktop"]], ui.repSt, (v) => { ui.repSt = v; render(true); }));
+    s.append(ctl, repCard(D));
+    return s;
+  }
+  // every page at once: what the report cannot show while it shows one
+  function overview(D) {
+    const s = sec("Toate paginile"), wrap = el("div", "prf-tcard"), t = el("table", "prf-tbl"), th = el("thead"), tr0 = el("tr"), tb = el("tbody");
+    ["Pagina", "Telefon", "Desktop"].forEach((x) => { const c = el("th", "", x); c.scope = "col"; tr0.append(c); }); th.append(tr0); t.append(th);
     for (const P of D.pages) {
-      const r = el("div", "prf-pg"), n = el("div", "prf-pg-n"), two = el("div", "prf-2");
-      n.append(el("b", "", P.label), el("span", "", P.path));
-      two.append(panel("mobile", P.strategies.mobile), panel("desktop", P.strategies.desktop));
-      r.append(n, two); box.append(r);
+      const tr = el("tr"), n = el("td"); n.append(P.label, el("small", "", P.path)); tr.append(n);
+      for (const st of ["mobile", "desktop"]) {
+        const td = el("td"), S = P.strategies[st], H = S.headline, b = el("button", "prf-ov"); b.type = "button"; b.onclick = () => openReport(P.path, st);
+        if (!H) { b.setAttribute("aria-label", P.path + " pe " + STRAT[st].toLowerCase() + ": fără scor Google. Arată motivul."); b.append(el("span", "prf-c", "Fără scor")); }
+        else { const v = Math.round(H.performance), l = el("span", "prf-v"); l.append(mk(band(v)), String(v)); b.append(l, el("small", "", H.n < D.window ? "Provizoriu, " + H.n + " din " + D.window : "din " + H.samples.join(", "))); b.setAttribute("aria-label", P.path + " pe " + STRAT[st].toLowerCase() + ": " + v + ". Arată raportul."); }
+        td.append(b); tr.append(td);
+      }
+      tb.append(tr);
     }
-    s.append(box); return s;
+    t.append(tb); wrap.append(t); s.append(wrap);
+    return s;
+  }
+  function openReport(path, st) {
+    ui.repPage = path; ui.repSt = st; render(true);
+    const r = document.getElementById("prf-rep"); if (r) r.scrollIntoView({ block: "start", behavior: stillMotion() ? "auto" : "smooth" });
   }
 
   // ---------- real visitors ----------
@@ -312,7 +415,7 @@
     lastJson = J;
     const y = window.scrollY, focusId = document.activeElement && document.activeElement.id;
     stamp.textContent = data.lastRunAt ? "ultima măsurătoare " + when(data.lastRunAt) : "";
-    const C = data.content || {}, parts = [actions(), conclusions(C), scores(data), field(data), trend(data), cityFirst(C), history(data)].filter(Boolean);
+    const C = data.content || {}, parts = [actions(), verdict(C), report(data), conclusions(C), overview(data), field(data), trend(data), cityFirst(C), history(data)].filter(Boolean);
     body.replaceChildren(...parts);
     if (force) { window.scrollTo({ top: y }); if (focusId) { const f = document.getElementById(focusId); if (f && !f.disabled) f.focus({ preventScroll: true }); } }
   }
@@ -328,7 +431,7 @@
   const on = () => document.body.dataset.cat === "perf";
   function schedule() { clearTimeout(timer); if (!on()) return; timer = setTimeout(() => { if (on() && !document.hidden) refresh(); else schedule(); }, data && data.running ? 6000 : 60000); }
   let was = false;
-  function watch() { const now = on(); if (now && !was) refresh(true); if (!now) { clearTimeout(timer); if (was) heroLeave(); } was = now; }
+  function watch() { const now = on(); if (now && !was) refresh(true); if (!now) { clearTimeout(timer); if (was) { heroC.leave(); repC.leave(); } } was = now; }
   new MutationObserver(watch).observe(document.body, { attributes: true, attributeFilter: ["data-cat"] });
   document.addEventListener("visibilitychange", () => { if (!document.hidden && on()) refresh(); });
   NARROW.addEventListener("change", () => { if (on() && data) render(true); });
