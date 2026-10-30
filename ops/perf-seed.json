@@ -1,0 +1,212 @@
+{
+ "at": "2026-10-30T10:37:04.225Z",
+ "base": "https://cromaticstudios.com",
+ "results": [
+  {
+   "path": "/",
+   "strategy": "mobile",
+   "performance": 98,
+   "accessibility": 95,
+   "bestPractices": 100,
+   "seo": 100,
+   "lcpMs": 2304,
+   "fcpMs": 1136,
+   "tbtMs": 46,
+   "cls": 0,
+   "speedIndexMs": 1721.4227892124518,
+   "fieldUrl": {
+    "overall": "AVERAGE",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 0,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 969,
+     "cat": "AVERAGE"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 1781,
+     "cat": "FAST"
+    }
+   },
+   "fieldOrigin": {
+    "overall": "AVERAGE",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 0,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 842,
+     "cat": "AVERAGE"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 1551,
+     "cat": "FAST"
+    },
+    "LARGEST_CONTENTFUL_PAINT_MS": {
+     "p75": 2291,
+     "cat": "FAST"
+    }
+   }
+  },
+  {
+   "path": "/",
+   "strategy": "desktop",
+   "performance": 98,
+   "accessibility": 95,
+   "bestPractices": 100,
+   "seo": 100,
+   "lcpMs": 343,
+   "fcpMs": 343,
+   "tbtMs": 115.5,
+   "cls": 0.0199900256164375,
+   "speedIndexMs": 1125.243104214821,
+   "fieldUrl": {
+    "overall": "AVERAGE",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 3,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 949,
+     "cat": "AVERAGE"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 1579,
+     "cat": "FAST"
+    }
+   },
+   "fieldOrigin": {
+    "overall": "FAST",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 2,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 516,
+     "cat": "FAST"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 888,
+     "cat": "FAST"
+    },
+    "LARGEST_CONTENTFUL_PAINT_MS": {
+     "p75": 1580,
+     "cat": "FAST"
+    }
+   }
+  },
+  {
+   "path": "/ro/",
+   "strategy": "mobile",
+   "performance": 98,
+   "accessibility": 95,
+   "bestPractices": 100,
+   "seo": 100,
+   "lcpMs": 2251,
+   "fcpMs": 1081,
+   "tbtMs": 52,
+   "cls": 0,
+   "speedIndexMs": 1684.3099152906243,
+   "fieldUrl": {
+    "overall": "AVERAGE",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 0,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 842,
+     "cat": "AVERAGE"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 1551,
+     "cat": "FAST"
+    },
+    "LARGEST_CONTENTFUL_PAINT_MS": {
+     "p75": 2291,
+     "cat": "FAST"
+    }
+   },
+   "fieldOrigin": {
+    "overall": "AVERAGE",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 0,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 842,
+     "cat": "AVERAGE"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 1551,
+     "cat": "FAST"
+    },
+    "LARGEST_CONTENTFUL_PAINT_MS": {
+     "p75": 2291,
+     "cat": "FAST"
+    }
+   }
+  },
+  {
+   "path": "/ro/",
+   "strategy": "desktop",
+   "performance": 58,
+   "accessibility": 95,
+   "bestPractices": 100,
+   "seo": 100,
+   "lcpMs": 1080.5,
+   "fcpMs": 334,
+   "tbtMs": 1840.5,
+   "cls": 0.06263487130448642,
+   "speedIndexMs": 4997.552611991842,
+   "fieldUrl": {
+    "overall": "FAST",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 2,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 516,
+     "cat": "FAST"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 888,
+     "cat": "FAST"
+    },
+    "LARGEST_CONTENTFUL_PAINT_MS": {
+     "p75": 1580,
+     "cat": "FAST"
+    }
+   },
+   "fieldOrigin": {
+    "overall": "FAST",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE": {
+     "p75": 2,
+     "cat": "FAST"
+    },
+    "EXPERIMENTAL_TIME_TO_FIRST_BYTE": {
+     "p75": 516,
+     "cat": "FAST"
+    },
+    "FIRST_CONTENTFUL_PAINT_MS": {
+     "p75": 888,
+     "cat": "FAST"
+    },
+    "LARGEST_CONTENTFUL_PAINT_MS": {
+     "p75": 1580,
+     "cat": "FAST"
+    }
+   }
+  },
+  {
+   "path": "/city/",
+   "strategy": "mobile",
+   "error": "retries exhausted"
+  },
+  {
+   "path": "/city/",
+   "strategy": "desktop",
+   "error": "retries exhausted"
+  }
+ ]
+}

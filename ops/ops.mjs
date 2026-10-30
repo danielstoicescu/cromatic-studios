@@ -29,9 +29,12 @@
 //        all: true removes the published files AND the preview ("Șterge" in the tab);
 //        never the repo's proposals/ folder) or drops a preview; logged in proposals.jsonl
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
+//   GET  /api/ops/perf                          (admin session) TASK-141: the Performance page's data (ops/metrics.mjs)
+//   POST /api/ops/perf/run                      (admin session) "Măsoară acum": 202 at once, the run goes on in the background; at most one per 15 min
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
 import { join, extname } from "node:path";
 import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto";
+import { createMetrics } from "./metrics.mjs";
 
 // the allow-list lives in ops/users.json (one place to edit); <dataDir>/users.json overrides it on a server
 const USERS_FILE = new URL("./users.json", import.meta.url);
@@ -48,7 +51,7 @@ export const PROPOSAL_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{10}$/;
 export const PROPOSAL_FILE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/i;
 const PROPOSAL_FILE_MAX = 4 * 1048576, PROPOSAL_FILES_MAX = 6, PROPOSAL_BODY_MAX = 12 * 1048576;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const ASSETS = { "nav.js": "text/javascript; charset=utf-8", "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
+const ASSETS = { "nav.js": "text/javascript; charset=utf-8", "perf.js": "text/javascript; charset=utf-8", "perf.css": "text/css; charset=utf-8", "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
 
 const sha = (x) => createHash("sha256").update(String(x)).digest();
 const shaHex = (x) => createHash("sha256").update(String(x)).digest("hex");
@@ -153,6 +156,8 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   users = users.filter((u) => u && u.id && u.name && (u.role === "admin" || u.role === "member") && Array.isArray(u.emails));
   const P = (f) => join(dataDir, f);
   const prod = process.env.NODE_ENV === "production";
+  const metrics = createMetrics({ dataDir, log }); // TASK-141: PageSpeed + GA4, background jobs only
+  metrics.start();
   const byEmail = new Map();
   for (const u of users) for (const e of u.emails) byEmail.set(e.toLowerCase(), u);
 
@@ -326,7 +331,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
     if (role === "admin") return { collections: c, generatedAt: snap.generatedAt };
     const out = {};
     for (const [name, docs] of Object.entries(c)) {
-      if (name === "coreRequests" || name === "approvals" || name === "security" || name === "offers") continue; // TASK-135: offers are admins only
+      if (name === "coreRequests" || name === "approvals" || name === "security" || name === "offers" || name === "analytics") continue; // TASK-135: offers are admins only; TASK-141: so are GA4 numbers
       if (name === "core") { out.core = {}; for (const [id, d] of Object.entries(docs || {})) { const { token, link, url, links, log: _l, ...rest } = d || {}; out.core[id] = scrub(rest); } continue; }
       out[name] = scrub(docs);
     }
@@ -521,7 +526,17 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       const s = sessionOf(req);
       if (r === "me" && m === "GET") { if (!s) json(res, 401, { ok: false }); else json(res, 200, { ok: true, user: pub(s) }); return true; }
       if (!s) { json(res, 401, { ok: false }); return true; }
-      if (r === "snapshot" && m === "GET") { json(res, 200, { ok: true, user: pub(s), ...withOutbox(forRole(snapshot(), s.user.role)) }); return true; }
+      if (r === "snapshot" && m === "GET") {
+        const view = withOutbox(forRole(snapshot(), s.user.role));
+        if (s.user.role === "admin") { const a = metrics.analyticsDoc(); if (a) view.collections = { ...view.collections, analytics: { ...(view.collections.analytics || {}), summary: a } }; } // TASK-141: GA4 from the server's cache, never a call to Google per view
+        json(res, 200, { ok: true, user: pub(s), ...view }); return true;
+      }
+      if (r === "perf" || r === "perf/run") { // TASK-141: admins only, like core / sec / offer: a member gets nothing
+        if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        if (r === "perf" && m === "GET") { json(res, 200, { ok: true, ...metrics.perfView() }); return true; }
+        if (r === "perf/run" && m === "POST") { const out = metrics.startManual(s.email); json(res, out.status, { ok: out.ok, ...(out.error ? { error: out.error } : {}), ...(out.nextAt ? { nextAt: out.nextAt } : {}) }); return true; }
+        json(res, 405, { ok: false }); return true;
+      }
       if (r === "upload" && m === "POST") { await upload(req, res, s, u); return true; }
       if (r === "inbox" && m === "POST") {
         if (userInbox(s.email)) { json(res, 429, { ok: false, error: "rate" }); return true; }
