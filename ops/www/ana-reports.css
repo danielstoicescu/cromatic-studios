@@ -9,6 +9,11 @@
 .anr-when { font-size: 12px; }
 .anr-l { margin: 0; max-width: 72ch; font-size: 14px; line-height: 1.45; color: var(--muted); }
 .anr-foot { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); max-width: 72ch; }
+.anr-notes { display: grid; gap: 10px; margin-top: 6px; padding-top: 16px; border-top: 1px solid var(--g1); min-width: 0; }
+.anr-nl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px 24px; margin: 0; padding: 0; list-style: none; }
+.anr-nl li { display: grid; gap: 3px; align-content: start; min-width: 0; font-size: 14px; line-height: 1.45; }
+.anr-nl b { font-weight: 700; text-wrap: balance; }
+.anr-nl span { color: var(--muted); }
 .anr-find { margin: 0; max-width: 34ch; font: 800 clamp(22px, 2.6vw, 30px)/1.12 var(--f-d); letter-spacing: -.02em; text-wrap: balance; }
 .anr-c > .btn { justify-self: start; }
 .anr-empty { padding: 22px 0; font-size: 14px; color: var(--muted); }

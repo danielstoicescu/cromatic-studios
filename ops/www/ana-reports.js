@@ -18,6 +18,17 @@
   const bar = (v, max) => { const b = el("span", "anr-bar"), i = el("i"); i.style.width = (max ? Math.max(1, v / max * 100) : 0) + "%"; b.append(i); return b; };
   function shareNode(num, den) { const s = N.share(num, den), o = el("span", "anr-sh"); o.append(el("b", "", s.main)); if (s.sub) o.append(el("small", "", s.sub)); return o; }
 
+  // ---------- the comments under the funnel: written every two days or on a major change, sent through the bridge, no deploy ----------
+  const OLD_AFTER = 3; // days; past this the comment says it is behind the numbers
+  function notesBlock(A) {
+    const n = A.notes; if (!n || !Array.isArray(n.items) || !n.items.length) return null;
+    const box = el("div", "anr-notes"), head = el("div", "anr-th"), age = (Date.now() - Date.parse(n.writtenAt + "T12:00:00Z")) / 864e5;
+    head.append(el("h4", "anr-h4", "Ce vedem aici"), el("span", "mono muted anr-when", (age > OLD_AFTER ? "Comentariu vechi, din " : "Scris pe ") + fday(n.writtenAt)));
+    const ul = el("ul", "anr-nl");
+    for (const x of n.items) { const li = el("li"); li.append(el("b", "", x.title), el("span", "", x.text)); ul.append(li); }
+    box.append(head, ul); return box;
+  }
+
   // ---------- F1: the staircase ----------
   const F1 = [
     { key: "start", label: "Au venit" },
@@ -108,7 +119,7 @@
   }
 
   // ---------- Orașul: a quiet count (decision 1) ----------
-  const GAME = { gloves_open: "au deschis jocul", gloves_start: "au pornit", gloves_pick: "au ales un luptător", gloves_match_end: "au terminat un meci", gloves_voucher_shown: "au văzut voucherul" };
+  const GAME = { gloves_open: ["a deschis jocul", "au deschis jocul"], gloves_start: ["a pornit", "au pornit"], gloves_pick: ["a ales un luptător", "au ales un luptător"], gloves_match_end: ["a terminat un meci", "au terminat un meci"], gloves_voucher_shown: ["a văzut voucherul", "au văzut voucherul"] };
   function cityCard(A) {
     const c = card("Orașul", "Îl judecăm după cât rămâne în minte, nu după lead-uri. Aici doar numărăm" + (A.pageFrom ? ", din " + fday(A.pageFrom) : "") + ".", "anr-city");
     const f = (A.funnels || {}).f2; if (!f) { c.append(empty(NEXT_READ)); return c; }
@@ -118,17 +129,20 @@
     if (by("lead") > 0 && !f.separate) c.append(el("p", "anr-l", by("lead") === 1 ? "Unul dintre ei a trimis apoi un boarding pass." : nf(by("lead")) + " dintre ei au trimis apoi un boarding pass."));
     if (f.separate) c.append(el("p", "anr-foot", "Numărate separat, nu aceiași oameni."));
     const game = (A.game || []).filter((g) => g.users);
-    if (game.length) { const g = el("p", "anr-game"); g.append(el("b", "", "Jocul: ")); g.append(game.map((x) => nf(x.users) + " " + GAME[x.event]).join(", ") + "."); c.append(g); }
+    if (game.length) { const g = el("p", "anr-game"); g.append(el("b", "", "Jocul: ")); g.append(game.map((x) => nf(x.users) + " " + GAME[x.event][x.users === 1 ? 0 : 1]).join(", ") + "."); c.append(g); }
     return c;
   }
 
   // ---------- Pagini de intrare ----------
-  const DOORS = { "/": "Homepage", "/ro/": "Homepage RO", "/city/": "Orașul", "(not set)": "Nesetat" };
+  const DOORS = { "/": "Homepage", "/ro": "Homepage RO", "/city": "Orașul", "(not set)": "Nesetat" };
+  // GA keeps a landing path as typed: /city and /city/ are one door, and /site is a 301 to the homepage
+  const door = (p) => { const x = p.length > 1 ? p.replace(/\/+$/, "") : p; return x === "/site" ? "/" : x; };
+  function doors(rows) { const m = new Map(); for (const r of rows) { const k = door(r.path), o = m.get(k) || { path: k, sessions: 0, engaged: 0 }; o.sessions += r.sessions; o.engaged += r.engaged; m.set(k, o); } return [...m.values()].sort((a, b) => b.sessions - a.sessions); }
   function landingCard(A) {
     const c = card("Pe ce ușă intră", (A.pageFrom ? "Din " + fday(A.pageFrom) + "." : "") + " Câte sesiuni încep aici și câte se implică.");
     if ((A.missing || []).includes("landing")) { c.append(empty(FAILED)); return c; }
     if (!A.landing) { c.append(empty(NEXT_READ)); return c; }
-    const rows = A.landing.filter((r) => r.sessions); if (!rows.length) { c.append(empty(STILL_EMPTY)); return c; }
+    const rows = doors(A.landing.filter((r) => r.sessions)); if (!rows.length) { c.append(empty(STILL_EMPTY)); return c; }
     const top = rows.slice(0, 5), rest = rows.slice(5), shown = rest.length ? top.concat([{ other: true, path: "Altele (" + rest.length + ")", sessions: rest.reduce((t, r) => t + r.sessions, 0), engaged: rest.reduce((t, r) => t + r.engaged, 0) }]) : top;
     const titled = new Map((A.cases || []).map((x) => [x.slug, x.title])), name = (p) => { if (DOORS[p]) return DOORS[p]; const m = /^\/(?:work|ro\/proiecte)\/([^/]+)/.exec(p); return (m && titled.get(m[1])) || p; };
     const max = Math.max(...shown.map((r) => r.sessions)), ol = el("ol", "anr-rank");
@@ -223,7 +237,8 @@
     last = key; lastA = A;
     const again = () => draw(lastA, true);
     const two = (a, b, cls) => { const g = el("div", "anr-2" + (cls ? " " + cls : "")); g.append(a, b); return g; };
-    host.replaceChildren(funnelCard(A), sourcesCard(A), two(casesCard(A, again), cityCard(A), "wide"), two(landingCard(A), whoCard(A)), wantsCard(A));
+    const fc = funnelCard(A), notes = notesBlock(A); if (notes) fc.append(notes);
+    host.replaceChildren(fc, sourcesCard(A), two(casesCard(A, again), cityCard(A), "wide"), two(landingCard(A), whoCard(A)), wantsCard(A));
     host.classList.toggle("anr-anim", !draw.seen); draw.seen = true;
   }
   window.AnaReports = {

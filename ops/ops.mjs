@@ -29,6 +29,8 @@
 //        all: true removes the published files AND the preview ("Șterge" in the tab);
 //        never the repo's proposals/ folder) or drops a preview; logged in proposals.jsonl
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
+//   GET  /api/ops/bridge/analytics?range=30     (Bearer key) one period of Analytics, counts only, for the comments under the funnel
+//   POST /api/ops/bridge/analytics-notes        (Bearer key) {writtenAt, through, items:[{title, text}]}   replaces those comments, no deploy
 //   GET  /api/ops/perf                          (admin session) TASK-141: the Performance page's data (ops/metrics.mjs)
 //   GET  /api/ops/analytics?range=today|7|30|90 (admin session) one period from the GA4 cache; a missing one is fetched in the background ({loading: true})
 //   GET  /api/ops/leads                         (admin session) TASK-144: the stored leads, to mark them: name, email, message, never the phone or IP; no-store
@@ -171,6 +173,9 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   // ---------- files ----------
   const readJson = (f, dflt) => { try { return JSON.parse(readFileSync(P(f), "utf8")); } catch { return dflt; } };
   const writeJson = (f, v) => { const tmp = P(f + ".tmp-" + process.pid); writeFileSync(tmp, JSON.stringify(v), { mode: 0o600 }); renameSync(tmp, P(f)); };
+  // Daniel, 30 Oct: comments on the funnel, refreshed every two days or on a major change. <dataDir>/analytics-notes.json overrides the repo's without a deploy
+  const REPO_NOTES = new URL("./analytics-notes.json", import.meta.url);
+  const analyticsNotes = () => { const over = readJson("analytics-notes.json", null); if (over) return over; try { return JSON.parse(readFileSync(REPO_NOTES, "utf8")); } catch { return null; } };
   const appendLine = (f, v) => { try { appendFileSync(P(f), JSON.stringify(v) + "\n", { mode: 0o600 }); } catch (e) { log.error("[ops] append", f, e.message); } };
   const readLines = (f) => { let s = ""; try { s = readFileSync(P(f), "utf8"); } catch { return []; } return s.split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean); };
 
@@ -435,6 +440,18 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
           writeJson("snapshot.json", snap);
           json(res, 200, { ok: true, collections: Object.keys(b.collections).length, generatedAt: snap.generatedAt }); return true;
         }
+        if (r === "bridge/analytics" && m === "GET") {
+          const { status, ...out } = metrics.analyticsPeriod(new URL(req.url, "http://x").searchParams.get("range") || "30");
+          json(res, status, { ...out, notes: analyticsNotes() }); return true;
+        }
+        if (r === "bridge/analytics-notes" && m === "POST") {
+          const b = await body(req, 64e3), DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+          const items = Array.isArray(b && b.items) ? b.items.map((x) => ({ title: str(x && x.title, 80), text: str(x && x.text, 420) })) : [];
+          const clean = items.length >= 1 && items.length <= 6 && items.every((x) => x.title && x.text && !/@/.test(x.title + x.text)); // these are comments on counts: an address never belongs here
+          if (!clean || !DAY_RE.test(String(b.writtenAt)) || !DAY_RE.test(String(b.through))) { json(res, 422, { ok: false, error: "notes" }); return true; }
+          writeJson("analytics-notes.json", { writtenAt: b.writtenAt, through: b.through, items });
+          json(res, 200, { ok: true, items: items.length }); return true;
+        }
         if (r === "bridge/ack" && m === "POST") {
           const b = await body(req, 256e3);
           // {ids, status?: "done"|"rejected", reply?, replies?: {id: text}, results?: {id: {status, reply}}}
@@ -540,13 +557,13 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       if (!s) { json(res, 401, { ok: false }); return true; }
       if (r === "snapshot" && m === "GET") {
         const view = withOutbox(forRole(snapshot(), s.user.role));
-        if (s.user.role === "admin") { const a = metrics.analyticsDoc(); if (a) view.collections = { ...view.collections, analytics: { ...(view.collections.analytics || {}), summary: a } }; } // TASK-141: GA4 from the server's cache, never a call to Google per view
+        if (s.user.role === "admin") { const a = metrics.analyticsDoc(); if (a) view.collections = { ...view.collections, analytics: { ...(view.collections.analytics || {}), summary: { ...a, notes: analyticsNotes() } } }; } // TASK-141: GA4 from the server's cache, never a call to Google per view
         json(res, 200, { ok: true, user: pub(s), ...view }); return true;
       }
       if (r === "analytics" && m === "GET") { // one period of the Analytics section, admins only like the rest of it; never waits for Google
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
         const { status, ...out } = metrics.analyticsPeriod(u.searchParams.get("range") || "30");
-        json(res, status, out); return true;
+        json(res, status, out.data ? { ...out, data: { ...out.data, notes: analyticsNotes() } } : out); return true;
       }
       if (r === "leads" || r === "leads/mark") { // TASK-144: personal data, admins only; nothing from these two routes is ever logged
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
