@@ -258,7 +258,7 @@ function client() {
         ref: "CS" + h.toString(36).toUpperCase().slice(0, 5).padStart(5, "0"), name: name, first: name.split(/\s+/)[0], email: email, phone: val("phone"), msg: val("msg"),
         date: String(now.getDate()).padStart(2, "0") + " " + MON[now.getMonth()] + " " + now.getFullYear(), time: String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0"),
         flight: "CS " + String(99 + pick.dreams.length).padStart(3, "0"), stops: pick.dreams.map(function (x) { return CODES[x] || ["TBD", x]; }), dreams: pick.dreams, biz: pick.biz, when: pick.when,
-        klass: CLASS[pick.biz] || "Open Class", boarding: BOARD[pick.when] || "When you are ready", company_site: val("company_site"), lang: RO ? "ro" : "en"
+        klass: CLASS[pick.biz] || "Open Class", boarding: BOARD[pick.when] || "When you are ready", company_site: val("company_site"), lang: RO ? "ro" : "en", page: location.pathname
       };
       f.querySelectorAll("input[data-lead]").forEach(function (i) { if (i.value) t[i.name] = i.value.slice(0, 120); });
       btn.disabled = true; status.textContent = L.printing;

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ro"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>cromaticstudios.com ops</title><link rel="stylesheet" href="/ops/ops.css"><link rel="stylesheet" href="/ops/offers.css"><link rel="stylesheet" href="/ops/perf.css"><link rel="stylesheet" href="/ops/files.css"><script src="/ops/adapter.js"></script><script src="/ops/offers.js" defer></script><script src="/ops/nav.js" defer></script><script src="/ops/files.js" defer></script><script src="/ops/perf.js" defer></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>cromaticstudios.com ops</title><link rel="stylesheet" href="/ops/ops.css"><link rel="stylesheet" href="/ops/offers.css"><link rel="stylesheet" href="/ops/perf.css"><link rel="stylesheet" href="/ops/ana-reports.css"><link rel="stylesheet" href="/ops/files.css"><script src="/ops/adapter.js"></script><script src="/ops/offers.js" defer></script><script src="/ops/nav.js" defer></script><script src="/ops/files.js" defer></script><script src="/ops/perf.js" defer></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22r%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23FED012%22/%3E%3Cstop offset=%22.25%22 stop-color=%22%2328C840%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23119BFE%22/%3E%3Cstop offset=%22.75%22 stop-color=%22%23B098C8%22/%3E%3Cstop offset=%221%22 stop-color=%22%23F65342%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg transform=%22rotate%28-8 32 32%29%22%3E%3Crect x=%225%22 y=%2215%22 width=%2254%22 height=%2234%22 rx=%2217%22 fill=%22%230D0C09%22 transform=%22translate%280 3%29%22/%3E%3Crect x=%225%22 y=%2215%22 width=%2254%22 height=%2234%22 rx=%2217%22 fill=%22url%28%23r%29%22/%3E%3Crect x=%229%22 y=%2219%22 width=%2246%22 height=%2226%22 rx=%2213%22 fill=%22%23fff%22/%3E%3Ctext x=%2232%22 y=%2238.5%22 text-anchor=%22middle%22 font-family=%22Google Sans,DM Sans,Arial,sans-serif%22 font-weight=%22900%22 font-size=%2219%22 letter-spacing=%22-1%22 fill=%22%230D0C09%22%3Eops%3C/text%3E%3C/g%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -1470,47 +1470,30 @@ body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition:
 .an-chart { position: relative; }
 .an-svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: pan-y; } .an-svg:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; border-radius: 8px; }
 .an-grid { stroke: var(--g1); stroke-width: 1; } .an-ax { font: 500 10px var(--f-m); fill: var(--muted); }
-.an-area { fill: var(--yellow); opacity: .35; animation: fade .8s ease both; }
 .an-lu { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; } .an-ls { fill: none; stroke: #119BFE; stroke-width: 2; stroke-linejoin: round; stroke-dasharray: none; }
-.an-lead { fill: #28C840; transform-box: fill-box; transform-origin: bottom; animation: bbgrow .5s var(--ease-out) both; }
+.an-lead { fill: var(--yellow); stroke: #000; stroke-width: .75; } .an-mk { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; }
 @media (prefers-reduced-motion: no-preference) { .an-lu, .an-ls { stroke-dasharray: 1; stroke-dashoffset: 1; animation: spdraw 1.2s var(--ease-out) .1s forwards; } }
 @keyframes spdraw { to { stroke-dashoffset: 0; } }
 .an-guide { stroke: var(--g3); stroke-dasharray: 3 3; } .an-dot { fill: var(--ink); stroke: var(--card); stroke-width: 2; } .an-dot2 { fill: #119BFE; stroke: var(--card); stroke-width: 2; }
 .an-tip { position: absolute; top: 28px; transform: translateX(12px); display: grid; gap: 1px; background: var(--ink); color: var(--on-ink); border-radius: 12px; padding: 8px 10px; font-size: 12.5px; pointer-events: none; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.18); z-index: 2; }
-.an-tip.left { transform: translateX(calc(-100% - 12px)); } .an-tip b { font-weight: 700; } .an-tip span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; } .an-tip .u::before { background: var(--yellow); } .an-tip .s::before { background: #119BFE; } .an-tip .l::before { background: #28C840; }
-.an-lg { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); } .an-lg span { display: inline-flex; align-items: center; gap: 6px; } .an-lg i { width: 14px; height: 8px; border-radius: 3px; } .an-lg .u i { background: var(--yellow); box-shadow: inset 0 -2px 0 var(--ink); } .an-lg .s i { background: #119BFE; } .an-lg .l i { background: #28C840; }
-.an-2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; align-items: start; }
-.an-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
-.an-tw { overflow-x: auto; } .an-tbl { min-width: 460px; } .an-tbl td { padding: 7px 8px; } .an-tbl th { padding: 6px 8px; } .an-tbl .an-num, .an-tbl th.an-num { text-align: right; font-variant-numeric: tabular-nums; }
-.an-sn { display: grid; gap: 0; } .an-sn b { font-weight: 700; }
-.an-sb { position: relative; min-width: 120px; } .an-sb i { position: absolute; left: 8px; top: 50%; height: 20px; transform: translateY(-50%); width: calc((100% - 16px) * var(--w) / 100); background: color-mix(in srgb, #119BFE 22%, transparent); border-radius: 6px; transform-origin: left; animation: bargrow .6s var(--ease-out) both; } .an-sb span { position: relative; font-variant-numeric: tabular-nums; padding-left: 6px; }
+.an-tip.left { transform: translateX(calc(-100% - 12px)); } .an-tip b { font-weight: 700; } .an-tip span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; } .an-tip .u::before { background: var(--yellow); } .an-tip .s::before { background: var(--on-ink); } .an-tip .l::before { background: var(--yellow); }
+.an-lg { display: flex; gap: 14px; font-size: 12.5px; color: var(--muted); } .an-lg span { display: inline-flex; align-items: center; gap: 6px; } .an-lg i { width: 14px; height: 8px; border-radius: 3px; } .an-lg .u i { background: var(--yellow); box-shadow: inset 0 -2px 0 var(--ink); } .an-lg .s i { background: var(--ink); height: 2px; } .an-lg .l i { background: var(--yellow); box-shadow: inset 0 0 0 1px #000; width: 5px; height: 12px; border-radius: 1.5px; }
 @keyframes bargrow { from { transform: translateY(-50%) scaleX(0); } }
 .an-camp { display: grid; gap: 12px; }
 .an-cb { display: grid; gap: 10px; background: var(--card); border: var(--line); border-left: 4px solid var(--acc, var(--ink)); border-radius: 22px; padding: 14px 16px; box-shadow: var(--soft); scroll-margin-top: 90px; }
 .an-cbh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; } .an-cbh b { font: 800 18px var(--f-d); } .an-cbh .btn { margin-left: auto; }
 .an-ab { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .an-v { display: grid; gap: 8px; align-content: start; border: 1px solid var(--g1); border-radius: 16px; padding: 10px 12px; background: var(--soft-bg); transition: border-color .2s, box-shadow .2s; }
-.an-v.win { border-color: var(--ink); box-shadow: 0 2px 0 var(--ink); background: var(--card); }
 .an-vh { display: flex; align-items: center; gap: 8px; min-width: 0; } .an-vk { font: 900 14px var(--f-d); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--on-ink); flex: none; }
 .an-vt { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.an-win { margin-left: auto; font: 700 10px var(--f-m); text-transform: uppercase; letter-spacing: .05em; background: var(--yellow); color: #000; border: 1px solid #000; border-radius: 999px; padding: 1px 8px; white-space: nowrap; animation: soft 2.4s ease-in-out infinite; }
-.an-fn { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
-.an-fn li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-rows: auto 8px; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 12.5px; }
-.an-fn .an-fl { grid-column: 1; } .an-fn b { grid-column: 2; font-variant-numeric: tabular-nums; } .an-fn .an-fr { grid-column: 3; font: 500 10.5px var(--f-m); color: var(--muted); min-width: 42px; text-align: right; }
-.an-fn li:first-child b { grid-column: 2 / 4; text-align: right; }
-.an-fn i { grid-column: 1 / -1; grid-row: 2; height: 8px; width: var(--w); border-radius: 999px; background: var(--acc, var(--ink)); opacity: .85; transform-origin: left; animation: bargrow2 .6s var(--ease-out) both; }
 @keyframes bargrow2 { from { transform: scaleX(0); } }
 .an-cv { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; border-top: 1px dashed var(--g2); padding-top: 8px; } .an-cv b { font: 900 22px var(--f-d); } .an-cv span { font-size: 12.5px; color: var(--muted); } .an-cv .mono { flex-basis: 100%; font-size: 10px; }
-.an-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
-.an-mt { position: relative; display: grid; gap: 2px; background: var(--card); border: var(--line); border-radius: 999px; padding: 10px 50px 10px 18px; animation: btpop .45s var(--ease) both; transition: transform .25s var(--ease); } .an-mt:hover { transform: translateY(-3px); }
-.an-mt b { font: 900 24px/1 var(--f-d); font-variant-numeric: tabular-nums; } .an-mt > span:last-child { font-size: 12px; color: var(--muted); } .an-mt .bt-ic { top: 50%; transform: translateY(-50%); right: 12px; }
 .an-bl { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .an-bl li { position: relative; display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; font-size: 13.5px; border-radius: 8px; overflow: hidden; }
 .an-bl li i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--w); background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 8px; transform-origin: left; animation: bargrow2 .6s var(--ease-out) both; }
 .an-bl li:hover i { background: color-mix(in srgb, var(--yellow) 45%, transparent); }
 .an-bl-t { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-weight: 600; } .an-bl-v { position: relative; font: 500 11px var(--f-m); color: var(--muted); white-space: nowrap; }
 .cp-ana { justify-self: start; }
-@media (max-width: 980px) { .an-2, .an-3 { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) { .an-ab { grid-template-columns: minmax(0, 1fr); } .an-k { grid-template-columns: repeat(2, minmax(0, 1fr)); } .an-kpi b { font-size: 24px; } }
 
 /* r10: phone bottom bar · ~6.5 items visible (the cut 7th says "there is more"), snap per item, edge fades */
@@ -1939,18 +1922,11 @@ body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition:
         <div class="an-per" id="ana-per" role="status" hidden></div>
         <div class="an-k" id="ana-k"></div>
         <div class="muted" id="ana-lead-n" hidden style="font-size:13px;line-height:1.45;max-width:76ch"></div>
-        <div class="an-card"><div class="an-ct"><span id="ana-chart-t">Pe zile</span><span class="mono muted">treci peste grafic</span></div><div class="an-chart" id="ana-chart"></div></div>
-        <div class="an-2">
-          <div class="an-card"><div class="an-ct">Surse de trafic</div><div class="an-tw"><table class="an-tbl"><thead><tr><th>Sursă / mediu</th><th>Sesiuni</th><th class="an-num">Utilizatori</th><th class="an-num">Lead-uri</th><th class="an-num">Conversie</th></tr></thead><tbody id="ana-src"></tbody></table></div></div>
-          <div class="an-card"><div class="an-ct">Pe hartă</div><div class="an-map" id="ana-map"></div></div>
-        </div>
-        <div class="an-ct" style="margin-top:4px">Campanii · A vs B</div>
+        <div class="an-card"><div class="an-ct"><span id="ana-chart-t">Pe zile</span><span class="mono muted anr-hint">treci peste grafic</span></div><div class="an-chart" id="ana-chart"></div></div>
+        <div class="anr" id="ana-rep"></div>
+        <div class="an-card anr-c" id="ana-leads" hidden></div>
+        <div class="an-ct" id="ana-camp-h" style="margin-top:4px" hidden>Campanii · A vs B</div>
         <div class="an-camp" id="ana-camp"></div>
-        <div class="an-3">
-          <div class="an-card"><div class="an-ct">Pagini de top</div><ol class="an-bl" id="ana-pages"></ol></div>
-          <div class="an-card"><div class="an-ct">Țări</div><ol class="an-bl" id="ana-ctry"></ol></div>
-          <div class="an-card"><div class="an-ct">Dispozitive</div><ol class="an-bl" id="ana-dev"></ol></div>
-        </div>
         <div class="muted" id="ana-src-n" hidden style="font-size:13px">Din GA4, pentru perioada aleasă, fără traficul intern. GA numără doar vizitatorii care acceptă cookie-urile, deci vizitele reale sunt mai multe.</div>
       </div>
     </section>
@@ -2005,6 +1981,8 @@ body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition:
 </aside>
 <div class="toasts" id="toasts" aria-live="assertive"></div>
 
+<script src="/ops/ana-num.js"></script>
+<script src="/ops/ana-reports.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -4258,10 +4236,10 @@ body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition:
     const U = sum("users", 0, 30), Ss = sum("sessions", 0, 30), L = sum("leads", 0, 30);
     const d = {
       generatedAt: new Date().toISOString(), source: "mock", range: { from: daily[0].date, to: daily[29].date },
-      kpis: { users: kp(U, Math.round(U * .82)), sessions: kp(Ss, Math.round(Ss * .85)), engagedRate: kp(.618, .574), avgEngagementSec: kp(94, 101), leads: kp(L, Math.round(L * .7)), coreLiteStarts: kp(212, 160), coreLiteSubmits: kp(88, 71) },
+      kpis: { users: kp(U, Math.round(U * .82)), sessions: kp(Ss, Math.round(Ss * .85)), engagedRate: kp(.618, .574), avgEngagementSec: kp(94, 101), leads: kp(L, Math.round(L * .7)), },
       daily,
       sources: [["google", "organic", .34], ["instagram.com", "social", .21], ["(direct)", "(none)", .18], ["google", "cpc", .12], ["facebook.com", "paid", .09], ["linkedin.com", "social", .06]].map(([source, medium, f]) => ({ source, medium, sessions: Math.round(Ss * f), users: Math.round(U * f * .9), leads: Math.round(L * f * (medium === "cpc" || medium === "paid" ? 1.6 : .8)) })),
-      campaigns: camps.flatMap((slug, k) => ["a", "b"].map((variant) => { const s = Math.round(900 - k * 220 + rnd() * 200), cta = Math.round(s * (variant === "a" ? .21 : .26) * (0.9 + rnd() * .2)), fs = Math.round(cta * .55), fsub = Math.round(fs * .48), leads = Math.round(fsub * .8); return { slug, variant, utm_campaign: slug + "-" + variant, sessions: s, ctaClicks: cta, freebieStarts: fs, freebieSubmits: fsub, leads, conversionPct: Math.round(leads / s * 1000) / 10 }; })),
+      campaigns: camps.flatMap((slug, k) => ["a", "b"].map((variant) => { const s = Math.round(900 - k * 220 + rnd() * 200), leads = Math.round(s * .012 * (0.9 + rnd() * .2)); return { slug, variant, utm_campaign: slug + "-" + variant, sessions: s, leads }; })),
       map: { driveSessions: 1840, cardOpens: 5230, gameStarts: 412, postcards: 96 },
       topPages: [["/", "Acasă · harta"], ["/lp/coffee-brands/", "Coffee brands"], ["/the-core/", "The Core Lite"], ["/proiecte/litorsal/", "Litorsal"], ["/lp/beauty-healthcare/", "Beauty & healthcare"], ["/despre/", "Despre noi"]].map(([path, title], i) => ({ path, title, views: Math.round(Ss * [.55, .14, .11, .07, .06, .04][i]), avgSec: [71, 128, 214, 96, 110, 48][i] })),
       countries: [["România", .78], ["Republica Moldova", .07], ["Germania", .05], ["Regatul Unit", .04], ["Italia", .03]].map(([country, f]) => ({ country, users: Math.round(U * f) })),
@@ -4270,7 +4248,8 @@ body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition:
     anaMockCache = { sig, d }; return d;
   }
   const anaReal = () => { const A = S.analytics; return A && typeof A === "object" && (A.kpis || A.daily) ? A : null; };
-  const anaData = () => { const R = anaReal(); return !R ? anaMock() : ANA.range === "30" ? R : ANA.docs[ANA.range] || R; };
+  // 30 days comes with the snapshot; right after a lead is marked its own read is newer, until the next snapshot catches up
+  const anaData = () => { const R = anaReal(), d = ANA.docs[ANA.range]; if (!R) return anaMock(); if (ANA.range === "30") return d && String(d.generatedAt) >= String(R.generatedAt) ? d : R; return d || R; };
   const arrA = (x) => (Array.isArray(x) ? x : []);
   // real data: the numbers of the period's own report. Test data has one period only, so 7 days is summed from its days
   function kpiOf(A, k, force) {
@@ -4278,42 +4257,38 @@ body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition:
     if (A.source !== "ga4" && r === "7" && D.length >= 14 && ["users", "sessions", "leads"].includes(k)) { const s = (a, b) => D.slice(a, b).reduce((t, d) => t + (Number(d[k]) || 0), 0), v = s(-7), p = s(-14, -7); return { value: v, prev: p, deltaPct: p ? (v - p) / p * 100 : null, r: "7" }; }
     if (!x) return null; const v = Number(x.value), p = Number(x.prev), ps = Number(((A.kpis || {}).sessions || {}).prev) || 0;
     // a period with almost nothing before it makes any percentage absurd (+6.758%): say that instead
-    const low = !A.noCompare && (k === "leads" ? p < 5 : ["users", "sessions"].includes(k) ? p < 20 : ps < 20);
+    const low = !A.noCompare && (["leads", "users", "sessions"].includes(k) ? p < 30 : ps < 30); // the shared number rule (ana-num.js): no percent under 30
     return { value: v, prev: p, none: !!A.noCompare, low, deltaPct: x.prevPartial ? null : x.deltaPct != null ? Number(x.deltaPct) : p ? (v - p) / p * 100 : null, r: A.source === "ga4" ? r : "30" };
   }
-  function delta(x, inverse) { const s = el("span", "an-dl"), dp = x.deltaPct; if (x.none) { s.style.display = "none"; return s; } if (x.low) { s.classList.add("eq"); s.textContent = "date puține înainte"; s.title = "În perioada dinainte: " + nf(x.prev); return s; } if (dp == null || !isFinite(dp)) { s.textContent = "—"; return s; } const up = dp >= 0, good = inverse ? !up : up; s.classList.add(Math.abs(dp) < .5 ? "eq" : good ? "up" : "dn"); s.append(el("i", "", Math.abs(dp) < .5 ? "＝" : up ? "▲" : "▼"), (up ? "+" : "−") + pctS(Math.abs(dp))); s.title = "față de perioada anterioară, de aceeași lungime"; return s; }
-  // the 30-day chart: users (area), sessions (line), leads (bars), with a hover readout
-  function anaChart(box, D) {
-    box.replaceChildren(); if (D.length < 2) { box.append(el("div", "empty", "Prea puține zile pentru grafic.")); return; }
-    const W = 800, H = 220, pl = 36, pr = 10, pt = 12, pb = 26, iw = W - pl - pr, ih = H - pt - pb, NS = "http://www.w3.org/2000/svg";
-    const mx = Math.max(1, ...D.map((d) => Math.max(Number(d.users) || 0, Number(d.sessions) || 0))), ml = Math.max(1, ...D.map((d) => Number(d.leads) || 0));
+  function delta(x, inverse) { const s = el("span", "an-dl"), dp = x.deltaPct; if (x.none) { s.style.display = "none"; return s; } if (x.low) { s.classList.add("eq"); s.textContent = "date puține înainte"; s.title = "În perioada dinainte: " + nf(x.prev); return s; } if (dp == null || !isFinite(dp)) { s.textContent = "—"; return s; } const up = dp >= 0, good = inverse ? !up : up; s.classList.add(Math.abs(dp) < .5 ? "eq" : good ? "up" : "dn"); s.append(el("i", "", Math.abs(dp) < .5 ? "＝" : up ? "▲" : "▼"), (up ? "+" : "−") + pctS(Math.abs(dp), 0)); s.title = "față de perioada anterioară, de aceeași lungime"; return s; }
+  // the chart (TASK-144): sessions as a line, leads as ticks, by the week on 90 days. One marker: 28 Oct, the home move. Users left: at this volume they follow sessions
+  function anaWeeks(D) { const out = []; for (let i = 0; i < D.length; i += 7) { const w = D.slice(i, i + 7); out.push({ date: w[0].date, week: true, sessions: w.reduce((t, d) => t + (Number(d.sessions) || 0), 0), leads: w.reduce((t, d) => t + (Number(d.leads) || 0), 0), hasMove: w.some((d) => d.date === "2026-10-28") }); } return out; }
+  function anaChart(box, D0) {
+    box.replaceChildren(); if (D0.length < 2) { box.append(el("div", "empty", "Prea puține zile pentru grafic.")); return; }
+    const D = D0.length > 60 ? anaWeeks(D0) : D0;
+    const W = 800, H = 220, pl = 36, pr = 10, pt = 22, pb = 26, iw = W - pl - pr, ih = H - pt - pb, NS = "http://www.w3.org/2000/svg";
+    const mx = Math.max(1, ...D.map((d) => Number(d.sessions) || 0)), ml = Math.max(1, ...D.map((d) => Number(d.leads) || 0));
     const nice = (v) => { const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }, top = nice(mx);
     const X = (i) => pl + i / (D.length - 1) * iw, Y = (v) => pt + ih - (Number(v) || 0) / top * ih;
     const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("class", "an-svg"); svg.setAttribute("role", "img");
-    svg.setAttribute("aria-label", "Utilizatori, sesiuni și lead-uri, " + D.length + (D[0].label ? " ore" : " zile") + ". Ultimul punct: " + nf(D[D.length - 1].users) + " utilizatori, " + nf(D[D.length - 1].sessions) + " sesiuni, " + nf(D[D.length - 1].leads) + " lead-uri.");
+    svg.setAttribute("aria-label", "Sesiuni și lead-uri, " + D.length + (D[0].label ? " ore" : D[0].week ? " săptămâni" : " zile") + ". Ultimul punct: " + nf(D[D.length - 1].sessions) + " sesiuni, " + nf(D[D.length - 1].leads) + " lead-uri.");
     const mk = (tag, at) => { const n = document.createElementNS(NS, tag); for (const k in at) n.setAttribute(k, at[k]); svg.append(n); return n; };
     for (let g = 0; g <= 4; g++) { const v = top / 4 * g, y = Y(v); mk("line", { x1: pl, x2: W - pr, y1: y, y2: y, class: "an-grid" }); const t = mk("text", { x: pl - 6, y: y + 3, class: "an-ax", "text-anchor": "end" }); t.textContent = v >= 1000 ? Math.round(v / 100) / 10 + "k" : String(Math.round(v)); }
-    const bw = Math.max(2, iw / D.length * .45); D.forEach((d, i) => { const h = (Number(d.leads) || 0) / ml * ih * .28; mk("rect", { x: X(i) - bw / 2, y: pt + ih - h, width: bw, height: h, rx: 1.5, class: "an-lead", style: "animation-delay:" + (300 + i * 12) + "ms" }); });
-    const line = (k) => D.map((d, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(d[k]).toFixed(1)).join(" ");
-    mk("path", { d: line("users") + " L" + X(D.length - 1) + " " + (pt + ih) + " L" + pl + " " + (pt + ih) + " Z", class: "an-area" });
-    mk("path", { d: line("users"), class: "an-lu", pathLength: 1 }); mk("path", { d: line("sessions"), class: "an-ls", pathLength: 1 });
-    const step = Math.ceil(D.length / 6); D.forEach((d, i) => { if (i % step && i !== D.length - 1) return; const dd = new Date(d.date + "T12:00:00"), t = mk("text", { x: X(i), y: H - 8, class: "an-ax", "text-anchor": i === 0 ? "start" : i === D.length - 1 ? "end" : "middle" }); t.textContent = d.label ? d.label : isNaN(dd) ? d.date : dd.getDate() + " " + dd.toLocaleDateString("ro-RO", { month: "short" }).replace(".", ""); });
-    const guide = mk("line", { x1: 0, x2: 0, y1: pt, y2: pt + ih, class: "an-guide", visibility: "hidden" }), dot = mk("circle", { r: 4, class: "an-dot", visibility: "hidden" }), dot2 = mk("circle", { r: 4, class: "an-dot2", visibility: "hidden" });
+    const mv = D[0].label ? -1 : D.findIndex((d) => d.hasMove || d.date === "2026-10-28"); if (mv >= 0) { const x = X(mv), t = mk("text", { x, y: 11, class: "an-ax", "text-anchor": x > W * .8 ? "end" : x < W * .2 ? "start" : "middle" }); mk("line", { x1: x, x2: x, y1: pt - 6, y2: pt + ih, class: "an-mk" }); t.textContent = "28 oct, homepage nou"; }
+    const bw = Math.max(2, iw / D.length * .3); D.forEach((d, i) => { const h = (Number(d.leads) || 0) / ml * ih * .28; if (h) mk("rect", { x: X(i) - bw / 2, y: pt + ih - h, width: bw, height: h, rx: 1.5, class: "an-lead" }); });
+    mk("path", { d: D.map((d, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(d.sessions).toFixed(1)).join(" "), class: "an-lu", pathLength: 1 });
+    const fmt = (d) => { const dd = new Date(d.date + "T12:00:00"); return isNaN(dd) ? d.date : dd.getDate() + " " + dd.toLocaleDateString("ro-RO", { month: "short" }).replace(".", ""); };
+    const step = Math.ceil(D.length / 6); D.forEach((d, i) => { if (i % step && i !== D.length - 1) return; if (i !== D.length - 1 && D.length - 1 - i < step * .6) return; const t = mk("text", { x: X(i), y: H - 8, class: "an-ax", "text-anchor": i === 0 ? "start" : i === D.length - 1 ? "end" : "middle" }); t.textContent = d.label ? d.label : fmt(d); });
+    const guide = mk("line", { x1: 0, x2: 0, y1: pt, y2: pt + ih, class: "an-guide", visibility: "hidden" }), dot = mk("circle", { r: 4, class: "an-dot", visibility: "hidden" });
     const tip = el("div", "an-tip"); tip.hidden = true;
-    const show = (i) => { const d = D[i], x = X(i); guide.setAttribute("x1", x); guide.setAttribute("x2", x); dot.setAttribute("cx", x); dot.setAttribute("cy", Y(d.users)); dot2.setAttribute("cx", x); dot2.setAttribute("cy", Y(d.sessions)); for (const n of [guide, dot, dot2]) n.setAttribute("visibility", "visible"); const dd = new Date(d.date + "T12:00:00"); tip.replaceChildren(el("b", "", d.label ? d.label : isNaN(dd) ? d.date : dd.toLocaleDateString("ro-RO", { weekday: "short", day: "numeric", month: "short" })), el("span", "u", nf(d.users) + " utilizatori"), el("span", "s", nf(d.sessions) + " sesiuni"), el("span", "l", nf(d.leads) + " lead-uri")); tip.hidden = false; tip.style.left = (x / W * 100) + "%"; tip.classList.toggle("left", x > W * .66); };
-    const hide = () => { for (const n of [guide, dot, dot2]) n.setAttribute("visibility", "hidden"); tip.hidden = true; };
+    const show = (i) => { const d = D[i], x = X(i); guide.setAttribute("x1", x); guide.setAttribute("x2", x); dot.setAttribute("cx", x); dot.setAttribute("cy", Y(d.sessions)); for (const n of [guide, dot]) n.setAttribute("visibility", "visible"); const dd = new Date(d.date + "T12:00:00"); tip.replaceChildren(el("b", "", d.label ? d.label : d.week ? "Săptămâna din " + fmt(d) : isNaN(dd) ? d.date : dd.toLocaleDateString("ro-RO", { weekday: "short", day: "numeric", month: "short" })), el("span", "s", nf(d.sessions) + " sesiuni"), el("span", "l", nf(d.leads) + " lead-uri")); tip.hidden = false; tip.style.left = (x / W * 100) + "%"; tip.classList.toggle("left", x > W * .66); };
+    const hide = () => { for (const n of [guide, dot]) n.setAttribute("visibility", "hidden"); tip.hidden = true; };
     const at = (cx) => { const r = svg.getBoundingClientRect(), x = (cx - r.left) / r.width * W; return Math.max(0, Math.min(D.length - 1, Math.round((x - pl) / iw * (D.length - 1)))); };
     svg.addEventListener("pointermove", (e) => show(at(e.clientX))); svg.addEventListener("pointerleave", hide);
     svg.tabIndex = 0; let ki = D.length - 1; svg.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); ki = Math.max(0, Math.min(D.length - 1, ki + (e.key === "ArrowRight" ? 1 : -1))); show(ki); } else if (e.key === "Escape") hide(); }); svg.addEventListener("blur", hide);
-    const lg = el("div", "an-lg"); [["u", "Utilizatori"], ["s", "Sesiuni"], ["l", "Lead-uri"]].forEach(([c, l]) => { const s = el("span", c); s.append(el("i"), l); lg.append(s); });
+    const lg = el("div", "an-lg"); [["s", "Sesiuni"], ["l", "Lead-uri"]].forEach(([c, l]) => { const s = el("span", c); s.append(el("i"), l); lg.append(s); });
     box.append(lg, svg, tip);
   }
-  function barList(box, rows, label, val, fmtV, sub) {
-    box.replaceChildren(); const mx = Math.max(1, ...rows.map((r) => Number(r[val]) || 0)), tot = rows.reduce((s, r) => s + (Number(r[val]) || 0), 0) || 1;
-    if (!rows.length) { box.append(el("div", "empty", "Fără date.")); return; }
-    rows.forEach((r, i) => { const li = el("li"), b = el("i"); b.style.setProperty("--w", (Number(r[val]) || 0) / mx * 100 + "%"); b.style.animationDelay = i * 50 + "ms"; const t = el("span", "an-bl-t", String(r[label] ?? "")); if (sub && r[sub]) t.title = r[sub]; li.append(b, t, el("span", "an-bl-v", fmtV ? fmtV(r, tot) : nf(r[val]))); box.append(li); });
-  }
-  const DEV = { mobile: "Telefon", desktop: "Desktop", tablet: "Tabletă" };
   function renderAna() {
     const hide = anaHidden(), nb = document.querySelector('.nav-i[data-cat="ana"]'); if (nb) nb.hidden = hide; $("ana").classList.toggle("mirror-hide", hide); if (hide) return;
     const A = anaData(), mock = A.source !== "ga4", D = arrA(A.daily), can7 = D.length >= 14;
@@ -4327,49 +4302,49 @@ body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition:
     $("ana-mock").hidden = !mock; $("ana-mock-h").hidden = !mock && !anaSt.stale;
     $("ana-src-n").hidden = mock;
     const anaLS = !mock && A.leadsStore, anaLN = $("ana-lead-n"); anaLN.hidden = !anaLS;
-    if (anaLS) anaLN.textContent = "Lead-urile din cardul galben și din grafic vin din serverul nostru, fără testele noastre" + (anaLS.partial ? ", și sunt numărate abia din " + (anaLS.first || "momentul primului lead") + ", de când există arhiva" : "") + ". Cele din Surse și Campanii vin din GA, unde testele vechi nu se pot scoate.";
+    if (anaLS) { const seen = anaLS.ga != null && anaLS.all && !anaLS.partial && anaLS.ga <= anaLS.all ? " GA a văzut " + nf(anaLS.ga) + " din " + nf(anaLS.all) + ", pentru că numără doar pe cine a acceptat cookie-urile." : ""; anaLN.textContent = "Lead-urile din cardul galben și din grafic vin din serverul nostru, fără testele noastre și fără cele marcate „nu”" + (anaLS.partial ? ", și sunt numărate abia din " + (anaLS.first || "momentul primului lead") + ", de când există arhiva" : "") + "." + seen + " Cele din Surse și Campanii vin din GA, unde testele vechi nu se pot scoate."; }
     $("ana-mock-t").textContent = !mock ? "Ultima citire din GA4 a eșuat" + (anaSt.error && anaSt.error.message ? " (" + anaSt.error.message + ")" : "") + ". Cifrele sunt din " + anaWhen + "." : anaSt.error ? "Date de test · GA4 a refuzat citirea: " + (anaSt.error.message || "eroare") : anaSt.configured ? "Date de test · prima citire din GA4 e pe drum" : "Date de test · GA4 nu e conectat încă, lipsește cheia (TASK-128)";
     const rg = A.range || {}; $("ana-n").textContent = (rg.from && rg.to ? rg.from + " → " + rg.to : "") + (A.generatedAt ? " · generat " + when(A.generatedAt) : "");
     // KPIs
-    const K = [["users", "Utilizatori", "i-team", nf], ["sessions", "Sesiuni", "i-ck-globe", nf], ["leads", "Lead-uri", "i-ck-spark", nf], ["engagedRate", "Rată de implicare", "i-flame", (v) => pctS(rate(v))], ["avgEngagementSec", "Timp mediu implicat", "i-cal", mmss], ["coreLiteStarts", "The Core Lite pornite", "i-play", nf], ["coreLiteSubmits", "The Core Lite terminate", "i-check", nf]];
+    const K = [["leads", "Lead-uri", "i-ck-spark", nf], ["sessions", "Sesiuni", "i-ck-globe", nf], ["users", "Utilizatori", "i-team", nf], ["engagedRate", "Rată de implicare", "i-flame", (v) => pctS(rate(v), 0)]];
     const kb = $("ana-k"); kb.replaceChildren();
-    K.forEach(([k, l, ic, f], i) => { const x = kpiOf(A, k); if (!x) return; const c = el("div", "an-kpi" + (k === "leads" ? " hero" : "")); c.style.animationDelay = i * 40 + "ms"; const h = el("div", "an-kh"), hl = el("span"); hl.append(...liteText(l)); h.append(icon(ic), hl); if (x.r !== ANA.range) h.append(el("em", "", x.r + " z")); const n = el("b"); const isRate = k === "engagedRate"; countF(n, isRate ? rate(x.value) : x.value, "ana-" + k + ANA.range, isRate ? (v) => pctS(v) : k === "avgEngagementSec" ? mmss : (v) => nf(Math.round(v))); c.append(h, n, delta(x)); c.title = "Anterior: " + (isRate ? pctS(rate(x.prev)) : f(x.prev)); kb.append(c); });
+    K.forEach(([k, l, ic, f], i) => {
+      const x = kpiOf(A, k); if (!x) return;
+      const c = el("div", "an-kpi" + (k === "leads" ? " hero" : "")); c.style.animationDelay = i * 40 + "ms";
+      const h = el("div", "an-kh"), hl = el("span"); hl.append(...liteText(l)); h.append(icon(ic), hl); if (x.r !== ANA.range) h.append(el("em", "", x.r + " z"));
+      const n = el("b"), isRate = k === "engagedRate", ses = Number(((A.kpis || {}).sessions || {}).value) || 0;
+      if (isRate && ses < 30) n.textContent = AnaNum.share(Math.round(rate(x.value) / 100 * ses), ses).main; // under 30 sessions: counts, never a percent
+      else countF(n, isRate ? rate(x.value) : x.value, "ana-" + k + ANA.range, isRate ? (v) => pctS(v, 0) : (v) => nf(Math.round(v)));
+      c.append(h, n, delta(x)); c.title = "Anterior: " + (isRate ? pctS(rate(x.prev), 0) : f(x.prev));
+      if (k === "leads" && anaLS && anaLS.unmarked) { const m = el("button", "anl-hero", nf(anaLS.unmarked) + (anaLS.unmarked === 1 ? " nemarcat" : " nemarcate")); m.type = "button"; m.onclick = () => AnaReports.openLeads(); c.append(m); }
+      kb.append(c);
+    });
     const anaD = mock ? D.slice(ANA.range === "7" ? -7 : -30) : D;
     anaChart($("ana-chart"), anaD);
-    $("ana-chart-t").textContent = D[0] && D[0].label ? "Pe ore · azi" : "Pe zile · " + anaD.length + " zile";
-    // sources
-    const src = arrA(A.sources).slice().sort((a, b) => (Number(b.sessions) || 0) - (Number(a.sessions) || 0)), sb = $("ana-src"); sb.replaceChildren(); const smx = Math.max(1, ...src.map((s) => Number(s.sessions) || 0));
-    src.forEach((s, i) => { const tr = el("tr"), bar = el("i"); bar.style.setProperty("--w", (Number(s.sessions) || 0) / smx * 100 + "%"); bar.style.animationDelay = i * 40 + "ms"; const t1 = el("td", "an-sn"); t1.append(el("b", "", s.source || "—"), el("span", "mono muted", s.medium || "")); const t2 = el("td", "an-sb"); t2.append(bar, el("span", "", nf(s.sessions))); const cv = s.sessions ? (Number(s.leads) || 0) / s.sessions * 100 : 0; tr.append(t1, t2, el("td", "an-num", nf(s.users)), el("td", "an-num", nf(s.leads)), el("td", "an-num", s.sessions ? pctS(cv) : "—")); sb.append(tr); });
-    if (!src.length) { const tr = el("tr"), td = el("td", "empty", "Fără surse încă."); td.colSpan = 5; tr.append(td); sb.append(tr); }
+    $("ana-chart-t").textContent = D[0] && D[0].label ? "Pe ore, azi" : anaD.length > 60 ? "Pe săptămâni, " + anaD.length + " de zile" : "Pe zile, " + anaD.length + " zile";
+    // the funnels, the reports and the leads list: ana-reports.js
+    AnaReports.render(A, { mock, onMarked: () => { if (window.__ops) anaLoad(ANA.range); } });
     // campaigns A vs B with the funnel
     const cb = $("ana-camp"); cb.replaceChildren(); const by = new Map(); arrA(A.campaigns).forEach((c) => { if (!c || !c.slug) return; if (!by.has(c.slug)) by.set(c.slug, {}); by.get(c.slug)[String(c.variant || "a").toLowerCase()] = c; });
-    if (!by.size) cb.append(el("div", "empty", "Campaniile apar aici când au trafic cu utm_campaign."));
-    const ALLSTEPS = [["sessions", "Sesiuni"], ["ctaClicks", "Click pe CTA"], ["freebieStarts", "The Core Lite pornit"], ["freebieSubmits", "The Core Lite terminat"], ["leads", "Lead"]];
+    const hasCamp = arrA(A.campaigns).some((c) => Number(c.sessions)); $("ana-camp-h").hidden = !hasCamp; cb.hidden = !hasCamp; // no campaign with sessions: no block at all
     for (const [slug, v] of by) {
       const meta = S.campaigns.find((c) => (c.slug || c.id) === slug) || {}, blk = el("article", "an-cb"); blk.id = "ana-c-" + slug; blk.style.setProperty("--acc", safeCol(meta.color));
       const hd = el("div", "an-cbh"); hd.append(el("b", "", meta.title || meta.name || slug), el("span", "mono muted", slug));
       if (meta.slug || meta.id) { const go = el("button", "btn sm ghost"); go.type = "button"; go.append(icon("i-mega"), el("span", "", "Cardul campaniei")); go.onclick = () => { setCat("camp"); requestAnimationFrame(() => { const x = document.querySelector('.campc[data-slug="' + CSS.escape(slug) + '"]'); if (x) { x.scrollIntoView({ block: "center", behavior: reduced() ? "auto" : "smooth" }); flashEl(x); } }); }; hd.append(go); }
       blk.append(hd);
-      const cA = v.a ? Number(v.a.conversionPct ?? (v.a.leads / v.a.sessions * 100)) : null, cB = v.b ? Number(v.b.conversionPct ?? (v.b.leads / v.b.sessions * 100)) : null, win = cA != null && cB != null && Math.abs(cA - cB) >= .05 ? (cA > cB ? "a" : "b") : "";
+      // counts first; "mai bun" only with n >= 100 on both sides and Wilson intervals that do not overlap (ana-num.js). A lead rate almost never gets there: that is the honest answer
+      const verdict = v.a && v.b ? AnaNum.better({ k: Number(v.a.leads) || 0, n: Number(v.a.sessions) || 0 }, { k: Number(v.b.leads) || 0, n: Number(v.b.sessions) || 0 }) : null;
       const ab = el("div", "an-ab");
       for (const k of ["a", "b"]) {
-        const c = v[k], col = el("div", "an-v" + (win === k ? " win" : "")); const vh = el("div", "an-vh"); vh.append(el("span", "an-vk", k.toUpperCase())); let hl = meta["headline" + k.toUpperCase()]; if (hl && typeof hl === "object") hl = hl.ro || hl.en || Object.values(hl).find((x) => typeof x === "string"); if (typeof hl === "string" && hl) { const t = el("span", "an-vt", hl); t.title = hl; vh.append(t); } if (win === k) vh.append(el("span", "an-win", "câștigă +" + pctS(Math.abs(cA - cB), 1).replace("%", " pp"))); col.append(vh);
+        const c = v[k], col = el("div", "an-v"), vh = el("div", "an-vh"); vh.append(el("span", "an-vk", k.toUpperCase())); let hl = meta["headline" + k.toUpperCase()]; if (hl && typeof hl === "object") hl = hl.ro || hl.en || Object.values(hl).find((x) => typeof x === "string"); if (typeof hl === "string" && hl) { const t = el("span", "an-vt", hl); t.title = hl; vh.append(t); } col.append(vh);
         if (!c) { col.append(el("div", "empty", "Fără date pentru varianta " + k.toUpperCase() + ".")); ab.append(col); continue; }
-        const top = Number(c.sessions) || 1, fl = el("ol", "an-fn"), STEPS = ALLSTEPS.filter(([sk]) => c[sk] != null); // GA4 has no CTA or Core Lite event: those steps are left out, not shown as 0
-        STEPS.forEach(([sk, sl], i) => { const val = Number(c[sk]) || 0, prev = i ? Number(c[STEPS[i - 1][0]]) || 0 : 0, li = el("li"), bar = el("i"); bar.style.setProperty("--w", Math.max(1.5, val / top * 100) + "%"); bar.style.animationDelay = 150 + i * 70 + "ms"; const fl2 = el("span", "an-fl"); fl2.append(...liteText(sl)); li.append(fl2, bar, el("b", "", nf(val))); if (i) li.append(el("span", "an-fr", prev ? pctS(val / prev * 100) : "—")); fl.append(li); });
-        const cv = el("div", "an-cv"); cv.append(el("b", "", pctS(k === "a" ? cA : cB)), el("span", "", "conversie sesiune → lead")); if (c.utm_campaign) cv.append(el("span", "mono muted", "utm_campaign=" + c.utm_campaign));
-        col.append(fl, cv); ab.append(col);
+        const ses = Number(c.sessions) || 0, ld = Number(c.leads) || 0, sh = AnaNum.share(ld, ses), cv = el("div", "an-cv"); cv.append(el("b", "", sh.main), el("span", "", sh.pct == null ? "sesiuni cu lead" : (sh.sub ? sh.sub + " " : "") + "sesiuni cu lead")); col.append(cv);
+        const counts = el("div", "muted", nf(ses) + " sesiuni, " + nf(ld) + " lead-uri" + (c.utm_campaign ? ", utm_campaign=" + c.utm_campaign : "")); counts.style.fontSize = "12px"; counts.style.overflowWrap = "anywhere"; col.append(counts);
+        ab.append(col);
       }
+      if (verdict) blk.append(el("p", "anr-find", "Varianta " + verdict.toUpperCase() + " e mai bună, și diferența nu ține de noroc."));
       blk.append(ab); cb.append(blk);
     }
-    // map engagement
-    const M = A.map || {}, mb = $("ana-map"); mb.replaceChildren();
-    [["driveSessions", A.source === "ga4" ? "sesiuni pe /city/" : "plimbări cu mașina pe hartă", "i-ck-pin", "#119BFE"], ["cardOpens", "carduri de proiect deschise", "i-ck-img", "#FED012"], ["gameStarts", "jocuri pornite", "i-play", "#28C840"], ["postcards", "vederi trimise", "i-send", "#F65342"]].forEach(([k, l, ic, acc], i) => { if (M[k] == null) return; const t = el("div", "an-mt"); t.style.setProperty("--acc", acc); t.style.animationDelay = i * 50 + "ms"; const ii = el("span", "bt-ic"); ii.append(icon(ic)); const n = el("b"); countF(n, Number(M[k]) || 0, "ana-m-" + k, (v) => nf(Math.round(v))); t.append(ii, n, el("span", "", l)); mb.append(t); });
-    if (!mb.children.length) mb.append(el("div", "empty", "Fără date de pe hartă."));
-    // lists
-    barList($("ana-pages"), arrA(A.topPages).slice(0, 8).map((p) => ({ ...p, lbl: p.title || p.path })), "lbl", "views", (r) => nf(r.views) + (r.avgSec ? " · " + mmss(r.avgSec) : ""), "path");
-    barList($("ana-ctry"), arrA(A.countries).slice(0, 8), "country", "users", (r, t) => nf(r.users) + " · " + pctS(r.users / t * 100, 0));
-    barList($("ana-dev"), arrA(A.devices).map((d) => ({ ...d, lbl: DEV[d.device] || d.device })), "lbl", "users", (r, t) => pctS(r.users / t * 100, 0));
     // Home card
     const h = $("ana-home"); h.replaceChildren(); const hk = el("div", "an-hk");
     const homeA = anaReal() || anaMock(), homeD = arrA(homeA.daily); // Home has no selector: always 30 days, and it says so

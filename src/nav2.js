@@ -763,6 +763,7 @@
     function goTo(target, pl) {
       if (!D.ready && !place()) return false;
       D.ready = true;
+      window.czEvent?.("city_ready", { once: "city_ready" }); // TASK-144 (T4): those who leave during the 6 s boot are not "uninterested"; once per page, only after a yes (czEvent)
       if (FREE) {
         if (!P.init) freeInit();
         if (!freeGo(target, pl)) { if (pl?.board) { H.arrive(pl); return true; } return false; } // beta 2.92: since r185 the road ends at Olari 9's forecourt: the jet (no road to it now) opens its boarding pass straight away
@@ -833,7 +834,7 @@
     function tick(dt, now) {
       if (!H.ready()) return;
       if (!D.ready) {
-        if (!place()) return; D.ready = true; render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500);
+        if (!place()) return; D.ready = true; window.czEvent?.("city_ready", { once: "city_ready" }); render(true); H.closures?.(CLOSED); setTimeout(preShots, 1200); setTimeout(() => engineLoops(H.vehicle()), 2500);
         // beta 3.xx: the sound's context in the first idle moment (see SND.prep), not in the first key press
         // r399: and only once the opening is over (window.__czIntro.onEnd): under it the context's 100+ ms task held the page
         const sndPrep = () => (window.requestIdleCallback || ((f) => setTimeout(f, 300)))(() => SND.prep(), { timeout: 1500 }), Z = window.__czIntro;
@@ -2708,6 +2709,7 @@
       try { if (!force && localStorage.getItem("cz-drive-guide") === "2") return false; localStorage.setItem("cz-drive-guide", "2"); } catch {}
       if (!D.ready && !place()) return false;
       D.ready = true;
+      window.czEvent?.("city_ready", { once: "city_ready" }); // TASK-144 (T4): those who leave during the 6 s boot are not "uninterested"; once per page, only after a yes (czEvent)
       if (!TUT.el) {
         TUT.el = document.createElement("div"); TUT.el.className = "drive-guide n2-guide hidden"; TUT.el.setAttribute("role", "status");
         document.body.appendChild(TUT.el);

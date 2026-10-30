@@ -1,0 +1,111 @@
+/* TASK-144 · /ops Analytics: funnels and reports. The same system as the rest of /ops: black, white and greys carry the page, yellow only on the
+   lead step and the one KPI; no other colour, so the reports read as one drawing. Text on yellow is black. No outlined type, no decorative pills. */
+.anr { display: grid; gap: 14px; min-width: 0; }
+.anr-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; min-width: 0; }
+.anr-2.wide { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.anr-c { gap: 12px; padding: 18px 20px; }
+.anr-t { margin: 0; font: 800 18px/1.2 var(--f-d); letter-spacing: -.01em; text-wrap: balance; }
+.anr-th { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; }
+.anr-when { font-size: 12px; }
+.anr-l { margin: 0; max-width: 72ch; font-size: 14px; line-height: 1.45; color: var(--muted); }
+.anr-foot { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); max-width: 72ch; }
+.anr-find { margin: 0; max-width: 34ch; font: 800 clamp(22px, 2.6vw, 30px)/1.12 var(--f-d); letter-spacing: -.02em; text-wrap: balance; }
+.anr-c > .btn { justify-self: start; }
+.anr-empty { padding: 22px 0; font-size: 14px; color: var(--muted); }
+.anr-st { margin: 0; font-size: 13.5px; font-weight: 600; }
+.anr-h4 { margin: 0 0 8px; font: 800 14px var(--f-d); }
+.anr-bar { display: block; height: 6px; border-radius: 3px; background: var(--g1); overflow: hidden; }
+.anr-bar i { display: block; height: 100%; border-radius: 3px; background: var(--ink); }
+.anr-sh { display: inline-grid; gap: 1px; justify-items: end; } .anr-sh b { font-weight: 700; } .anr-sh small { font-size: 11.5px; color: var(--muted); font-weight: 400; white-space: nowrap; }
+
+/* ----- the staircase: columns on a wide screen, stacked bars on a phone. One drawing, the page's one big gesture ----- */
+.anf { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(calc(var(--n) - 1), minmax(0, 1fr)) minmax(0, .55fr); column-gap: 0; }
+.anf-s { display: grid; grid-template-rows: auto 220px; row-gap: 12px; min-width: 0; }
+.anf-tx { display: grid; grid-template-columns: auto 1fr; align-content: start; column-gap: 8px; padding-right: 16px; min-width: 0; }
+.anf-no { grid-column: 1; grid-row: 1; align-self: baseline; font: 500 12px var(--f-m); color: var(--muted); }
+.anf-n { grid-column: 2; grid-row: 1; font: 900 clamp(30px, 3.4vw, 46px)/1 var(--f-d); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.anf-lb { grid-column: 2; margin-top: 4px; font-size: 14px; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+.anf-note { grid-column: 2; margin-top: 3px; font-size: 12px; line-height: 1.35; color: var(--muted); text-wrap: pretty; }
+.anf-p { position: relative; display: grid; grid-template-columns: minmax(44px, 42%) 1fr; align-items: end; height: 220px; border-bottom: 1px solid var(--ink); }
+.anf-b { grid-column: 1; grid-row: 1; display: block; height: var(--v); min-height: 3px; background: var(--ink); border-radius: 4px 4px 0 0; transform-origin: bottom; }
+.anf-s.lead .anf-b { background: var(--yellow); box-shadow: inset 0 0 0 1px #000; min-height: 6px; }
+.anf-link { grid-column: 2; grid-row: 1; align-self: stretch; display: block; background: var(--g1); }
+.anf-r { grid-column: 2; grid-row: 1; align-self: end; justify-self: start; display: grid; gap: 1px; padding: 0 0 10px 12px; position: relative; }
+.anf-r b { font: 800 19px/1.1 var(--f-d); font-variant-numeric: tabular-nums; }
+.anf-r small { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.anf.sep .anf-b { background: var(--g3); } .anf.sep .anf-s.lead .anf-b { background: var(--g3); box-shadow: none; }
+.anf.sep { grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+@media (prefers-reduced-motion: no-preference) { .anr-anim .anf-b { animation: anfUp .2s var(--ease-out, ease-out) both; } }
+@keyframes anfUp { from { transform: scaleY(0); } to { transform: none; } }
+
+/* ----- tables that turn into rows on a phone: nothing ever scrolls sideways ----- */
+.anr-tbl { width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; }
+.anr-tbl thead th { padding: 0 10px 8px; font: 500 12px var(--f-b); letter-spacing: 0; text-transform: none; color: var(--muted); background: none; text-align: left; border-bottom: 1px solid var(--g2); white-space: nowrap; }
+.anr-tbl thead th:first-child { padding-left: 0; } .anr-tbl thead th:last-child { padding-right: 0; }
+.anr-tbl th.anr-n, .anr-tbl td.anr-n { text-align: right; font-variant-numeric: tabular-nums; }
+.anr-tbl tbody th, .anr-tbl tbody td { padding: 11px 10px; border-bottom: 1px solid var(--g1); vertical-align: top; }
+.anr-tbl tbody tr:last-child th, .anr-tbl tbody tr:last-child td { border-bottom: 0; }
+.anr-tbl tbody th { padding-left: 0; font: 400 14px var(--f-b); letter-spacing: 0; text-transform: none; color: inherit; background: none; text-align: left; } .anr-tbl tbody td:last-child { padding-right: 0; }
+.anr-src b { display: block; font-weight: 700; overflow-wrap: anywhere; } .anr-src small { font-size: 12px; color: var(--muted); }
+.anr-tbl tr.other .anr-src b { font-weight: 500; color: var(--muted); }
+.anr-ses { width: 30%; } .anr-ses b { display: block; font-weight: 700; margin-bottom: 5px; }
+
+/* ----- ranked lists ----- */
+.anr-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; min-width: 0; }
+.anr-rank.tight { gap: 10px; }
+.anr-rank li { display: grid; gap: 5px; min-width: 0; }
+.anr-rt { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; font-size: 14px; }
+.anr-rt b { font-weight: 600; min-width: 0; overflow-wrap: anywhere; } .anr-rv { font: 700 14px var(--f-b); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.anr-rank small { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.anr-who { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.anr-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+
+/* ----- the city: a quiet count ----- */
+.anr-cnt { display: flex; flex-wrap: wrap; gap: 14px 36px; margin: 4px 0 0; }
+.anr-cnt dd { margin: 0; font: 900 34px/1 var(--f-d); letter-spacing: -.02em; font-variant-numeric: tabular-nums; } .anr-cnt dt { margin-top: 4px; font-size: 13.5px; color: var(--muted); }
+.anr-game { margin: 0; padding-top: 12px; border-top: 1px solid var(--g1); font-size: 13.5px; line-height: 1.5; color: var(--muted); } .anr-game b { color: var(--ink); font-weight: 600; }
+
+/* ----- the leads ----- */
+.anl-hero { justify-self: start; margin-top: 2px; padding: 0; border: 0; background: none; color: #000; font: 700 12.5px var(--f-b); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.anl-hero:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
+.anr-lbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.anl { list-style: none; margin: 0; padding: 0; display: grid; }
+.anl-i { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto; gap: 8px 22px; align-items: start; padding: 14px 0; border-top: 1px solid var(--g1); min-width: 0; }
+.anl-who { display: grid; gap: 2px; min-width: 0; } .anl-who b { font-weight: 700; overflow-wrap: anywhere; } .anl-who small, .anl-what small { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.anl-mail { font-size: 13.5px; color: inherit; overflow-wrap: anywhere; text-underline-offset: 2px; }
+.anl-what { display: grid; gap: 4px; min-width: 0; } .anl-msg { margin: 0; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-line; }
+.anl-act { display: grid; gap: 5px; justify-items: end; } .anl-by { font-size: 12px; color: var(--muted); text-align: right; max-width: 22ch; }
+.anl-seg button { min-height: 36px; }
+.anl-seg button:disabled { opacity: .55; }
+.anl-i.no .anl-who, .anl-i.no .anl-what { opacity: .55; }
+
+@media (max-width: 980px) { .anr-2, .anr-2.wide { grid-template-columns: minmax(0, 1fr); } .anl-i { grid-template-columns: minmax(0, 1fr) auto; } .anl-what { grid-column: 1 / -1; grid-row: 2; } .anl-act { grid-column: 2; grid-row: 1; } }
+@media (max-width: 720px) {
+  .anr-c { padding: 16px; }
+  .anr-3 { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  /* the staircase lies down: each step one bar, the rate between the steps */
+  .anf, .anf.sep { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+  .anf-s { grid-template-rows: auto auto; row-gap: 8px; }
+  .anf-tx { grid-template-columns: auto 1fr; padding-right: 0; }
+  .anf-n { font-size: 34px; }
+  .anf-p { display: block; height: auto; border-bottom: 0; }
+  .anf-b { width: var(--v); min-width: 3px; height: 14px; min-height: 14px; border-radius: 0 4px 4px 0; transform-origin: left; }
+  .anf-s.lead .anf-b { min-height: 14px; min-width: 6px; }
+  .anf-link { display: none; }
+  .anf-r { padding: 10px 0 16px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .anf-r b { font-size: 16px; }
+  .anf-s:not(:last-child) .anf-p { border-bottom: 1px solid var(--g1); margin-bottom: 14px; }
+  .anf-s:not(:last-child) .anf-r::before { content: "Merg mai departe:"; font-size: 13px; color: var(--muted); }
+  .anr-tbl thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .anr-tbl, .anr-tbl tbody, .anr-tbl tr, .anr-tbl tbody th, .anr-tbl tbody td { display: block; }
+  .anr-tbl tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; padding: 14px 0; border-top: 1px solid var(--g1); }
+  .anr-tbl tbody tr:first-child { border-top: 0; padding-top: 0; }
+  .anr-tbl tbody th, .anr-tbl tbody td { padding: 0; border: 0; text-align: left; }
+  .anr-tbl tbody th { grid-column: 1 / -1; }
+  .anr-ses { grid-column: 1 / -1; width: auto; }
+  .anr-tbl td.anr-n { text-align: left; }
+  .anr-tbl td:not(.anr-ses)::before { content: attr(data-l); display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .anr-tbl .anr-sh { justify-items: start; } .anr-sh small { white-space: normal; }
+  .anr-who { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .anl-i { grid-template-columns: minmax(0, 1fr); } .anl-what, .anl-act { grid-column: 1; grid-row: auto; } .anl-act { justify-items: start; grid-auto-flow: column; align-items: center; justify-content: start; gap: 10px; } .anl-by { text-align: left; }
+}
