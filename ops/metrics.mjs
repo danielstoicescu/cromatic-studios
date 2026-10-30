@@ -207,7 +207,7 @@ export function parseFunnel(j, name) {
   return { ok: true, sampled, steps: keys.map((key, i) => ({ key, users: users[i] })) };
 }
 /** every number of the section, for one period, one report at a time. SOFT ones are new or depend on the property's setup: if one fails the others stay, and its card says so */
-export const SOFT = new Set(["caseReads", "eventUsers", "cityUsers", "pages", "caseClicks", "caseLeads", "landing"]);
+export const SOFT = new Set(["caseReads", "eventUsers", "cityUsers", "pages", "caseClicks", "caseLeads", "landing", "mailClicks"]);
 export function gaReports(p = "30", now = new Date()) {
   const { both: RANGES, one: MONTH } = periodRanges(p), step = p === "today" ? "hour" : "date", rows = p === "today" ? 30 : GA_PERIODS[p] + 5, PAGES = pageRange(p, now);
   return {
@@ -224,13 +224,14 @@ export function gaReports(p = "30", now = new Date()) {
   caseClicks: { dateRanges: PAGES, dimensions: ["customEvent:case_path"], metrics: ["eventCount"], dimensionFilter: eventIs("case_study_click"), limit: 100 },
   caseLeads: { dateRanges: PAGES, dimensions: ["pagePath"], metrics: ["eventCount"], dimensionFilter: { andGroup: { expressions: [eventIs(LEAD), isCase] } }, limit: 100 },
   landing: { dateRanges: PAGES, dimensions: ["landingPage"], metrics: ["sessions", "engagementRate"], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 40 },
+  mailClicks: { dateRanges: PAGES, dimensions: ["date", "sessionSource", "sessionMedium"], metrics: ["eventCount"], dimensionFilter: eventIs("email_click"), limit: 200 }, // mail sent directly never reaches the funnel; this is the only trace it leaves
   countries: { dateRanges: MONTH, dimensions: ["country", "countryId"], metrics: ["activeUsers"], orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }], limit: 8 },
   devices: { dateRanges: MONTH, dimensions: ["deviceCategory"], metrics: ["activeUsers"], orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }] },
   campaigns: { dateRanges: MONTH, dimensions: ["sessionCampaignName"], metrics: ["sessions"], dimensionFilter: { filter: { fieldName: "sessionCampaignName", stringFilter: { matchType: "FULL_REGEXP", value: ".+-[abAB]" } } }, limit: 40 },
   campaignLeads: { dateRanges: MONTH, dimensions: ["sessionCampaignName"], metrics: ["eventCount"], dimensionFilter: { andGroup: { expressions: [eventIs(LEAD), { filter: { fieldName: "sessionCampaignName", stringFilter: { matchType: "FULL_REGEXP", value: ".+-[abAB]" } } }] } }, limit: 40 },
   };
 }
-const SUMMARY_V = 2; // a cached summary of an older shape is refreshed as soon as the retry rule allows
+const SUMMARY_V = 3; // a cached summary of an older shape is refreshed as soon as the retry rule allows
 /** a case page, in either language, as one row */
 const caseSlug = (path) => { const m = /^\/(?:work|ro\/proiecte)\/([^/?#]+)/.exec(String(path || "").replace(/^https?:\/\/[^/]+/, "")); return m ? m[1] : null; };
 const caseTitle = (t) => { const x = String(t || "").split(/\s[|·–-]\s/)[0].trim(); return x && x !== "(not set)" ? x : ""; };
@@ -298,6 +299,7 @@ export function buildSummary(R, now = new Date(), period = "30") {
     pageFrom: pageStart(period, now), // the report by page and the funnels start here; the UI says so
     sources: buildSources(R), cases: buildCases(R), funnels: buildFunnels(R),
     landing: rowsOf(R.landing).map((r) => ({ path: r.landingPage, sessions: r.sessions, engaged: Math.round((r.engagementRate || 0) * r.sessions) })),
+    mailClicks: rowsOf(R.mailClicks).map((r) => ({ date: isoDay(r.date), source: isInstagram(r.sessionSource) ? "Instagram" : r.sessionSource, medium: isInstagram(r.sessionSource) ? "" : r.sessionMedium, clicks: r.eventCount })),
     game: GAME_STEPS.map((event) => ({ event, users: evUsers.get(event) || 0 })),
     missing: [...SOFT].filter((k) => !R[k]), // the reports that failed this time: their cards say so, instead of showing zero
     countries: rowsOf(R.countries).map((r) => ({ country: regionRo(r.countryId, r.country), users: r.activeUsers })),

@@ -18,6 +18,17 @@
   const bar = (v, max) => { const b = el("span", "anr-bar"), i = el("i"); i.style.width = (max ? Math.max(1, v / max * 100) : 0) + "%"; b.append(i); return b; };
   function shareNode(num, den) { const s = N.share(num, den), o = el("span", "anr-sh"); o.append(el("b", "", s.main)); if (s.sub) o.append(el("small", "", s.sub)); return o; }
 
+  // ---------- mail sent directly never reaches the funnel: the clicks on the address are the only trace, and only with cookies accepted ----------
+  function mailLine(A) {
+    if ((A.missing || []).includes("mailClicks") || !Array.isArray(A.mailClicks)) return null;
+    const by = new Map(); let total = 0;
+    for (const r of A.mailClicks) { const k = srcName(r); by.set(k, (by.get(k) || 0) + r.clicks); total += r.clicks; }
+    const p = el("p", "anr-game"); p.append(el("b", "", "Pe lângă funnel: "));
+    const list = [...by].sort((a, b) => b[1] - a[1]).map(([k, n]) => k + " " + nf(n)).join(", ");
+    p.append(total ? nf(total) + (total === 1 ? " click" : " click-uri") + " pe adresa de mail, din " + fday(A.pageFrom) + ": " + list + ". Se văd doar cei care au acceptat cookie-urile și au dat click, nu cei care au copiat adresa." : "Niciun click pe adresa de mail din " + fday(A.pageFrom) + ". Se văd doar cei care au acceptat cookie-urile și au dat click, nu cei care au copiat adresa.");
+    return p;
+  }
+
   // ---------- the comments under the funnel: written every two days or on a major change, sent through the bridge, no deploy ----------
   const OLD_AFTER = 3; // days; past this the comment says it is behind the numbers
   function notesBlock(A) {
@@ -237,7 +248,7 @@
     last = key; lastA = A;
     const again = () => draw(lastA, true);
     const two = (a, b, cls) => { const g = el("div", "anr-2" + (cls ? " " + cls : "")); g.append(a, b); return g; };
-    const fc = funnelCard(A), notes = notesBlock(A); if (notes) fc.append(notes);
+    const fc = funnelCard(A), mail = mailLine(A), notes = notesBlock(A); if (mail) fc.append(mail); if (notes) fc.append(notes);
     host.replaceChildren(fc, sourcesCard(A), two(casesCard(A, again), cityCard(A), "wide"), two(landingCard(A), whoCard(A)), wantsCard(A));
     host.classList.toggle("anr-anim", !draw.seen); draw.seen = true;
   }
