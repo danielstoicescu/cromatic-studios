@@ -18,6 +18,7 @@ import { createSign } from "node:crypto";
 import { readFileSync, writeFileSync, renameSync, statSync, unlinkSync, mkdirSync } from "node:fs";
 import { writeFile, rename } from "node:fs/promises";
 import { join } from "node:path";
+import { makeLeadStore, withStoreLeads, bucharestDay } from "./leads.mjs";
 
 const PATHS = [["/", "Homepage EN"], ["/ro/", "Homepage RO"], ["/city/", "Orașul"]];
 const STRATEGIES = ["mobile", "desktop"];
@@ -200,7 +201,7 @@ export function buildSummary(R, now = new Date(), period = "30") {
   const daily = [];
   if (period === "today") { // by the hour, up to the last one with visits
     const hours = rowsOf(R.daily), last = hours.reduce((a, r) => Math.max(a, Number(r.hour) || 0), 0), by = new Map(hours.map((r) => [Number(r.hour), r])), byLead = new Map([...leadsByDay].map(([k, v]) => [Number(k), v]));
-    for (let h = 0; h <= last; h++) { const r = by.get(h) || {}; daily.push({ date: now.toISOString().slice(0, 10), label: String(h).padStart(2, "0") + ":00", users: r.activeUsers || 0, sessions: r.sessions || 0, leads: byLead.get(h) || 0 }); }
+    for (let h = 0; h <= last; h++) { const r = by.get(h) || {}; daily.push({ date: bucharestDay(now), label: String(h).padStart(2, "0") + ":00", users: r.activeUsers || 0, sessions: r.sessions || 0, leads: byLead.get(h) || 0 }); }
   } else if (days.length) { // GA leaves out a day with no visits: the chart still needs it, at zero
     const dayMs = 86400e3, toD = (k) => Date.UTC(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8));
     for (let t = toD(days[0]); t <= toD(days[days.length - 1]); t += dayMs) {
@@ -236,7 +237,8 @@ export function buildSummary(R, now = new Date(), period = "30") {
 }
 
 // ---------- the service ----------
-export function createMetrics({ dataDir, log = console, env = process.env }) {
+export function createMetrics({ dataDir, log = console, env = process.env, leadsDirs = () => [] }) {
+  const leadStore = makeLeadStore(leadsDirs); // the Leads numbers come from our own store, without our tests; GA4 keeps the rest
   const P = (f) => join(dataDir, f);
   const prod = env.NODE_ENV === "production";
   const dev = (name, real) => (!prod && env[name]) || real; // test stubs only: a production server always talks to Google
@@ -489,7 +491,7 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
     const f = gaFile();
     if (!gaConfigured() && !f.data) return null;
     const status = gaStatus(f);
-    return f.data ? { ...f.data, status } : { status };
+    return f.data ? { ...withStoreLeads(f.data, leadStore()), status } : { status };
   }
   /** one period, for the selector. Never waits for Google: it answers with what is cached and asks for the rest in the background */
   function analyticsPeriod(raw) {
@@ -499,7 +501,7 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
     const due = gaDue(Date.now(), p);
     if (due) refreshGa(p).catch((e) => warn("GA4: " + e.message));
     const f = gaFile(p), pending = due || gaPending(p);
-    if (f.data) return { status: 200, ok: true, range: p, refreshing: pending, data: { ...f.data, status: gaStatus(f) } };
+    if (f.data) return { status: 200, ok: true, range: p, refreshing: pending, data: { ...withStoreLeads(f.data, leadStore()), status: gaStatus(f) } };
     if (pending) return { status: 200, ok: true, range: p, loading: true };
     return { status: 200, ok: false, error: "ga", message: (f.lastError && f.lastError.message) || "" };
   }
