@@ -31,6 +31,8 @@
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
 //   GET  /api/ops/perf                          (admin session) TASK-141: the Performance page's data (ops/metrics.mjs)
 //   GET  /api/ops/analytics?range=today|7|30|90 (admin session) one period from the GA4 cache; a missing one is fetched in the background ({loading: true})
+//   GET  /api/ops/leads                         (admin session) TASK-144: the stored leads, to mark them: name, email, message, never the phone or IP; no-store
+//   POST /api/ops/leads/mark                    (admin session) {id, mark: "real"|"nu"|null}, rate limited; state + audit beside the lead file (ops/leads.mjs)
 //   GET  /api/ops/perf/shot/<page>-<device>     (admin session) the latest PSI screenshot + filmstrip, as data URIs
 //   POST /api/ops/perf/run                      (admin session) "Măsoară acum": 202 at once, the run goes on in the background; at most one per 15 min
 //   GET|POST /api/ops/files, POST|DELETE /api/ops/files/<id>   (admin session) TASK-142: Fișiere; the links are /f/<id>/<name> (ops/files.mjs)
@@ -38,6 +40,7 @@ import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, sta
 import { join, extname } from "node:path";
 import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto";
 import { createMetrics } from "./metrics.mjs";
+import { LEAD_ID_RE } from "./leads.mjs";
 import { createFiles, FILE_ID_RE } from "./files.mjs";
 
 // the allow-list lives in ops/users.json (one place to edit); <dataDir>/users.json overrides it on a server
@@ -55,7 +58,7 @@ export const PROPOSAL_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{10}$/;
 export const PROPOSAL_FILE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/i;
 const PROPOSAL_FILE_MAX = 4 * 1048576, PROPOSAL_FILES_MAX = 6, PROPOSAL_BODY_MAX = 12 * 1048576;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const ASSETS = { "nav.js": "text/javascript; charset=utf-8", "perf.js": "text/javascript; charset=utf-8", "perf.css": "text/css; charset=utf-8", "files.js": "text/javascript; charset=utf-8", "files.css": "text/css; charset=utf-8", "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
+const ASSETS = { "ana-num.js": "text/javascript; charset=utf-8", "ana-reports.js": "text/javascript; charset=utf-8", "ana-reports.css": "text/css; charset=utf-8", "nav.js": "text/javascript; charset=utf-8", "perf.js": "text/javascript; charset=utf-8", "perf.css": "text/css; charset=utf-8", "files.js": "text/javascript; charset=utf-8", "files.css": "text/css; charset=utf-8", "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
 
 const sha = (x) => createHash("sha256").update(String(x)).digest();
 const shaHex = (x) => createHash("sha256").update(String(x)).digest("hex");
@@ -182,7 +185,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
 
   // ---------- helpers ----------
   const codes = new Map(); // email -> {hash, exp, tries}
-  const ipLogin = limiter(10, 15 * 60e3), emailLogin = limiter(3, 15 * 60e3), ipVerify = limiter(20, 15 * 60e3), userInbox = limiter(30, 10 * 60e3);
+  const ipLogin = limiter(10, 15 * 60e3), emailLogin = limiter(3, 15 * 60e3), ipVerify = limiter(20, 15 * 60e3), userInbox = limiter(30, 10 * 60e3), userMark = limiter(60, 10 * 60e3);
   const userUpload = limiter(40, 10 * 60e3);
   const UP_DIR = join(dataDir, "uploads"), UP_CAP = Number(process.env.OPS_UPLOAD_CAP_MB || 2048) * 1048576;
   let upUsed = null;
@@ -544,6 +547,23 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
         const { status, ...out } = metrics.analyticsPeriod(u.searchParams.get("range") || "30");
         json(res, status, out); return true;
+      }
+      if (r === "leads" || r === "leads/mark") { // TASK-144: personal data, admins only; nothing from these two routes is ever logged
+        if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        const noStore = { "Cache-Control": "no-store" };
+        if (r === "leads" && m === "GET") {
+          try { json(res, 200, { ok: true, ...metrics.leads.list() }, noStore); } catch { log.error("[ops] leads: the list could not be read"); json(res, 500, { ok: false }, noStore); }
+          return true;
+        }
+        if (r === "leads/mark" && m === "POST") { // the Origin check for every browser write is above
+          if (userMark(s.email)) { json(res, 429, { ok: false, error: "rate" }, noStore); return true; }
+          const b = await body(req, 2048), id = String((b && b.id) || ""), mark = b && b.mark === null ? null : String((b && b.mark) || "");
+          if (!LEAD_ID_RE.test(id) || !(mark === null || mark === "real" || mark === "nu")) { json(res, 422, { ok: false, error: "bad" }, noStore); return true; }
+          try { const { status, ...out } = metrics.leads.mark(id, mark, { email: s.email, name: s.user.name }); json(res, status, { ok: status === 200, ...out }, noStore); }
+          catch { log.error("[ops] leads: a mark could not be saved"); json(res, 500, { ok: false }, noStore); }
+          return true;
+        }
+        json(res, 405, { ok: false }, noStore); return true;
       }
       if (r.startsWith("perf/shot/") && m === "GET") { // the latest screenshot and filmstrip of one page on one device, admins only
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
