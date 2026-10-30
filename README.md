@@ -43,6 +43,7 @@ State when this file was written: **live 4.10** (r296, `3559138`); beta = live +
 | `/onboarding/`, `/rapoarte/<slug>/` | launch page, private reports |
 | `/thecore30/<id>?t=<token>`, `/thecore30/lite`, `/thecore30/blank`, `/api/core30/*` | The Core 3.0 (answers live outside the release in `CORE30_DATA`) |
 | `/ops`, `/api/ops/*` | the Ops mirror (email + emailed code login, data in `OPS_DATA`) |
+| `/f/<id>/<name>` | /ops Fișiere: files uploaded by admins, in `OPS_DATA/files`, no deploy. HTML and SVG are sandboxed with an opaque origin so they cannot act in /ops (`ops/files.mjs`, never add allow-same-origin) |
 | `POST /api/boarding` | the boarding pass form (mail to the studio + the passenger, lead saved) |
 | `/api/csp-report*`, `/api/ctx`, `/api/leads`, `/healthz` | CSP reports, internal-IP flag, leads (key), health (r400: a readiness probe, 503 until the process listens and while it drains on shutdown) |
 

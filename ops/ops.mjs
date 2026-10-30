@@ -31,10 +31,12 @@
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
 //   GET  /api/ops/perf                          (admin session) TASK-141: the Performance page's data (ops/metrics.mjs)
 //   POST /api/ops/perf/run                      (admin session) "Măsoară acum": 202 at once, the run goes on in the background; at most one per 15 min
+//   GET|POST /api/ops/files, POST|DELETE /api/ops/files/<id>   (admin session) TASK-142: Fișiere; the links are /f/<id>/<name> (ops/files.mjs)
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
 import { join, extname } from "node:path";
 import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto";
 import { createMetrics } from "./metrics.mjs";
+import { createFiles, FILE_ID_RE } from "./files.mjs";
 
 // the allow-list lives in ops/users.json (one place to edit); <dataDir>/users.json overrides it on a server
 const USERS_FILE = new URL("./users.json", import.meta.url);
@@ -51,7 +53,7 @@ export const PROPOSAL_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{10}$/;
 export const PROPOSAL_FILE_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*\.html$/i;
 const PROPOSAL_FILE_MAX = 4 * 1048576, PROPOSAL_FILES_MAX = 6, PROPOSAL_BODY_MAX = 12 * 1048576;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const ASSETS = { "nav.js": "text/javascript; charset=utf-8", "perf.js": "text/javascript; charset=utf-8", "perf.css": "text/css; charset=utf-8", "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
+const ASSETS = { "nav.js": "text/javascript; charset=utf-8", "perf.js": "text/javascript; charset=utf-8", "perf.css": "text/css; charset=utf-8", "files.js": "text/javascript; charset=utf-8", "files.css": "text/css; charset=utf-8", "offers.js": "text/javascript; charset=utf-8", "offers.css": "text/css; charset=utf-8", "login.css": "text/css; charset=utf-8", "logo.css": "text/css; charset=utf-8", "adapter.js": "text/javascript; charset=utf-8", "login.js": "text/javascript; charset=utf-8", "ops.css": "text/css; charset=utf-8", "favicon.svg": "image/svg+xml" };
 
 const sha = (x) => createHash("sha256").update(String(x)).digest();
 const shaHex = (x) => createHash("sha256").update(String(x)).digest("hex");
@@ -185,19 +187,23 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   const du = (d) => { let n = 0; let list = []; try { list = readdirSync(d, { withFileTypes: true }); } catch { return 0; } for (const e of list) { const p = join(d, e.name); n += e.isDirectory() ? du(p) : (statOr(p)?.size || 0); } return n; };
   const statOr = (p) => { try { return statSync(p); } catch { return null; } };
 
+  // TASK-142: Fișiere. The files share the uploads' cap, so OPS_UPLOAD_CAP_MB stays the one number for this disk
+  const FILE_MAX = Number(process.env.OPS_FILE_MAX_MB || 50) * 1048576, userFiles = limiter(60, 10 * 60e3);
+  const fileStore = createFiles({ dataDir, sniff, fileMax: FILE_MAX, capBytes: UP_CAP, usedElsewhere: () => (upUsed === null ? (upUsed = du(UP_DIR)) : upUsed), appendLine, log });
+
   async function upload(req, res, s, u) {
     if (userUpload(s.email)) return json(res, 429, { ok: false, error: "rate", message: "Prea multe fișiere deodată. Mai încearcă în câteva minute." });
     const len = Number(req.headers["content-length"] || 0);
     if (len > UP_MAX) { res.setHeader("Connection", "close"); return json(res, 413, { ok: false, error: "too_large", message: "Fișierul e peste 25 MB." }); }
     if (upUsed === null) upUsed = du(UP_DIR);
-    if (upUsed + (len || 0) > UP_CAP) return json(res, 507, { ok: false, error: "quota", message: "Spațiul pentru fișiere din ops e plin (" + Math.round(UP_CAP / 1048576 / 1024 * 10) / 10 + " GB). Spune-i lui Daniel." });
+    if (upUsed + fileStore.used() + (len || 0) > UP_CAP) return json(res, 507, { ok: false, error: "quota", message: "Spațiul pentru fișiere din ops e plin (" + Math.round(UP_CAP / 1048576 / 1024 * 10) / 10 + " GB). Spune-i lui Daniel." });
     const chunks = []; let n = 0;
     for await (const c of req) { n += c.length; if (n > UP_MAX) { res.setHeader("Connection", "close"); json(res, 413, { ok: false, error: "too_large", message: "Fișierul e peste 25 MB." }); req.destroy(); return; } chunks.push(c); }
     const buf = Buffer.concat(chunks);
     if (!buf.length) return json(res, 422, { ok: false, error: "empty", message: "Fișierul e gol." });
     const ext = sniff(buf);
     if (!ext) return json(res, 415, { ok: false, error: "type", message: "Tip neacceptat. Merg PNG, JPG, WebP, AVIF, SVG, PDF, MP4 și WebM." });
-    if (upUsed + buf.length > UP_CAP) return json(res, 507, { ok: false, error: "quota", message: "Spațiul pentru fișiere din ops e plin. Spune-i lui Daniel." });
+    if (upUsed + fileStore.used() + buf.length > UP_CAP) return json(res, 507, { ok: false, error: "quota", message: "Spațiul pentru fișiere din ops e plin. Spune-i lui Daniel." });
     const kind = UP_KINDS.has(u.searchParams.get("kind")) ? u.searchParams.get("kind") : "other";
     const name = (str(u.searchParams.get("name") || "", 140).replace(/[\u0000-\u001f\\/<>:"|?*]+/g, "_") || "fisier." + ext);
     const now = new Date(), ym = now.toISOString().slice(0, 7).replace("-", ""), id = `up-${ym}-${randomBytes(6).toString("hex")}`;
@@ -368,7 +374,8 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   }
 
   // ---------- the handler: returns true when it answered ----------
-  return async function ops(req, res) {
+  return Object.assign(ops, { serveFile: (req, res) => fileStore.serve(req, res) }); // TASK-142: GET /f/<id>/<name> for server.js, no session
+  async function ops(req, res) {
     const u = new URL(req.url, "http://x"), p = u.pathname, m = req.method;
     try {
       if (p === "/ops" || p === "/ops/") {
@@ -479,7 +486,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       }
 
       // ----- browser -----
-      if (m === "POST" && !originOk(req)) { json(res, 403, { ok: false, error: "origin" }); return true; }
+      if (m !== "GET" && m !== "HEAD" && !originOk(req)) { json(res, 403, { ok: false, error: "origin" }); return true; } // TASK-142: DELETE too; a sandboxed /f/ page sends Origin: null
 
       if (r === "login" && m === "POST") {
         const ip = ipOf(req);
@@ -538,6 +545,25 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         json(res, 405, { ok: false }); return true;
       }
       if (r === "upload" && m === "POST") { await upload(req, res, s, u); return true; }
+      const fm = /^files(?:\/([^/]+))?$/.exec(r);
+      if (fm) { // TASK-142: admins only, like perf; a member gets nothing, not even the list
+        if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        if (m === "GET" && !fm[1]) { json(res, 200, { ok: true, files: fileStore.list(), room: fileStore.room() }); return true; }
+        if (m !== "POST" && m !== "DELETE") { json(res, 405, { ok: false }); return true; }
+        if (m === "DELETE" && !fm[1]) { json(res, 405, { ok: false }); return true; }
+        if (fm[1] && !FILE_ID_RE.test(fm[1])) { json(res, 404, { ok: false, error: "not_found", message: "Fișierul nu mai e aici." }); return true; }
+        if (userFiles(s.email)) { json(res, 429, { ok: false, error: "rate", message: "Prea multe într-un timp scurt. Mai încearcă în câteva minute." }, { Connection: "close" }); return true; }
+        const name = u.searchParams.get("name") || "";
+        try {
+          const [code, out] = m === "DELETE" ? fileStore.remove(s, fm[1]) : fm[1] ? await fileStore.replace(req, s, fm[1], name) : await fileStore.create(req, s, name);
+          json(res, code, out, code >= 400 && m === "POST" ? { Connection: "close" } : undefined);
+        } catch (e) {
+          if (!e.status) throw e;
+          res.once("finish", () => req.destroy()); // the answer first, then the rest of the body is dropped
+          json(res, e.status, { ok: false, error: e.error, message: e.message }, { Connection: "close" });
+        }
+        return true;
+      }
       if (r === "inbox" && m === "POST") {
         if (userInbox(s.email)) { json(res, 429, { ok: false, error: "rate" }); return true; }
         const b = await body(req, 64e3);
@@ -573,7 +599,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
       if (!e.status) log.error("[ops]", e.message);
       return true;
     }
-  };
+  }
 }
 
 /** the login code mail: the ops lockup (yellow pill + rainbow-ring OPS pill), the six digits in circles, Romanian, neutral.
