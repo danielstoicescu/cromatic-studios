@@ -31,6 +31,7 @@
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
 //   GET  /api/ops/perf                          (admin session) TASK-141: the Performance page's data (ops/metrics.mjs)
 //   GET  /api/ops/analytics?range=today|7|30|90 (admin session) one period from the GA4 cache; a missing one is fetched in the background ({loading: true})
+//   GET  /api/ops/perf/shot/<page>-<device>     (admin session) the latest PSI screenshot + filmstrip, as data URIs
 //   POST /api/ops/perf/run                      (admin session) "Măsoară acum": 202 at once, the run goes on in the background; at most one per 15 min
 //   GET|POST /api/ops/files, POST|DELETE /api/ops/files/<id>   (admin session) TASK-142: Fișiere; the links are /f/<id>/<name> (ops/files.mjs)
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
@@ -543,6 +544,12 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
         const { status, ...out } = metrics.analyticsPeriod(u.searchParams.get("range") || "30");
         json(res, status, out); return true;
+      }
+      if (r.startsWith("perf/shot/") && m === "GET") { // the latest screenshot and filmstrip of one page on one device, admins only
+        if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        const shot = metrics.shotOf(r.slice(10));
+        if (!shot) json(res, 404, { ok: false }); else json(res, 200, { ok: true, ...shot });
+        return true;
       }
       if (r === "perf" || r === "perf/run") { // TASK-141: admins only, like core / sec / offer: a member gets nothing
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
