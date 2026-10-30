@@ -30,6 +30,7 @@
 //        never the repo's proposals/ folder) or drops a preview; logged in proposals.jsonl
 //   GET  /ops/preview/<slug>/<file>             (admin session) an offer preview, framed by the Ofertă tab
 //   GET  /api/ops/perf                          (admin session) TASK-141: the Performance page's data (ops/metrics.mjs)
+//   GET  /api/ops/analytics?range=today|7|30|90 (admin session) one period from the GA4 cache; a missing one is fetched in the background ({loading: true})
 //   POST /api/ops/perf/run                      (admin session) "Măsoară acum": 202 at once, the run goes on in the background; at most one per 15 min
 //   GET|POST /api/ops/files, POST|DELETE /api/ops/files/<id>   (admin session) TASK-142: Fișiere; the links are /f/<id>/<name> (ops/files.mjs)
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
@@ -537,6 +538,11 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         const view = withOutbox(forRole(snapshot(), s.user.role));
         if (s.user.role === "admin") { const a = metrics.analyticsDoc(); if (a) view.collections = { ...view.collections, analytics: { ...(view.collections.analytics || {}), summary: a } }; } // TASK-141: GA4 from the server's cache, never a call to Google per view
         json(res, 200, { ok: true, user: pub(s), ...view }); return true;
+      }
+      if (r === "analytics" && m === "GET") { // one period of the Analytics section, admins only like the rest of it; never waits for Google
+        if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        const { status, ...out } = metrics.analyticsPeriod(u.searchParams.get("range") || "30");
+        json(res, status, out); return true;
       }
       if (r === "perf" || r === "perf/run") { // TASK-141: admins only, like core / sec / offer: a member gets nothing
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }

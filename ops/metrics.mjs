@@ -139,17 +139,26 @@ export function rowsOf(rep) {
     return o;
   });
 }
-const RANGES = [{ name: "cur", startDate: "30daysAgo", endDate: "yesterday" }, { name: "prev", startDate: "60daysAgo", endDate: "31daysAgo" }, { name: "w", startDate: "7daysAgo", endDate: "yesterday" }, { name: "wprev", startDate: "14daysAgo", endDate: "8daysAgo" }];
-const MONTH = [{ startDate: "30daysAgo", endDate: "yesterday" }];
+// the periods the Analytics section can show. A period's previous one has the same length and ends the day before it starts;
+// today is partial, so it has no fair comparison at all
+export const GA_PERIODS = { today: null, 7: 7, 30: 30, 90: 90 };
+function periodRanges(p) {
+  if (p === "today") return { both: [{ name: "cur", startDate: "today", endDate: "today" }], one: [{ startDate: "today", endDate: "today" }] };
+  const n = GA_PERIODS[p];
+  return { both: [{ name: "cur", startDate: n + "daysAgo", endDate: "yesterday" }, { name: "prev", startDate: 2 * n + "daysAgo", endDate: n + 1 + "daysAgo" }], one: [{ startDate: n + "daysAgo", endDate: "yesterday" }] };
+}
 const eventIs = (name) => ({ filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: name } } });
 const isoDay = (d) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
 function regionRo(id, fallback) { try { return new Intl.DisplayNames(["ro"], { type: "region" }).of(id) || fallback; } catch { return fallback; } }
 
-export const GA_REPORTS = {
-  totals: { dateRanges: RANGES, metrics: ["activeUsers", "sessions", "engagementRate", "userEngagementDuration"] },
+/** every number of the section, for one period (13 reports, one at a time) */
+export function gaReports(p = "30") {
+  const { both: RANGES, one: MONTH } = periodRanges(p), step = p === "today" ? "hour" : "date", rows = p === "today" ? 30 : GA_PERIODS[p] + 5;
+  return {
+  totals: { dateRanges: RANGES, returnPropertyQuota: true, metrics: ["activeUsers", "sessions", "engagementRate", "userEngagementDuration"] },
   leads: { dateRanges: RANGES, metrics: ["eventCount"], dimensionFilter: eventIs(LEAD) },
-  daily: { dateRanges: MONTH, dimensions: ["date"], metrics: ["activeUsers", "sessions"], orderBys: [{ dimension: { dimensionName: "date" } }], limit: 70 },
-  dailyLeads: { dateRanges: MONTH, dimensions: ["date"], metrics: ["eventCount"], dimensionFilter: eventIs(LEAD), limit: 70 },
+  daily: { dateRanges: MONTH, dimensions: [step], metrics: ["activeUsers", "sessions"], orderBys: [{ dimension: { dimensionName: step } }], limit: rows },
+  dailyLeads: { dateRanges: MONTH, dimensions: [step], metrics: ["eventCount"], dimensionFilter: eventIs(LEAD), limit: rows },
   sources: { dateRanges: MONTH, dimensions: ["sessionSource", "sessionMedium"], metrics: ["sessions", "activeUsers"], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 12 },
   sourceLeads: { dateRanges: MONTH, dimensions: ["sessionSource", "sessionMedium"], metrics: ["eventCount"], dimensionFilter: eventIs(LEAD), limit: 100 },
   events: { dateRanges: MONTH, dimensions: ["eventName"], metrics: ["eventCount"], dimensionFilter: { filter: { fieldName: "eventName", inListFilter: { values: [PLACE, GAME] } } } },
@@ -159,9 +168,10 @@ export const GA_REPORTS = {
   devices: { dateRanges: MONTH, dimensions: ["deviceCategory"], metrics: ["activeUsers"], orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }] },
   campaigns: { dateRanges: MONTH, dimensions: ["sessionCampaignName"], metrics: ["sessions"], dimensionFilter: { filter: { fieldName: "sessionCampaignName", stringFilter: { matchType: "FULL_REGEXP", value: ".+-[abAB]" } } }, limit: 40 },
   campaignLeads: { dateRanges: MONTH, dimensions: ["sessionCampaignName"], metrics: ["eventCount"], dimensionFilter: { andGroup: { expressions: [eventIs(LEAD), { filter: { fieldName: "sessionCampaignName", stringFilter: { matchType: "FULL_REGEXP", value: ".+-[abAB]" } } }] } }, limit: 40 },
-};
+  };
+}
 /** Only the cards the site really measures: The Core Lite, CTA clicks and postcards send no GA event, so those keys stay absent and the UI skips them */
-export function buildSummary(R, now = new Date()) {
+export function buildSummary(R, now = new Date(), period = "30") {
   const byRange = (rows) => Object.fromEntries(rows.map((r) => [r.dateRange || "cur", r]));
   const T = byRange(rowsOf(R.totals)), L = byRange(rowsOf(R.leads));
   const pick = (a, b, leadsA, leadsB) => {
@@ -169,11 +179,14 @@ export function buildSummary(R, now = new Date()) {
     const avg = (t) => (t.activeUsers ? t.userEngagementDuration / t.activeUsers : 0);
     return { users: kp(x.activeUsers || 0, y.activeUsers || 0), sessions: kp(x.sessions || 0, y.sessions || 0), engagedRate: kp(x.engagementRate || 0, y.engagementRate || 0), avgEngagementSec: kp(Math.round(avg(x)), Math.round(avg(y))), leads: kp((leadsA || {}).eventCount || 0, (leadsB || {}).eventCount || 0) };
   };
-  const leadsByDay = new Map(rowsOf(R.dailyLeads).map((r) => [r.date, r.eventCount]));
-  const seen = new Map(rowsOf(R.daily).map((r) => [r.date, r]));
+  const leadsByDay = new Map(rowsOf(R.dailyLeads).map((r) => [r.date ?? r.hour, r.eventCount]));
+  const seen = new Map(period === "today" ? [] : rowsOf(R.daily).map((r) => [r.date, r]));
   const days = [...seen.keys()].sort();
   const daily = [];
-  if (days.length) { // GA leaves out a day with no visits: the chart still needs it, at zero
+  if (period === "today") { // by the hour, up to the last one with visits
+    const hours = rowsOf(R.daily), last = hours.reduce((a, r) => Math.max(a, Number(r.hour) || 0), 0), by = new Map(hours.map((r) => [Number(r.hour), r])), byLead = new Map([...leadsByDay].map(([k, v]) => [Number(k), v]));
+    for (let h = 0; h <= last; h++) { const r = by.get(h) || {}; daily.push({ date: now.toISOString().slice(0, 10), label: String(h).padStart(2, "0") + ":00", users: r.activeUsers || 0, sessions: r.sessions || 0, leads: byLead.get(h) || 0 }); }
+  } else if (days.length) { // GA leaves out a day with no visits: the chart still needs it, at zero
     const dayMs = 86400e3, toD = (k) => Date.UTC(+k.slice(0, 4), +k.slice(4, 6) - 1, +k.slice(6, 8));
     for (let t = toD(days[0]); t <= toD(days[days.length - 1]); t += dayMs) {
       const k = new Date(t).toISOString().slice(0, 10).replace(/-/g, ""), r = seen.get(k) || {};
@@ -199,7 +212,7 @@ export function buildSummary(R, now = new Date()) {
   }).filter(Boolean);
   return {
     generatedAt: now.toISOString(), source: "ga4", range: daily.length ? { from: daily[0].date, to: daily[daily.length - 1].date } : null,
-    kpis: pick(T.cur, T.prev, L.cur, L.prev), kpis7: pick(T.w, T.wprev, L.w, L.wprev), daily, sources, campaigns,
+    period, ...(period === "today" ? { noCompare: true } : {}), kpis: pick(T.cur, T.prev, L.cur, L.prev), daily, sources, campaigns,
     map: { driveSessions: cityRow.sessions || 0, cardOpens: ev.get(PLACE) || 0, gameStarts: ev.get(GAME) || 0 },
     topPages,
     countries: rowsOf(R.countries).map((r) => ({ country: regionRo(r.countryId, r.country), users: r.activeUsers })),
@@ -376,7 +389,8 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
   }
 
   // ---------- GA4 ----------
-  const gaFile = () => readJson("ga.json", {});
+  const gaName = (p) => (String(p) === "30" ? "ga.json" : "ga-" + p + ".json"); // 30 days keeps its old file: what is cached survives the deploy
+  const gaFile = (p = "30") => readJson(gaName(p), {});
   const gaConfigured = () => !!(gaRaw() && gaProperty());
   async function gaAccessToken() {
     if (gaToken && gaToken.exp > Date.now() + 60e3) return gaToken.value;
@@ -405,34 +419,59 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
       await wait(dev("OPS_PSI_RETRY_MS", 5000) * 1);
     }
   }
-  let gaBusy = false;
-  async function refreshGa() {
-    if (gaBusy || !gaConfigured()) return;
-    if (!/^\d{3,20}$/.test(gaProperty())) { saveJson("ga.json", { ...gaFile(), lastAttemptAt: new Date().toISOString(), lastError: { code: "property", message: "GA_PROPERTY trebuie să fie doar cifre." } }); return; }
-    gaBusy = true;
-    const prev = gaFile(), at = new Date().toISOString();
+  // one report at a time across all periods: 30 days refreshes by itself, the others only when someone opens them
+  const gaQueue = []; let gaBusy = false, gaNow = null;
+  async function refreshOne(p) {
+    const file = gaName(p), prev = gaFile(p), at = new Date().toISOString();
+    if (!/^\d{3,20}$/.test(gaProperty())) { await saveJson(file, { ...prev, lastAttemptAt: at, lastError: { code: "property", message: "GA_PROPERTY trebuie să fie doar cifre." } }); return; }
     try {
       const R = {};
-      for (const [name, body] of Object.entries(GA_REPORTS)) R[name] = await gaReport(body); // one at a time
-      await saveJson("ga.json", { data: buildSummary(R), fetchedAt: new Date().toISOString(), lastAttemptAt: at, lastError: null });
-      say("GA4 refreshed");
+      for (const [name, body] of Object.entries(gaReports(p))) R[name] = await gaReport(body);
+      const q = R.totals && R.totals.propertyQuota;
+      await saveJson(file, { data: buildSummary(R, new Date(), p), fetchedAt: new Date().toISOString(), lastAttemptAt: at, lastError: null, ...(q ? { quota: { dayLeft: q.tokensPerDay && q.tokensPerDay.remaining, hourLeft: q.tokensPerHour && q.tokensPerHour.remaining } } : {}) });
+      say("GA4 refreshed (" + p + ")" + (q && q.tokensPerDay ? ", tokens left today " + q.tokensPerDay.remaining : ""));
     } catch (e) {
       const err = { code: e.code || "network", http: e.http ?? null, message: scrub(e.code === "timeout" ? "GA4 n-a răspuns la timp." : e.message) };
-      await saveJson("ga.json", { ...prev, lastAttemptAt: at, lastError: err });
-      warn("GA4 refresh failed: " + err.code + " " + (err.http || "") + " " + err.message);
-    } finally { gaBusy = false; }
+      await saveJson(file, { ...prev, lastAttemptAt: at, lastError: err });
+      warn("GA4 refresh failed (" + p + "): " + err.code + " " + (err.http || "") + " " + err.message);
+    }
   }
-  function gaDue(now = Date.now()) {
-    if (!gaConfigured() || gaBusy) return false;
-    const f = gaFile(), fetched = Date.parse(f.fetchedAt || 0) || 0, tried = Date.parse(f.lastAttemptAt || 0) || 0;
+  async function refreshGa(p = "30") {
+    p = String(p);
+    if (!gaConfigured()) return;
+    if (gaNow !== p && !gaQueue.includes(p)) gaQueue.push(p);
+    if (gaBusy) return;
+    gaBusy = true;
+    try { while (gaQueue.length) { gaNow = gaQueue.shift(); await refreshOne(gaNow); gaNow = null; } } finally { gaBusy = false; gaNow = null; }
+  }
+  const gaPending = (p) => gaNow === String(p) || gaQueue.includes(String(p));
+  function gaDue(now = Date.now(), p = "30") {
+    if (!gaConfigured() || gaPending(p)) return false;
+    const f = gaFile(p), fetched = Date.parse(f.fetchedAt || 0) || 0, tried = Date.parse(f.lastAttemptAt || 0) || 0;
     return now - fetched >= GA_EVERY && now - tried >= GA_RETRY;
   }
-  /** analytics/summary for the snapshot (admins only). Real data when it exists; otherwise only a status, so the page keeps its labelled test data */
+  function gaStatus(f) {
+    const age = Date.now() - (Date.parse(f.fetchedAt || 0) || 0);
+    return { configured: gaConfigured(), fetchedAt: f.fetchedAt || null, error: f.lastError ? { code: f.lastError.code, http: f.lastError.http ?? null, message: f.lastError.message } : null, stale: !!f.data && (age > GA_STALE || !!f.lastError) };
+  }
+  /** analytics/summary for the snapshot (admins only): always 30 days. Real data when it exists; otherwise only a status, so the page keeps its labelled test data */
   function analyticsDoc() {
-    const f = gaFile(), configured = gaConfigured(), age = Date.now() - (Date.parse(f.fetchedAt || 0) || 0);
-    if (!configured && !f.data) return null;
-    const status = { configured, fetchedAt: f.fetchedAt || null, error: f.lastError ? { code: f.lastError.code, http: f.lastError.http ?? null, message: f.lastError.message } : null, stale: !!f.data && (age > GA_STALE || !!f.lastError) };
+    const f = gaFile();
+    if (!gaConfigured() && !f.data) return null;
+    const status = gaStatus(f);
     return f.data ? { ...f.data, status } : { status };
+  }
+  /** one period, for the selector. Never waits for Google: it answers with what is cached and asks for the rest in the background */
+  function analyticsPeriod(raw) {
+    const p = String(raw);
+    if (!Object.prototype.hasOwnProperty.call(GA_PERIODS, p)) return { status: 422, ok: false, error: "range" };
+    if (!gaConfigured()) return { status: 503, ok: false, error: "no-ga" };
+    const due = gaDue(Date.now(), p);
+    if (due) refreshGa(p).catch((e) => warn("GA4: " + e.message));
+    const f = gaFile(p), pending = due || gaPending(p);
+    if (f.data) return { status: 200, ok: true, range: p, refreshing: pending, data: { ...f.data, status: gaStatus(f) } };
+    if (pending) return { status: 200, ok: true, range: p, loading: true };
+    return { status: 200, ok: false, error: "ga", message: (f.lastError && f.lastError.message) || "" };
   }
 
   // ---------- the scheduler: light checks, the work is awaited in the background ----------
@@ -450,5 +489,5 @@ export function createMetrics({ dataDir, log = console, env = process.env }) {
     timer = setInterval(tick, TICK); if (timer.unref) timer.unref();
     say(`jobs on (PageSpeed ${psiKey() ? "yes" : "no key"}, GA4 ${gaConfigured() ? "yes" : "no key"})`);
   }
-  return { start, tick, perfView, startManual, analyticsDoc, refreshGa, autoDue, gaDue, scrub, flush: () => saving };
+  return { start, tick, perfView, startManual, analyticsDoc, analyticsPeriod, refreshGa, autoDue, gaDue, scrub, flush: () => saving };
 }

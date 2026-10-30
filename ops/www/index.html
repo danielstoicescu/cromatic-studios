@@ -1451,6 +1451,8 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
 .an-tag { font: 700 10px var(--f-m); text-transform: uppercase; letter-spacing: .07em; border: 1px dashed var(--amber); background: var(--t-yellow); border-radius: 999px; padding: 2px 9px; }
 .an-mock { display: flex; gap: 10px; align-items: center; border: 1.5px dashed var(--amber); background: var(--t-yellow); border-radius: 16px; padding: 10px 14px; font-weight: 600; font-size: 14px; }
 .an-mock .ic { color: var(--amber); }
+.an-per { font-size: 14px; line-height: 1.45; color: var(--muted); max-width: 76ch; }
+body .ana-full.ana-wait > :not(.an-bar):not(.an-per) { opacity: .35; transition: opacity .15s; }
 .an-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
 .an-k { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
 .an-kpi { display: grid; gap: 4px; align-content: start; background: var(--card); border: var(--line); border-radius: 20px; padding: 12px 14px; box-shadow: var(--soft); animation: btpop .45s var(--ease) both; transition: transform .25s var(--ease); }
@@ -1933,7 +1935,8 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
       <div class="an-mock" id="ana-mock-h" hidden><svg class="ic"><use href="#i-info"/></svg><span id="ana-mock-t">Date de test · GA4 nu e conectat încă</span></div>
       <div class="ana-home" id="ana-home"></div>
       <div class="ana-full">
-        <div class="an-bar"><div class="seg" role="group" aria-label="Perioada"><button type="button" data-ana-r="7" aria-pressed="false">7 zile</button><button type="button" data-ana-r="30" aria-pressed="true">30 de zile</button></div><span class="an-tag" id="ana-mock" hidden>date de test</span></div>
+        <div class="an-bar"><div class="seg" role="group" aria-label="Perioada"><button type="button" data-ana-r="today" aria-pressed="false">Azi</button><button type="button" data-ana-r="7" aria-pressed="false">7 zile</button><button type="button" data-ana-r="30" aria-pressed="true">30 de zile</button><button type="button" data-ana-r="90" aria-pressed="false">90 de zile</button></div><span class="an-tag" id="ana-mock" hidden>date de test</span></div>
+        <div class="an-per" id="ana-per" role="status" hidden></div>
         <div class="an-k" id="ana-k"></div>
         <div class="an-card"><div class="an-ct"><span id="ana-chart-t">Pe zile</span><span class="mono muted">treci peste grafic</span></div><div class="an-chart" id="ana-chart"></div></div>
         <div class="an-2">
@@ -1947,7 +1950,7 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
           <div class="an-card"><div class="an-ct">Țări</div><ol class="an-bl" id="ana-ctry"></ol></div>
           <div class="an-card"><div class="an-ct">Dispozitive</div><ol class="an-bl" id="ana-dev"></ol></div>
         </div>
-        <div class="muted" id="ana-src-n" hidden style="font-size:13px">Din GA4, ultimele 30 de zile, fără traficul intern. GA numără doar vizitatorii care acceptă cookie-urile, deci vizitele reale sunt mai multe.</div>
+        <div class="muted" id="ana-src-n" hidden style="font-size:13px">Din GA4, pentru perioada aleasă, fără traficul intern. GA numără doar vizitatorii care acceptă cookie-urile, deci vizitele reale sunt mai multe.</div>
       </div>
     </section>
 
@@ -4225,7 +4228,17 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   for (const b of document.querySelectorAll("[data-soc-tab]")) b.onclick = () => setSocTab(b.dataset.socTab);
 
   // ---------- r8: Analytics (analytics/summary). TASK-141: the server fills it from GA4 (ops/metrics.mjs); without the key: mock data, clearly labelled ----------
-  const ANA = { range: 30 };
+  const ANA = { range: "30", docs: {}, loading: false, err: "" };
+  const ANA_DAYS = { today: 1, 7: 7, 30: 30, 90: 90 };
+  async function anaLoad(r, tries) { // a period other than the snapshot's 30 days: the server answers at once, Google is asked in the background
+    tries = tries || 0; if (r !== ANA.range) return;
+    let j = null; try { const x = await fetch("/api/ops/analytics?range=" + r, { credentials: "same-origin", cache: "no-store" }); j = await x.json(); } catch {}
+    if (r !== ANA.range) return;
+    if (j && j.ok && j.data) { ANA.docs[r] = j.data; ANA.loading = false; ANA.err = ""; if (j.refreshing && tries < 30) setTimeout(() => anaLoad(r, tries + 1), 4000); }
+    else if (j && j.ok && j.loading && tries < 40) { ANA.loading = true; setTimeout(() => anaLoad(r, tries + 1), 2500); }
+    else { ANA.loading = false; ANA.err = (j && j.message) || "GA4 n-a răspuns."; }
+    renderAna();
+  }
   function anaHidden() { return socHidden(); } // default admin-only in the mirror, same rule as Social & Ads
   const nf = (v) => (Number(v) || 0).toLocaleString("ro-RO");
   const pctS = (v, d = 1) => (Number(v) || 0).toLocaleString("ro-RO", { maximumFractionDigits: d, minimumFractionDigits: 0 }) + "%";
@@ -4255,15 +4268,19 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     };
     anaMockCache = { sig, d }; return d;
   }
-  const anaData = () => { const A = S.analytics; return A && typeof A === "object" && (A.kpis || A.daily) ? A : anaMock(); };
+  const anaReal = () => { const A = S.analytics; return A && typeof A === "object" && (A.kpis || A.daily) ? A : null; };
+  const anaData = () => { const R = anaReal(); return !R ? anaMock() : ANA.range === "30" ? R : ANA.docs[ANA.range] || R; };
   const arrA = (x) => (Array.isArray(x) ? x : []);
-  function kpiOf(A, k) {
-    const D = arrA(A.daily), x = (A.kpis || {})[k] || null, r = ANA.range;
-    if (r === 7 && A.kpis7 && A.kpis7[k]) { const y = A.kpis7[k]; return { value: Number(y.value), prev: Number(y.prev), deltaPct: y.deltaPct != null ? Number(y.deltaPct) : null, r: 7 }; } // real 7-day totals: users are not a sum of days
-    if (r === 7 && D.length >= 14 && ["users", "sessions", "leads"].includes(k)) { const s = (a, b) => D.slice(a, b).reduce((t, d) => t + (Number(d[k]) || 0), 0), v = s(-7), p = s(-14, -7); return { value: v, prev: p, deltaPct: p ? (v - p) / p * 100 : null, r: 7 }; }
-    if (!x) return null; const v = Number(x.value), p = Number(x.prev); return { value: v, prev: p, deltaPct: x.deltaPct != null ? Number(x.deltaPct) : p ? (v - p) / p * 100 : null, r: 30 };
+  // real data: the numbers of the period's own report. Test data has one period only, so 7 days is summed from its days
+  function kpiOf(A, k, force) {
+    const D = arrA(A.daily), x = (A.kpis || {})[k] || null, r = force || ANA.range;
+    if (A.source !== "ga4" && r === "7" && D.length >= 14 && ["users", "sessions", "leads"].includes(k)) { const s = (a, b) => D.slice(a, b).reduce((t, d) => t + (Number(d[k]) || 0), 0), v = s(-7), p = s(-14, -7); return { value: v, prev: p, deltaPct: p ? (v - p) / p * 100 : null, r: "7" }; }
+    if (!x) return null; const v = Number(x.value), p = Number(x.prev), ps = Number(((A.kpis || {}).sessions || {}).prev) || 0;
+    // a period with almost nothing before it makes any percentage absurd (+6.758%): say that instead
+    const low = !A.noCompare && (k === "leads" ? p < 5 : ["users", "sessions"].includes(k) ? p < 20 : ps < 20);
+    return { value: v, prev: p, none: !!A.noCompare, low, deltaPct: x.deltaPct != null ? Number(x.deltaPct) : p ? (v - p) / p * 100 : null, r: A.source === "ga4" ? r : "30" };
   }
-  function delta(dp, inverse) { const s = el("span", "an-dl"); if (dp == null || !isFinite(dp)) { s.textContent = "—"; return s; } const up = dp >= 0, good = inverse ? !up : up; s.classList.add(Math.abs(dp) < .5 ? "eq" : good ? "up" : "dn"); s.append(el("i", "", Math.abs(dp) < .5 ? "＝" : up ? "▲" : "▼"), (up ? "+" : "−") + pctS(Math.abs(dp))); s.title = "față de perioada anterioară"; return s; }
+  function delta(x, inverse) { const s = el("span", "an-dl"), dp = x.deltaPct; if (x.none) { s.style.display = "none"; return s; } if (x.low) { s.classList.add("eq"); s.textContent = "date puține înainte"; s.title = "În perioada dinainte: " + nf(x.prev); return s; } if (dp == null || !isFinite(dp)) { s.textContent = "—"; return s; } const up = dp >= 0, good = inverse ? !up : up; s.classList.add(Math.abs(dp) < .5 ? "eq" : good ? "up" : "dn"); s.append(el("i", "", Math.abs(dp) < .5 ? "＝" : up ? "▲" : "▼"), (up ? "+" : "−") + pctS(Math.abs(dp))); s.title = "față de perioada anterioară, de aceeași lungime"; return s; }
   // the 30-day chart: users (area), sessions (line), leads (bars), with a hover readout
   function anaChart(box, D) {
     box.replaceChildren(); if (D.length < 2) { box.append(el("div", "empty", "Prea puține zile pentru grafic.")); return; }
@@ -4272,17 +4289,17 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     const nice = (v) => { const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }, top = nice(mx);
     const X = (i) => pl + i / (D.length - 1) * iw, Y = (v) => pt + ih - (Number(v) || 0) / top * ih;
     const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("class", "an-svg"); svg.setAttribute("role", "img");
-    svg.setAttribute("aria-label", "Utilizatori, sesiuni și lead-uri pe zi, " + D.length + " zile. Ultima zi: " + nf(D[D.length - 1].users) + " utilizatori, " + nf(D[D.length - 1].sessions) + " sesiuni, " + nf(D[D.length - 1].leads) + " lead-uri.");
+    svg.setAttribute("aria-label", "Utilizatori, sesiuni și lead-uri, " + D.length + (D[0].label ? " ore" : " zile") + ". Ultimul punct: " + nf(D[D.length - 1].users) + " utilizatori, " + nf(D[D.length - 1].sessions) + " sesiuni, " + nf(D[D.length - 1].leads) + " lead-uri.");
     const mk = (tag, at) => { const n = document.createElementNS(NS, tag); for (const k in at) n.setAttribute(k, at[k]); svg.append(n); return n; };
     for (let g = 0; g <= 4; g++) { const v = top / 4 * g, y = Y(v); mk("line", { x1: pl, x2: W - pr, y1: y, y2: y, class: "an-grid" }); const t = mk("text", { x: pl - 6, y: y + 3, class: "an-ax", "text-anchor": "end" }); t.textContent = v >= 1000 ? Math.round(v / 100) / 10 + "k" : String(Math.round(v)); }
     const bw = Math.max(2, iw / D.length * .45); D.forEach((d, i) => { const h = (Number(d.leads) || 0) / ml * ih * .28; mk("rect", { x: X(i) - bw / 2, y: pt + ih - h, width: bw, height: h, rx: 1.5, class: "an-lead", style: "animation-delay:" + (300 + i * 12) + "ms" }); });
     const line = (k) => D.map((d, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(d[k]).toFixed(1)).join(" ");
     mk("path", { d: line("users") + " L" + X(D.length - 1) + " " + (pt + ih) + " L" + pl + " " + (pt + ih) + " Z", class: "an-area" });
     mk("path", { d: line("users"), class: "an-lu", pathLength: 1 }); mk("path", { d: line("sessions"), class: "an-ls", pathLength: 1 });
-    const step = Math.ceil(D.length / 6); D.forEach((d, i) => { if (i % step && i !== D.length - 1) return; const dd = new Date(d.date + "T12:00:00"), t = mk("text", { x: X(i), y: H - 8, class: "an-ax", "text-anchor": i === 0 ? "start" : i === D.length - 1 ? "end" : "middle" }); t.textContent = isNaN(dd) ? d.date : dd.getDate() + " " + dd.toLocaleDateString("ro-RO", { month: "short" }).replace(".", ""); });
+    const step = Math.ceil(D.length / 6); D.forEach((d, i) => { if (i % step && i !== D.length - 1) return; const dd = new Date(d.date + "T12:00:00"), t = mk("text", { x: X(i), y: H - 8, class: "an-ax", "text-anchor": i === 0 ? "start" : i === D.length - 1 ? "end" : "middle" }); t.textContent = d.label ? d.label : isNaN(dd) ? d.date : dd.getDate() + " " + dd.toLocaleDateString("ro-RO", { month: "short" }).replace(".", ""); });
     const guide = mk("line", { x1: 0, x2: 0, y1: pt, y2: pt + ih, class: "an-guide", visibility: "hidden" }), dot = mk("circle", { r: 4, class: "an-dot", visibility: "hidden" }), dot2 = mk("circle", { r: 4, class: "an-dot2", visibility: "hidden" });
     const tip = el("div", "an-tip"); tip.hidden = true;
-    const show = (i) => { const d = D[i], x = X(i); guide.setAttribute("x1", x); guide.setAttribute("x2", x); dot.setAttribute("cx", x); dot.setAttribute("cy", Y(d.users)); dot2.setAttribute("cx", x); dot2.setAttribute("cy", Y(d.sessions)); for (const n of [guide, dot, dot2]) n.setAttribute("visibility", "visible"); const dd = new Date(d.date + "T12:00:00"); tip.replaceChildren(el("b", "", isNaN(dd) ? d.date : dd.toLocaleDateString("ro-RO", { weekday: "short", day: "numeric", month: "short" })), el("span", "u", nf(d.users) + " utilizatori"), el("span", "s", nf(d.sessions) + " sesiuni"), el("span", "l", nf(d.leads) + " lead-uri")); tip.hidden = false; tip.style.left = (x / W * 100) + "%"; tip.classList.toggle("left", x > W * .66); };
+    const show = (i) => { const d = D[i], x = X(i); guide.setAttribute("x1", x); guide.setAttribute("x2", x); dot.setAttribute("cx", x); dot.setAttribute("cy", Y(d.users)); dot2.setAttribute("cx", x); dot2.setAttribute("cy", Y(d.sessions)); for (const n of [guide, dot, dot2]) n.setAttribute("visibility", "visible"); const dd = new Date(d.date + "T12:00:00"); tip.replaceChildren(el("b", "", d.label ? d.label : isNaN(dd) ? d.date : dd.toLocaleDateString("ro-RO", { weekday: "short", day: "numeric", month: "short" })), el("span", "u", nf(d.users) + " utilizatori"), el("span", "s", nf(d.sessions) + " sesiuni"), el("span", "l", nf(d.leads) + " lead-uri")); tip.hidden = false; tip.style.left = (x / W * 100) + "%"; tip.classList.toggle("left", x > W * .66); };
     const hide = () => { for (const n of [guide, dot, dot2]) n.setAttribute("visibility", "hidden"); tip.hidden = true; };
     const at = (cx) => { const r = svg.getBoundingClientRect(), x = (cx - r.left) / r.width * W; return Math.max(0, Math.min(D.length - 1, Math.round((x - pl) / iw * (D.length - 1)))); };
     svg.addEventListener("pointermove", (e) => show(at(e.clientX))); svg.addEventListener("pointerleave", hide);
@@ -4299,9 +4316,13 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
   function renderAna() {
     const hide = anaHidden(), nb = document.querySelector('.nav-i[data-cat="ana"]'); if (nb) nb.hidden = hide; $("ana").classList.toggle("mirror-hide", hide); if (hide) return;
     const A = anaData(), mock = A.source !== "ga4", D = arrA(A.daily), can7 = D.length >= 14;
-    if (!can7 && ANA.range === 7) ANA.range = 30;
-    for (const b of document.querySelectorAll("[data-ana-r]")) { b.setAttribute("aria-pressed", String(Number(b.dataset.anaR) === ANA.range)); if (b.dataset.anaR === "7") { b.disabled = !can7; b.title = can7 ? "" : "Trebuie cel puțin 14 zile de date"; } }
-    const anaSt = (S.analytics && S.analytics.status) || {}, anaWhen = anaSt.fetchedAt ? when(anaSt.fetchedAt) : "";
+    if (mock && (ANA.range === "today" || ANA.range === "90" || (ANA.range === "7" && !can7))) ANA.range = "30";
+    for (const b of document.querySelectorAll("[data-ana-r]")) { const r = b.dataset.anaR, off = mock && (r === "today" || r === "90" || (r === "7" && !can7)); b.setAttribute("aria-pressed", String(r === ANA.range)); b.disabled = off; b.title = off ? "Apare când GA4 e conectat" : ""; }
+    const waiting = !mock && ANA.range !== "30" && !ANA.docs[ANA.range] && !ANA.err, perN = $("ana-per");
+    document.querySelector(".ana-full").classList.toggle("ana-wait", waiting);
+    perN.textContent = waiting ? "Citesc din GA4 " + (ANA.range === "today" ? "ziua de azi" : "ultimele " + ANA.range + (ANA.range === "7" ? " zile" : " de zile")) + ", durează câteva secunde. Până atunci cifrele de mai jos sunt pe 30 de zile." : ANA.err && ANA.range !== "30" && !ANA.docs[ANA.range] ? "Perioada asta nu s-a putut citi (" + ANA.err + "). Cifrele de mai jos sunt pe 30 de zile." : ANA.range === "today" && !mock ? "Azi e o zi neterminată. GA adună datele cu întârziere, deci cifrele se schimbă până mâine și n-au cu ce să se compare." : "";
+    perN.hidden = !perN.textContent;
+    const anaSt = A.status || (S.analytics && S.analytics.status) || {}, anaWhen = anaSt.fetchedAt ? when(anaSt.fetchedAt) : "";
     $("ana-mock").hidden = !mock; $("ana-mock-h").hidden = !mock && !anaSt.stale;
     $("ana-src-n").hidden = mock;
     $("ana-mock-t").textContent = !mock ? "Ultima citire din GA4 a eșuat" + (anaSt.error && anaSt.error.message ? " (" + anaSt.error.message + ")" : "") + ". Cifrele sunt din " + anaWhen + "." : anaSt.error ? "Date de test · GA4 a refuzat citirea: " + (anaSt.error.message || "eroare") : anaSt.configured ? "Date de test · prima citire din GA4 e pe drum" : "Date de test · GA4 nu e conectat încă, lipsește cheia (TASK-128)";
@@ -4309,9 +4330,10 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     // KPIs
     const K = [["users", "Utilizatori", "i-team", nf], ["sessions", "Sesiuni", "i-ck-globe", nf], ["leads", "Lead-uri", "i-ck-spark", nf], ["engagedRate", "Rată de implicare", "i-flame", (v) => pctS(rate(v))], ["avgEngagementSec", "Timp mediu implicat", "i-cal", mmss], ["coreLiteStarts", "The Core Lite pornite", "i-play", nf], ["coreLiteSubmits", "The Core Lite terminate", "i-check", nf]];
     const kb = $("ana-k"); kb.replaceChildren();
-    K.forEach(([k, l, ic, f], i) => { const x = kpiOf(A, k); if (!x) return; const c = el("div", "an-kpi" + (k === "leads" ? " hero" : "")); c.style.animationDelay = i * 40 + "ms"; const h = el("div", "an-kh"), hl = el("span"); hl.append(...liteText(l)); h.append(icon(ic), hl); if (x.r !== ANA.range) h.append(el("em", "", x.r + " z")); const n = el("b"); const isRate = k === "engagedRate"; countF(n, isRate ? rate(x.value) : x.value, "ana-" + k + ANA.range, isRate ? (v) => pctS(v) : k === "avgEngagementSec" ? mmss : (v) => nf(Math.round(v))); c.append(h, n, delta(x.deltaPct)); c.title = "Anterior: " + (isRate ? pctS(rate(x.prev)) : f(x.prev)); kb.append(c); });
-    anaChart($("ana-chart"), ANA.range === 7 ? D.slice(-7) : D.slice(-30));
-    $("ana-chart-t").textContent = "Pe zile · ultimele " + (ANA.range === 7 ? 7 : Math.min(30, D.length)) + " zile";
+    K.forEach(([k, l, ic, f], i) => { const x = kpiOf(A, k); if (!x) return; const c = el("div", "an-kpi" + (k === "leads" ? " hero" : "")); c.style.animationDelay = i * 40 + "ms"; const h = el("div", "an-kh"), hl = el("span"); hl.append(...liteText(l)); h.append(icon(ic), hl); if (x.r !== ANA.range) h.append(el("em", "", x.r + " z")); const n = el("b"); const isRate = k === "engagedRate"; countF(n, isRate ? rate(x.value) : x.value, "ana-" + k + ANA.range, isRate ? (v) => pctS(v) : k === "avgEngagementSec" ? mmss : (v) => nf(Math.round(v))); c.append(h, n, delta(x)); c.title = "Anterior: " + (isRate ? pctS(rate(x.prev)) : f(x.prev)); kb.append(c); });
+    const anaD = mock ? D.slice(ANA.range === "7" ? -7 : -30) : D;
+    anaChart($("ana-chart"), anaD);
+    $("ana-chart-t").textContent = D[0] && D[0].label ? "Pe ore · azi" : "Pe zile · " + anaD.length + " zile";
     // sources
     const src = arrA(A.sources).slice().sort((a, b) => (Number(b.sessions) || 0) - (Number(a.sessions) || 0)), sb = $("ana-src"); sb.replaceChildren(); const smx = Math.max(1, ...src.map((s) => Number(s.sessions) || 0));
     src.forEach((s, i) => { const tr = el("tr"), bar = el("i"); bar.style.setProperty("--w", (Number(s.sessions) || 0) / smx * 100 + "%"); bar.style.animationDelay = i * 40 + "ms"; const t1 = el("td", "an-sn"); t1.append(el("b", "", s.source || "—"), el("span", "mono muted", s.medium || "")); const t2 = el("td", "an-sb"); t2.append(bar, el("span", "", nf(s.sessions))); const cv = s.sessions ? (Number(s.leads) || 0) / s.sessions * 100 : 0; tr.append(t1, t2, el("td", "an-num", nf(s.users)), el("td", "an-num", nf(s.leads)), el("td", "an-num", s.sessions ? pctS(cv) : "—")); sb.append(tr); });
@@ -4347,13 +4369,14 @@ body[data-cat="soc"] .soc-full { display: grid; } body[data-cat="soc"] .soc-home
     barList($("ana-dev"), arrA(A.devices).map((d) => ({ ...d, lbl: DEV[d.device] || d.device })), "lbl", "users", (r, t) => pctS(r.users / t * 100, 0));
     // Home card
     const h = $("ana-home"); h.replaceChildren(); const hk = el("div", "an-hk");
-    [["users", "utilizatori"], ["sessions", "sesiuni"], ["leads", "lead-uri"]].forEach(([k, l]) => { const x = kpiOf(A, k); if (!x) return; const d = el("div"), b = el("b"); countF(b, x.value, "ana-h-" + k + ANA.range, (v) => nf(Math.round(v))); d.append(b, el("span", "", l), delta(x.deltaPct)); hk.append(d); });
+    const homeA = anaReal() || anaMock(), homeD = arrA(homeA.daily); // Home has no selector: always 30 days, and it says so
+    [["users", "utilizatori"], ["sessions", "sesiuni"], ["leads", "lead-uri"]].forEach(([k, l]) => { const x = kpiOf(homeA, k, "30"); if (!x) return; const d = el("div"), b = el("b"); countF(b, x.value, "ana-h-" + k, (v) => nf(Math.round(v))); d.append(b, el("span", "", l), delta(x)); hk.append(d); });
     h.append(hk);
-    if (D.length > 1) { const NS = "http://www.w3.org/2000/svg", s = document.createElementNS(NS, "svg"), dd = D.slice(-30), mx = Math.max(1, ...dd.map((x) => Number(x.sessions) || 0)); s.setAttribute("viewBox", "0 0 300 40"); s.setAttribute("preserveAspectRatio", "none"); s.setAttribute("class", "an-hsp"); s.setAttribute("aria-hidden", "true"); const p = document.createElementNS(NS, "path"); p.setAttribute("d", dd.map((x, i) => (i ? "L" : "M") + (i / (dd.length - 1) * 300).toFixed(1) + " " + (38 - (Number(x.sessions) || 0) / mx * 34).toFixed(1)).join(" ")); p.setAttribute("class", "an-ls"); p.setAttribute("pathLength", "1"); s.append(p); h.append(s); }
-    const hr = el("div", "row"); if (mock) hr.append(el("span", "an-tag", "date de test")); const ob = el("button", "btn sm k"); ob.type = "button"; ob.append(icon("i-chart"), el("span", "", "Deschide Analytics")); ob.onclick = () => setCat("ana"); hr.append(ob); h.append(hr);
+    if (homeD.length > 1) { const NS = "http://www.w3.org/2000/svg", s = document.createElementNS(NS, "svg"), dd = homeD.slice(-30), mx = Math.max(1, ...dd.map((x) => Number(x.sessions) || 0)); s.setAttribute("viewBox", "0 0 300 40"); s.setAttribute("preserveAspectRatio", "none"); s.setAttribute("class", "an-hsp"); s.setAttribute("aria-hidden", "true"); const p = document.createElementNS(NS, "path"); p.setAttribute("d", dd.map((x, i) => (i ? "L" : "M") + (i / (dd.length - 1) * 300).toFixed(1) + " " + (38 - (Number(x.sessions) || 0) / mx * 34).toFixed(1)).join(" ")); p.setAttribute("class", "an-ls"); p.setAttribute("pathLength", "1"); s.append(p); h.append(s); }
+    const hr = el("div", "row"); if (mock) hr.append(el("span", "an-tag", "date de test")); hr.append(el("span", "mono muted", "ultimele 30 de zile")); const ob = el("button", "btn sm k"); ob.type = "button"; ob.append(icon("i-chart"), el("span", "", "Deschide Analytics")); ob.onclick = () => setCat("ana"); hr.append(ob); h.append(hr);
   }
   function goAna(slug) { setCat("ana"); requestAnimationFrame(() => { const x = $("ana-c-" + slug); if (x) { x.scrollIntoView({ block: "start", behavior: reduced() ? "auto" : "smooth" }); flashEl(x); } else toast("Campania nu are încă date în Analytics."); }); }
-  for (const b of document.querySelectorAll("[data-ana-r]")) b.onclick = () => { ANA.range = Number(b.dataset.anaR); renderAna(); };
+  for (const b of document.querySelectorAll("[data-ana-r]")) b.onclick = () => { ANA.range = b.dataset.anaR; ANA.err = ""; if (ANA.range !== "30" && anaReal() && window.__ops) anaLoad(ANA.range); renderAna(); };
 
 
   // phone bottom bar: keep the active item in view, and fade the edge that has more items behind it
