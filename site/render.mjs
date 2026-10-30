@@ -34,7 +34,7 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = nul
     return `<img src="${a.src}"${a.w ? ` width="${a.w}" height="${a.h}"` : ""} alt="${esc(alt)}"${cls ? ` class="${cls}"` : ""}${eager ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async">`;
   };
   const vid = (name, poster, cls = "") => {
-    const a = A(name);
+    const a = name.startsWith("/") ? { src: name } : A(name); // a path: the film's own file, for a card whose deck cut is too small
     if (!a) return "";
     const p = poster && A(poster);
     // played only while on screen (site.js); nothing downloads before that
@@ -123,7 +123,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const pill = (text, color, rot = 0, tag = "span") => `<${tag} class="pill" style="--pc:${color};--rot:${rot}deg">${text}</${tag}>`;
 
   const projectCard = (p, i) => {
-    const media = p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : "";
+    const media = p.vid ? vid(p.vid, p.vidPoster || p.img) : p.img ? img(p.img, p.name) : "";
     const badge = p.badge ? img(p.badge, "", "pc-badge") : "";
     const inner = `
       <span class="pc-media" style="--bc:${p.c};--bt:${p.t}">${media || `<span class="pc-poster">${esc(p.poster)}</span>`}${badge}</span>
@@ -207,7 +207,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   };
   const bentoCard = (p, i, covers, plan, n = 0) => {
     const own = MAP_ID[p.name] && covers["place:" + MAP_ID[p.name]];
-    const media0 = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
+    const media0 = own ? `<img src="${own}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : p.vid ? vid(p.vid, p.vidPoster || p.img) : p.img ? img(p.img, p.name) : (() => { const u = coverFor(p, covers); return u ? `<img src="${u}" alt="${esc(p.name)}" loading="lazy" decoding="async">` : ""; })();
     const size = p.wip ? "full" : plan || SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
     const media = media0 && /^<img\b(?![^>]*\bsizes=)[^>]*\bloading="lazy"/.test(media0) ? media0.replace(/^<img\b/, `<img sizes="${cardSizes(size, i, n)}"`) : media0; // r397: the card says its width (cardSizes)
     // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
