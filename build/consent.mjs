@@ -7,6 +7,9 @@
 // open_drive_mode, case_study_click. Google Tag Manager (GTM_ID) loads after the same yes, for future tags (pixels,
 // ads); GA4 stays here, so it must not be added again as a GA4 tag inside GTM (it would count every visit twice).
 // r136: the card links the privacy policy (/privacy/, /ro/confidentialitate/).
+// T1 (Mira's brief, 30 Oct; since the home move the old test was wrong: the EN logo counted as drive, no RO link did): open_drive_mode = a click on
+// any link to /city/, by its address only, in any language; open_normal_website = a link from the map back to the homepage.
+// Do not compare these two events with their values from before this change.
 // r139c: that link is built with DOM calls (no '+'-glued href in the source, audit N50); the footer's "Cookies" link
 // (data-cookies, on every page) opens the card even inside the map's frame, where it otherwise never asks.
 // r149 (Cristian, OpenAI Ads; Daniel: "let's add the pixel"): the OpenAI Ads measurement pixel loads after the same
@@ -75,10 +78,9 @@ var ONCE={};function ev(n,p){p=p||{};if(p.once){if(ONCE[p.once])return;ONCE[p.on
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a,button");if(!a)return;var h=a.getAttribute("href")||"",t=(a.textContent||"").trim().slice(0,60);
 if(/^mailto:/.test(h))ev("email_click",{link_text:t});else if(/^tel:/.test(h))ev("phone_click",{link_text:t});
 else if(a.classList.contains("lang-sw")||a.closest(".czf-lang"))ev("language_switch",{to:h});
-else if(/^\\/(site|ro)\\/?$/.test(h))ev("open_normal_website",{link_text:t});
-else if(/^\\/(\\?drive|\\?map|\\/?$)/.test(h)&&a.closest("header,nav,.map-top,.drive-btn"))ev("open_drive_mode",{link_text:t});
-else if(/\\/(work|proiecte)\\//.test(h))ev("case_study_click",{case_path:h.split("?")[0]});
-else if(/drive|ride/i.test(a.className||"")&&/drive/i.test(t))ev("open_drive_mode",{link_text:t})},true);
+else if(/^(https?:\\/\\/[^\\/]+)?(\\/ro)?\\/city\\/?([?#]|$)/.test(h))ev("open_drive_mode",{link_text:t});
+else if(a.closest(".map-site")||(/^\\/city(\\/|$)/.test(location.pathname)&&/^(\\/|\\/ro\\/?)$/.test(h)))ev("open_normal_website",{link_text:t});
+else if(/\\/(work|proiecte)\\//.test(h))ev("case_study_click",{case_path:h.split("?")[0]})},true);
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".vs-btn");if(b&&b.getAttribute("aria-pressed")!=="true")ev("video_sound_on",{page:location.pathname})},true);
 document.addEventListener("focusin",function(e){var f=e.target.closest&&e.target.closest("form, .bp-form, .mapcard.contact");if(f)ev("form_start",{form:"boarding_pass",page:location.pathname,once:"form_start"})});
 if(window.fetch){var f0=window.fetch;window.fetch=function(u,o){var r=f0.apply(this,arguments);try{if(String(u).indexOf("/api/boarding")>-1&&o&&o.method==="POST")r.then(function(x){if(x.ok&&window.__czOAI&&window.oaiq){var m=function(id){try{oaiq("measure","lead_created",{type:"customer_action"},{event_id:id})}catch(e){}};/* r149b: the server reports the same lead as "lead_"+ref, so the browser uses that id too (OpenAI counts it once) */try{x.clone().json().then(function(j){m(j&&j.ref?"lead_"+j.ref:"lead_"+Date.now().toString(36))},function(){m("lead_"+Date.now().toString(36))})}catch(e){m("lead_"+Date.now().toString(36))}}if(x.ok)ev("generate_lead",{form:"boarding_pass",page:location.pathname})})}catch(e){}return r}}
