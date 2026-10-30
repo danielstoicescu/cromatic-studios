@@ -1,7 +1,7 @@
 {
   "writtenAt": "2026-10-30",
   "conclusions": [
-    { "tone": "good", "lead": true, "text": "Homepage-ul e **rapid**. 98 până la 100 la Google, pe telefon și pe desktop." },
+    { "tone": "good", "lead": true, "text": "Homepage-ul e **rapid** la Google, pe telefon și pe desktop.", "figures": { "path": "/", "goodFrom": 90, "textBelow": "Homepage-ul a coborât sub 90 la Google.", "textNone": "Homepage-ul n-are încă un scor Google." } },
     { "tone": "good", "text": "Vizitatorii reali de pe telefon văd conținutul principal în 2,3 s la percentila 75, adică Rapid. Pagina nu sare deloc: CLS 0." },
     { "tone": "watch", "text": "Cel mai slab punct e răspunsul serverului: TTFB 842 ms la percentila 75, pe 28 de zile. HTML-ul de azi nu stă în cache la Cloudflare (cf-cache-status: DYNAMIC) și răspunde în 90 până la 235 ms din București." },
     { "tone": "note", "text": "Datele pe 28 de zile includ încă perioada dinainte de ultimele reparații, deci rămân în urma site-ului de azi." },
