@@ -204,6 +204,8 @@ function clean(b) {
     stops: Array.isArray(b.stops) ? b.stops.slice(0, 6).map((s) => [str(s?.[0], 4), str(s?.[1], 30)]) : [],
     // r285 (TASK-122): the ads landing page and the campaign the lead came from, kept with the lead and shown to the studio
     lp: str(b.lp, 60), lp_v: str(b.lp_v, 2),
+    // TASK-144 (T5): the page the pass was sent from, its path only, so the store can say where leads come from without any cookie
+    page: /^\/[\w\-./%]*$/.test(str(b.page, 120)) ? str(b.page, 120) : "",
     utm: Object.fromEntries(["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].map((k) => [k, str(b[k], 120)]).filter(([, v]) => v))
   };
 }

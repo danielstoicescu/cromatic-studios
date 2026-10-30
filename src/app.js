@@ -34623,7 +34623,7 @@ void main(){
         try {
           const ctl = new AbortController();
           const to = setTimeout(() => ctl.abort(), 9e3);
-          const r = await fetch("/api/boarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...t, company_site: hp.value }), signal: ctl.signal });
+          const r = await fetch("/api/boarding", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...t, company_site: hp.value, page: location.pathname }), signal: ctl.signal });
           clearTimeout(to);
           ok = r.ok;
         } catch (e) { ok = false; }

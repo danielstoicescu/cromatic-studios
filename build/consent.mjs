@@ -10,6 +10,9 @@
 // T1 (Mira's brief, 30 Oct; since the home move the old test was wrong: the EN logo counted as drive, no RO link did): open_drive_mode = a click on
 // any link to /city/, by its address only, in any language; open_normal_website = a link from the map back to the homepage.
 // Do not compare these two events with their values from before this change.
+// TASK-144 (T2, Mira's brief): pass_view {page}, the boarding pass seen at 50%, once per page. Sent only to a visitor who said yes
+// (window.__czGA), like every event here. T3: boarding_open fires only for the map's card, never read it as a total.
+// city_ready (T4, the engine is up on /city/) is sent from src/nav2.js through czEvent.
 // r139c: that link is built with DOM calls (no '+'-glued href in the source, audit N50); the footer's "Cookies" link
 // (data-cookies, on every page) opens the card even inside the map's frame, where it otherwise never asks.
 // r149 (Cristian, OpenAI Ads; Daniel: "let's add the pixel"): the OpenAI Ads measurement pixel loads after the same
@@ -84,6 +87,8 @@ else if(/\\/(work|proiecte)\\//.test(h))ev("case_study_click",{case_path:h.split
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".vs-btn");if(b&&b.getAttribute("aria-pressed")!=="true")ev("video_sound_on",{page:location.pathname})},true);
 document.addEventListener("focusin",function(e){var f=e.target.closest&&e.target.closest("form, .bp-form, .mapcard.contact");if(f)ev("form_start",{form:"boarding_pass",page:location.pathname,once:"form_start"})});
 if(window.fetch){var f0=window.fetch;window.fetch=function(u,o){var r=f0.apply(this,arguments);try{if(String(u).indexOf("/api/boarding")>-1&&o&&o.method==="POST")r.then(function(x){if(!x.ok)return;/* the server says when a pass is one of our own tests: no lead is measured. r149b: it reports a real lead as "lead_"+ref, so the browser uses that id too (OpenAI counts it once) */x.clone().json().then(function(j){return j||{}},function(){return{}}).then(function(j){if(j.internal)return;if(window.__czOAI&&window.oaiq){try{oaiq("measure","lead_created",{type:"customer_action"},{event_id:j.ref?"lead_"+j.ref:"lead_"+Date.now().toString(36)})}catch(e){}}ev("generate_lead",{form:"boarding_pass",page:location.pathname})})})}catch(e){}return r}}
+function passSeen(){var p=document.querySelector(".czp");if(!p||!window.IntersectionObserver)return;var io=new IntersectionObserver(function(es){for(var i=0;i<es.length;i++)if(es[i].isIntersecting&&window.__czGA){ev("pass_view",{page:location.pathname,once:"pass_view"});io.disconnect();return}},{threshold:.5});io.observe(p)}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",passSeen);else passSeen();
 var v=get();if(v==="yes2"&&!ONB){ga();oai()}else if(v==="yes"&&!ONB){ga();if(OAI&&!EMB){if(document.readyState==="complete")setTimeout(ask,1200);else addEventListener("load",function(){setTimeout(ask,1200)})}}else if(!EMB&&v!=="no"){if(document.readyState==="complete")setTimeout(ask,1200);else addEventListener("load",function(){setTimeout(ask,1200)})}})();`;
   return `<style id="cz-ck-css">${css}</style>\n<script>${js}</script>`;
 }
