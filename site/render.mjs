@@ -807,9 +807,9 @@ ${footer}`;
   // lives on this page, not in the footer (Daniel).
   const PRIVACY = [
     ["Who we are", [`This website belongs to Cromatic Studios, an independent creative studio in Bucharest. The company responsible for your data (the controller) is <strong>Radio Intelligence SRL</strong>, VAT number RO29014197, Bucharest, Romania.`, `For anything about your data, write to <a href="mailto:${STUDIO.email}">${STUDIO.email}</a>. A person from the studio reads it, not a bot.`]],
-    ["What we collect when you write to us", [`The boarding pass on the map is how you tell us about your project. It asks for:`,
-      { ul: ["your name", "your email address", "your phone number, if you want to give it", "your message", "the choices you tick: what you dream of, your industry, when you want to start"] },
-      `The server also notes when the boarding pass was sent and the IP address it came from, so we can stop spam.`]],
+    ["What we collect when you write to us", [`The boarding pass is how you tell us about your project. It asks for:`,
+      { ul: ["your name", "your email address", "your phone number", "your message", "the choices you tick: what you dream of, your industry, when you want to start"] },
+      `The server also notes when the boarding pass was sent and the IP address it came from, so we can stop spam, and the page you sent it from, so we can count which pages bring enquiries.`]],
     ["Why we use it", [`For one thing: to answer your enquiry and, if you want one, to prepare an offer. We do not sell your data, we do not add you to a newsletter and we do not use what you write for ads.`,
       `The legal basis is the steps you ask us to take before a possible contract (GDPR, Article 6(1)(b)) and your consent, which you give when you send the boarding pass (Article 6(1)(a)).`]],
     ["Who else handles it", [`A few services help us run the website. They process data only on our behalf:`,
@@ -833,9 +833,9 @@ ${header(false)}
 <main id="main" class="case hub legal-page" style="--bc:#FED012;--bt:#111">
   <section class="c-hero c2-hero hub-hero">
     <div class="wrap">
-      <p class="eyebrow mono">Privacy policy · updated 14 October 2026</p>
+      <p class="eyebrow mono">Privacy policy · updated 30 October 2026</p>
       <h1 class="c2-title">${"Your data, plainly".split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
-      <p class="lead hub-lead">What happens to what you tell us, in plain words. Short version: we use it to answer you, and nothing else.</p>
+      <p class="lead hub-lead">What happens to what you tell us, in plain words. Short version: we use it to answer you, we count which pages bring enquiries, and nothing else.</p>
     </div></section>
   <section class="sec"><div class="wrap legal">
     ${PRIVACY.map(([h, body]) => `<h2>${h}</h2>\n    ${body.map((b) => (typeof b === "string" ? `<p>${b}</p>` : `<ul>${b.ul.map((li) => `<li>${li}</li>`).join("")}</ul>`)).join("\n    ")}`).join("\n    ")}
