@@ -1364,7 +1364,7 @@ a.bcard.bc-dk .bc-name::after { background-image: url("data:image/svg+xml,%3Csvg
 .pwall.pw-first { position: relative; min-height: calc(100vh - 72px); min-height: calc(100svh - 72px); display: grid; align-content: center; padding: 14px 0; }
 .pw-over { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 0 20px; pointer-events: none; }
 .pw-h { position: relative; margin: 0; max-width: 11.5em; text-align: center; color: #fff; font-size: clamp(42px, 6.2vw, 104px); font-weight: 900; line-height: .98; letter-spacing: -.045em; text-wrap: balance; }
-.pw-h::before { content: ""; position: absolute; z-index: -1; inset: -42% -16%; border-radius: 50%; background: radial-gradient(closest-side, rgba(13,12,9,.8), rgba(13,12,9,.66) 52%, rgba(13,12,9,0)); filter: blur(8px); }
+.pw-h::before { content: ""; position: absolute; z-index: -1; inset: -42% -16%; border-radius: 50%; background: radial-gradient(closest-side, rgba(13,12,9,.8), rgba(13,12,9,.66) 52%, rgba(13,12,9,0)); filter: blur(8px); transition: opacity .2s linear; }
 .hc-half .hc-card { min-height: 56vh; min-height: 56svh; display: flex; align-items: flex-end; }
 .hc-half .hc-in { padding: clamp(48px, 8vh, 90px) 0 clamp(32px, 5vh, 56px); }
 .hero-city.hc-half .hc-h { font-size: clamp(40px, 5.4vw, 88px); margin-bottom: 0; max-width: 11em; }
@@ -1710,17 +1710,34 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
 @keyframes si-gun-b { 0% { opacity: .5; transform: translate3d(-.06em, -.02em, 0); } 100% { opacity: 0; transform: translate3d(0, 0, 0); } }
 @keyframes si-heart { 0% { opacity: 0; transform: scale(.4) rotate(-10deg); } 70% { opacity: 1; transform: scale(1.1) rotate(2deg); } 100% { opacity: 1; transform: none; } }
 @keyframes si-scan { 0% { opacity: 0; transform: translate3d(0, -52%, 0); } 18% { opacity: 1; } 82% { opacity: .8; } 100% { opacity: 0; transform: translate3d(0, 54%, 0); } }
-/* after load, desktop with the live CRT wall: when a set loses its signal, the interference reaches the type: the guns of
-   "brand experiences" slip apart for a moment and settle again (at most every 12 s; the words themselves never move) */
-.pw-h.si.si-glint .si-k::before { animation: si-int-r .7s cubic-bezier(.22, 1, .36, 1) calc((var(--i) - var(--k0, 0)) * 70ms) backwards; }
-.pw-h.si.si-glint .si-k::after { animation: si-int-b .7s cubic-bezier(.22, 1, .36, 1) calc((var(--i) - var(--k0, 0)) * 70ms) backwards; }
-@keyframes si-int-r { 0% { opacity: 0; transform: none; } 18% { opacity: .38; transform: translate3d(.05em, 0, 0); } 30% { transform: translate3d(.02em, 0, 0); } 42% { transform: translate3d(.045em, 0, 0); } 100% { opacity: 0; transform: none; } }
-@keyframes si-int-b { 0% { opacity: 0; transform: none; } 18% { opacity: .38; transform: translate3d(-.05em, 0, 0); } 30% { transform: translate3d(-.02em, 0, 0); } 42% { transform: translate3d(-.045em, 0, 0); } 100% { opacity: 0; transform: none; } }
 @media (max-width: 700px) {
   .pw-h.si .si-w::before, .pw-h.si .si-w::after { content: none; }
   .pw-h.si .pw-heart { animation-delay: calc(40ms + var(--n) * 32ms + 140ms); }
 }
 @media (prefers-reduced-motion: reduce) { .pw-h.si, .pw-h.si .pw-heart, .pw-h.si::after, .pw-h.si .si-w::before, .pw-h.si .si-w::after { animation: none !important; } }
+/* r408 (Daniel: "mai mult contrast între text și ce este în spatele lui, dar ce este în spate să se vadă totuși bine"). The dark
+   blot behind the h1 went on the live CRT wall (it stays only on the flat wall: no WebGL2, software GL, reduced motion): it
+   crushed the sets under it and was thinnest at the ends of the lines, where the words needed it. Now two things do it:
+   the tube shader's limiter brings down only what is bright behind the words (site.js, uLim), and the letters carry a
+   soft shadow that follows their own shape. Blurred, never a hard edge: this is not an outline. */
+.pwall.crt3 .pw-h::before { opacity: 0; }
+/* the gaps between the sets are bright paper, and the limiter cannot reach them: behind the rig (so no set is dimmed by it), the h1's box goes dark, with soft edges; only the gaps show it */
+.pwall.crt3::before { content: ""; position: absolute; z-index: 0; left: calc(var(--pwl, 0px) - var(--pwf, 0px)); top: calc(var(--pwt, 0px) - .9 * var(--pwf, 0px)); width: calc(var(--pww, 0px) + 2 * var(--pwf, 0px)); height: calc(var(--pwh, 0px) + 1.8 * var(--pwf, 0px)); background: #0d0c09; pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--pwf, 0px), #000 calc(100% - var(--pwf, 0px)), transparent), linear-gradient(180deg, transparent, #000 calc(.9 * var(--pwf, 0px)), #000 calc(100% - .9 * var(--pwf, 0px)), transparent); mask-image: linear-gradient(90deg, transparent, #000 var(--pwf, 0px), #000 calc(100% - var(--pwf, 0px)), transparent), linear-gradient(180deg, transparent, #000 calc(.9 * var(--pwf, 0px)), #000 calc(100% - .9 * var(--pwf, 0px)), transparent); -webkit-mask-composite: source-in; mask-composite: intersect; }
+.pw-h.si .si-w::before, .pw-h.si .si-w::after { text-shadow: none; }
+.pw-h { text-shadow: 0 0 max(.03em, 3px) rgba(13,12,9,.8), 0 1px max(.1em, 8px) rgba(13,12,9,.72), 0 1px max(.3em, 18px) rgba(13,12,9,.55); }
+.pw-heart { text-shadow: none; }
+/* r408: the letters' glitches (the code and why: site.js, r408). The real letter hides by a highlight (paint only); the copies
+   are generated content, absolute over it, in solid fills: white, the brand's red and blue guns. */
+::highlight(h1g) { color: transparent; }
+.h1g-o { position: absolute; inset: 0; z-index: 2; pointer-events: none; user-select: none; }
+.h1g-p, .h1g-c { position: absolute; display: block; text-align: left; white-space: pre; text-shadow: none; }
+.h1g-p::before { content: attr(data-c); }
+.h1g-c { clip-path: inset(7% -30% 3%); }
+.h1g-r { color: #F65342; opacity: 0; }
+.h1g-b { color: #119BFE; opacity: 0; }
+.h1g-g { opacity: 0; text-shadow: 0 0 .1em rgba(255,255,255,.75), 0 0 .28em rgba(255,255,255,.4); }
+.h1g-n::before { color: transparent; background-image: var(--n); background-size: 96px 96px; -webkit-background-clip: text; background-clip: text; image-rendering: pixelated; }
 /* r391 (Daniel: "the service cards should get their colour on mobile too as you pass over them, when they're in the middle
    area of the screen, because we have no hover"): on a touch screen the card whose centre crosses the middle band of the
    screen (35-65% of its height) takes its hover colour (.lit, set by site.js), one card at a time, after it has landed

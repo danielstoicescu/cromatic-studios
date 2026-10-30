@@ -618,7 +618,7 @@
   var DPR = Math.min(devicePixelRatio || 1, 1.5), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 6 : 8, RAD = phone ? 10 : 12;
   cv.className = "pw-gl"; cv.setAttribute("aria-hidden", "true");
   var VS = "#version 300 es\nlayout(location=0) in vec2 aC;layout(location=1) in vec4 iBox;layout(location=2) in vec4 iA;layout(location=3) in vec4 iG;layout(location=4) in vec4 iM;uniform vec2 uRes;out vec2 vP;flat out vec4 vBox,vA,vG,vM;void main(){vec2 p=iBox.xy+aC*iBox.zw;vP=(aC-.5)*iBox.zw;vBox=iBox;vA=iA;vG=iG;vM=iM;gl_Position=vec4(p/uRes*2.-1.,0.,1.);gl_Position.y=-gl_Position.y;}";
-  var FS = "#version 300 es\nprecision highp float;precision highp sampler2DArray;uniform sampler2DArray uT;uniform float uPitch,uDpr,uBez,uRad,uRk,uDk,uSeed,uMask,uTime;in vec2 vP;flat in vec4 vBox,vA,vG,vM;out vec4 o;" +
+  var FS = "#version 300 es\nprecision highp float;precision highp sampler2DArray;uniform sampler2DArray uT;uniform float uPitch,uDpr,uBez,uRad,uRk,uDk,uSeed,uMask,uTime,uLimS,uLimK;uniform vec4 uLim;in vec2 vP;flat in vec4 vBox,vA,vG,vM;out vec4 o;" +
     "float rr(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}" +
     "float h1(vec2 p){p=fract(p*vec2(.1031,.1030));p+=dot(p,p.yx+33.33);return fract((p.x+p.y)*p.x);}" +
     "vec3 tx(vec2 u){return textureLod(uT,vec3(clamp(u,.001,.999),vA.x),0.).rgb;}vec3 tb(vec2 u,float l){return textureLod(uT,vec3(clamp(u,.001,.999),vA.x),l).rgb;}" +
@@ -666,6 +666,8 @@
     "float sh=rr(q-vec2(0.,.022*AB.y),AB,rc);col*=mix(.3,1.,smoothstep(0.,7.*px,-sh));" +
     // the glass: the room's dim reflection (the black of an 80s screen is a grey) and one soft window up on the left
     "vec3 V=normalize(E-S),Rf=reflect(-V,n);float sp=dot(Rf,normalize(vec3(-.42,-.62,1.)));col+=vec3(.03,.032,.03)+vec3(1.,.99,.96)*(smoothstep(.95,.995,sp)*.13+pow(max(sp,0.),6.)*.07);" +
+    // r408, the limiter behind the h1: only what is brighter than the knee comes down (hue kept, a soft shoulder), so a bright set goes to a mid tone with its picture still there and a dark set is not touched
+    "vec2 ld=abs(vBox.xy+vP+hf-uLim.xy)-uLim.zw;float lm=uLimK*(1.-smoothstep(0.,uLimS,length(max(ld,0.))));if(lm>.002){float yy0=dot(col,vec3(.2126,.7152,.0722));if(yy0>.3){float yy1=.3+.26*(1.-exp(-(yy0-.3)/.26));col*=mix(1.,yy1/yy0,lm);}}" +
     "float ed=smoothstep(0.,aa*1.5*px,-sd);col=mix(vec3(.02),col,ed);o=vec4(clamp(col,0.,1.)*al,al);}";
   var mk = function (t, src) { var s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); return s; };
   var prog = gl.createProgram(), vs = mk(gl.VERTEX_SHADER, VS), fs = mk(gl.FRAGMENT_SHADER, FS);
@@ -680,7 +682,7 @@
   cv.addEventListener("webglcontextlost", function (e) { e.preventDefault(); lost(); });
   var setup = function () {
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { lost(); return; }
-    gl.useProgram(prog); ["uRes", "uT", "uPitch", "uDpr", "uBez", "uRad", "uRk", "uDk", "uSeed", "uMask", "uTime"].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
+    gl.useProgram(prog); ["uRes", "uT", "uPitch", "uDpr", "uBez", "uRad", "uRk", "uDk", "uSeed", "uMask", "uTime", "uLim", "uLimS", "uLimK"].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
     tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
     gl.texStorage3D(gl.TEXTURE_2D_ARRAY, TL, gl.RGBA8, TW, TH, NL); // mips: the halation reads the blurred levels
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -696,9 +698,10 @@
     cards.forEach(function (c) { if (c.img && !c.L.dec) { var go = function () { if (c.L.dec) return; c.L.dec = 1; (c.img.decode ? c.img.decode() : Promise.resolve()).then(function () { queue.push(c); }, function () { c.L.dec = 0; }); }; if (c.img.complete && c.img.naturalWidth) go(); else c.img.addEventListener("load", go, { once: true }); } });
   };
   // where everything is (on resize only): each set's box in the wall, without its row's current drift
-  var vw = 1, wh = 1, secTop = 0, D = 1, measure = function () {
+  var vw = 1, wh = 1, secTop = 0, D = 1, lim = null, limK = 0, measure = function () {
     var r = wall.getBoundingClientRect(), X = W.x || []; vw = r.width; wh = r.height; secTop = r.top + scrollY; D = innerWidth * (phone ? 4 : 1.8);
     cv.width = Math.round(vw * DPR); cv.height = Math.round(wh * DPR);
+    var h1 = wall.querySelector(".pw-h"); if (h1) { var fs = parseFloat(getComputedStyle(h1).fontSize) || 60; lim = [h1.offsetLeft + h1.offsetWidth / 2, h1.offsetTop + h1.offsetHeight / 2, h1.offsetWidth / 2, h1.offsetHeight / 2 + fs * 0.04, fs * 1.1]; wall.style.setProperty("--pwl", h1.offsetLeft + "px"); wall.style.setProperty("--pwt", h1.offsetTop + "px"); wall.style.setProperty("--pww", h1.offsetWidth + "px"); wall.style.setProperty("--pwh", h1.offsetHeight + "px"); wall.style.setProperty("--pwf", fs + "px"); }
     cards.forEach(function (c) { var b = c.el.getBoundingClientRect(); c.x = b.left - r.left - (X[c.row] || 0); c.y = b.top - r.top; c.w = b.width; c.h = b.height; });
     if (ready || gl.isProgram(prog)) { gl.viewport(0, 0, cv.width, cv.height); }
   };
@@ -752,6 +755,7 @@
     gl.useProgram(prog); gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, inst, 0, n * 16);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
     gl.uniform2f(U.uRes, vw, wh); gl.uniform1f(U.uSeed, Math.floor(Math.random() * 997)); gl.uniform1f(U.uTime, t / 1000);
+    if (lim) { var sp = Math.min(1, Math.max(0, scrollY / (wh * 0.62))); limK += ((1 - sp * sp * (3 - 2 * sp)) - limK) * (1 - Math.exp(-(dt || 0.016) / 0.1)); gl.uniform4f(U.uLim, lim[0], lim[1], lim[2], lim[3]); gl.uniform1f(U.uLimS, lim[4]); gl.uniform1f(U.uLimK, limK); } else gl.uniform1f(U.uLimK, 0);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
   };
   W.hooks.push(frame);
@@ -762,7 +766,7 @@
 // keyframes are in render.mjs + site.css), it lives with the wall. On the wall's own loop (so nothing runs while the
 // wall is off screen): on a desktop pointer it floats ±3 px against the wall, eased; as you scroll the wall away it
 // sinks a little behind the scroll, softens and fades with the scroll's progress (phones: fade and sink only, no
-// blur); and when a CRT set loses its signal, the red and blue guns of "brand experiences" slip apart for a moment (at most every 12 s).
+// blur). (Its glint on a CRT glitch went in r408: the letters' own glitches are in the block below.)
 // At rest every inline style is cleared, so the type stays crisp. Nothing with reduced motion.
 (function () {
   var W = window.__czWall, h = document.querySelector(".pw-h.si"), wall = h && h.closest(".pwall");
@@ -770,15 +774,10 @@
   var phone = matchMedia("(max-width: 700px)").matches, fine = matchMedia("(hover: hover) and (pointer: fine)").matches && !phone;
   var wh = 1, measure = function () { wh = wall.getBoundingClientRect().height; };
   measure(); addEventListener("resize", measure); addEventListener("load", measure);
-  var tx = 0, ty = 0, px = 0, py = 0, idle = true, ready = false, lastLive = null, lastGlint = -1e9;
+  var tx = 0, ty = 0, px = 0, py = 0, idle = true, ready = false;
   setTimeout(function () { ready = true; }, 1000); // the parallax waits for the lock to finish
   if (fine) addEventListener("pointermove", function (e) { tx = -(e.clientX / innerWidth - 0.5) * 6; ty = -(e.clientY / innerHeight - 0.5) * 6; }, { passive: true });
   if (fine) document.addEventListener("pointerleave", function () { tx = ty = 0; });
-  var glint = function (t) {
-    if (t - lastGlint < 12000) return; lastGlint = t;
-    h.classList.remove("si-glint"); void h.offsetWidth; h.classList.add("si-glint");
-    setTimeout(function () { h.classList.remove("si-glint"); }, 1600);
-  };
   W.hooks.push(function (t, dt) {
     var k = 1 - Math.exp(-(dt || 0.016) / 0.14);
     if (ready) { px += (tx - px) * k; py += (ty - py) * k; }
@@ -791,9 +790,121 @@
       h.style.filter = !phone && e > 0.01 ? "blur(" + (e * 7).toFixed(2) + "px)" : "";
       h.style.opacity = e > 0.001 ? (1 - 0.88 * e).toFixed(3) : "";
     }
-    // the interference: a new glitch on a set, the h1 on screen and not on its way out, the lock done
-    var C = window.__czCrt, live = C && C.live;
-    if (fine && ready && live && live !== lastLive && p < 0.15) glint(t);
-    lastLive = live || null;
   });
+})();
+// r408 (Daniel: "câte o literă care se glitchuiască conform glitch-urilor de pe TV, dar mult mai specific pentru literă, câte
+// una pe rând sau câte un rând întreg"). The interference reaches the h1: when a set on the wall loses its signal, the letter
+// nearest to that set loses its own a beat later, the same way: snow inside the letter, a drop, the hold slipping in bands,
+// or the letter's picture rolling once in its cell. Now and then, on a hold slip, a whole line tears instead. Three wall
+// glitches out of four at most, never two skipped in a row, one at a time. Where the wall has no CRT (software GL, a lost
+// context) it keeps its own 6-10 s clock on the wall's loop, with the same four. Nothing runs off screen or in a hidden tab
+// (the wall's loop stops), only a compare per frame between glitches; the motion is WAAPI on transform and opacity, so it
+// leaves the main thread (snow alone steps a background on one letter).
+// The h1's DOM is never touched: no letter is split, kerning, wrapping and diacritics stay the browser's own and nothing
+// can shift. The letter's place is read from a Range; the real letter is hidden through a CSS highlight (paint only, its
+// shadow stays); the copies are absolute, aria-hidden, in generated content (attr), so no extra text ever exists for a
+// screen reader, a selection or a crawler. Copies are solid fills. No Highlight API (Safari < 17.2, Firefox < 140): no
+// glitches. Never with reduced motion (no .si). One switch: window.__czH1.off() / .on(). QA, no UI: ?h1g=1 cycles all
+// every 1.6 s, ?h1g=roll|snow|drop|hsync|line only that one; __czH1.fire(type, letterIndex).
+(function () {
+  var W = window.__czWall, h = document.querySelector(".pw-h.si");
+  if (!W || !W.go || !h || !window.CSS || !CSS.highlights || typeof Highlight !== "function" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var KIND = { 1: "snow", 2: "drop", 3: "hsync", 4: "roll" }, ALL = ["snow", "drop", "hsync", "roll"], gq = new URLSearchParams(location.search).get("h1g");
+  var off = false, busy = false, pend = null, lastLive = null, skipped = false, first = true, lastIdx = -1, lastLine = -1e9, own = 0, cyc = 0, noise = null, hook;
+  // every letter and where it is now (read at the moment of a glitch: a clean layout, about 40 ranges)
+  var letters = function () {
+    var hb = h.getBoundingClientRect(), out = [];
+    [].forEach.call(h.querySelectorAll(".si-w"), function (w, wi) {
+      var n = w.firstChild; if (!n || n.nodeType !== 3) return;
+      var re = /\p{L}\p{M}*|./gu, m;
+      while ((m = re.exec(n.data))) { var r = document.createRange(); r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length); var b = r.getClientRects()[0]; if (b) out.push({ c: m[0], r: r, w: wi, x: b.left - hb.left, y: b.top - hb.top, W: b.width, H: b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, wide: /\p{L}/u.test(m[0]) && !/^[iljtfr]/.test(m[0]) }); }
+    });
+    return out;
+  };
+  var piece = function (o, txt, x, y, W2, H, cls) { var e = document.createElement("span"); e.className = "h1g-p" + (cls ? " " + cls : ""); e.setAttribute("data-c", txt); e.style.cssText = "left:" + x + "px;top:" + y + "px;width:" + W2 + "px;height:" + H + "px;line-height:" + H + "px"; o.appendChild(e); return e; };
+  var AT = [0, 0.1, 0.22, 0.38, 0.55, 0.7, 0.86, 1], SL = [0, 1, 0.55, 0.95, 0.4, 0.75, 0.12, 0];
+  var kf = function (vals, fn, ease) { return vals.map(function (v, i) { var f = fn(v); f.offset = AT[i]; if (ease) f.easing = ease; return f; }); };
+  // the hold slipping: bands sliding in turn against each other, the red and blue guns showing where they part
+  var slip = function (o, a, txt, x, y, W2, H, nb, amp, gun, dur) {
+    var em = parseFloat(getComputedStyle(h).fontSize);
+    [["h1g-r", gun], ["h1g-b", -gun]].forEach(function (g) { var e = piece(o, txt, x, y, W2, H, g[0]); a.push(e.animate(kf(SL, function (v) { return { transform: "translate3d(" + (g[1] * em * v).toFixed(2) + "px,0,0)", opacity: v > 0.05 ? 1 : 0 }; }), { duration: dur, fill: "both" })); });
+    for (var i = 0; i < nb; i++) (function (i) {
+      var e = piece(o, txt, x, y, W2, H), s = (i % 2 ? 1 : -1) * amp * em * (0.65 + 0.35 * Math.random()), t = H * 0.1, band = (H - 2 * t) / nb;
+      e.style.clipPath = "inset(" + (i ? t + band * i : -9) + "px -30% " + (i < nb - 1 ? t + band * (nb - i - 1) : -9) + "px -30%)";
+      a.push(e.animate(kf(SL, function (v) { return { transform: "translate3d(" + (s * v).toFixed(2) + "px,0,0)" }; }, "steps(2)"), { duration: dur, fill: "both" }));
+    })(i);
+  };
+  var bloom = function (o, a, L, dur) { var e = piece(o, L.c, L.x, L.y, L.W, L.H, "h1g-g"); a.push(e.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.68 }, { opacity: 1, offset: 0.78 }, { opacity: 0, offset: 1 }], { duration: dur, fill: "both" })); };
+  var snow = function () {
+    if (noise) return noise;
+    var c = document.createElement("canvas"); c.width = c.height = 96; var x = c.getContext("2d"), d = x.createImageData(96, 96);
+    // the shader's snow: scanlines of grain, some lines hotter; never dark enough to lose the letter
+    for (var y = 0; y < 96; y++) { var ln = 0.65 + 0.5 * Math.random(); for (var i = 0; i < 96; i++) { var v = Math.min(255, 96 + 190 * Math.random() * ln), k = (y * 96 + i) * 4; d.data[k] = d.data[k + 1] = d.data[k + 2] = v; d.data[k + 3] = 255; } }
+    x.putImageData(d, 0, 0); return (noise = c.toDataURL("image/png"));
+  };
+  var run = function (type, L, all) {
+    var o = document.createElement("span"); o.className = "h1g-o"; o.setAttribute("aria-hidden", "true");
+    var a = [], rs = [L.r], dur = 640;
+    if (type === "hsync") { dur = 560; slip(o, a, L.c, L.x, L.y, L.W, L.H, 5, 0.085, 0.045, dur); }
+    else if (type === "line") {
+      var line = all.filter(function (q) { return Math.abs(q.y - L.y) < 2; }), end = line[line.length - 1], txt = "", w0 = -1;
+      line.forEach(function (q) { if (w0 >= 0 && q.w !== w0) txt += " "; txt += q.c; w0 = q.w; });
+      rs = line.map(function (q) { return q.r; }); dur = 480; slip(o, a, txt, line[0].x, L.y, end.x + end.W - line[0].x + 8, L.H, 5, 0.05, 0.014, dur);
+    } else if (type === "roll") {
+      // the letter's own picture rolls once in its cell, as the set's does, and settles with a small bounce
+      var cell = document.createElement("span"); cell.className = "h1g-c"; cell.style.cssText = "left:" + L.x + "px;top:" + L.y + "px;width:" + L.W + "px;height:" + L.H + "px"; o.appendChild(cell);
+      var A = piece(cell, L.c, 0, 0, L.W, L.H), B = piece(cell, L.c, 0, -L.H * 1.06, L.W, L.H), fr = [];
+      for (var i = 0; i <= 14; i++) { var p = i / 14, y = Math.min(1, Math.max(0, (p - 0.06) / 0.8)), v = y < 0.75 ? 1.03 * Math.pow(y / 0.75, 2.2) : 1 + 0.03 * Math.cos(Math.PI * 1.5 * (y - 0.75) / 0.25) * Math.exp(-4 * (y - 0.75) / 0.25); fr.push({ offset: p, transform: "translate3d(0," + (v * L.H * 1.06).toFixed(2) + "px,0)" }); }
+      fr[14].transform = "translate3d(0," + (L.H * 1.06).toFixed(2) + "px,0)";
+      a.push(A.animate(fr, { duration: dur, fill: "both" }), B.animate(fr, { duration: dur, fill: "both" }));
+    } else if (type === "snow") {
+      dur = 700; var n = piece(o, L.c, L.x, L.y, L.W, L.H, "h1g-n"), top = piece(o, L.c, L.x, L.y, L.W, L.H);
+      n.style.setProperty("--n", "url(" + snow() + ")");
+      a.push(n.animate([{ backgroundPosition: "0 0" }, { backgroundPosition: "-1680px 1190px" }], { duration: dur, easing: "steps(14)", pseudoElement: "::before", fill: "both" }));
+      a.push(top.animate([{ opacity: 1, offset: 0 }, { opacity: 0, offset: 0.1 }, { opacity: 0, offset: 0.7 }, { opacity: 1, offset: 0.92 }, { opacity: 1, offset: 1 }], { duration: dur, fill: "both" }));
+      bloom(o, a, L, dur);
+    } else {
+      dur = 620; var e = piece(o, L.c, L.x, L.y, L.W, L.H);
+      a.push(e.animate([{ opacity: 1, offset: 0 }, { opacity: 0.42, offset: 0.12 }, { opacity: 0.62, offset: 0.3, easing: "steps(2)" }, { opacity: 0.42, offset: 0.46 }, { opacity: 0.58, offset: 0.6 }, { opacity: 0.45, offset: 0.7 }, { opacity: 1, offset: 0.86 }, { opacity: 1, offset: 1 }], { duration: dur, fill: "both" }));
+      bloom(o, a, L, dur);
+    }
+    busy = true; h.appendChild(o); CSS.highlights.set("h1g", new Highlight(...rs));
+    var done = false, end2 = function () { if (done) return; done = true; a.forEach(function (x) { x.cancel(); }); o.remove(); CSS.highlights.delete("h1g"); busy = false; };
+    if (a[0]) a[0].finished.then(end2, end2);
+    setTimeout(end2, dur + 500);
+    run.stop = end2;
+  };
+  var fire = function (type, idx, near) {
+    if (off || busy) return false;
+    var all = letters(), pool = all.filter(function (q, i) { q.i = i; return q.wide && i !== lastIdx; }); if (!pool.length) return false;
+    var L;
+    if (idx != null && all[idx]) L = all[idx];
+    else if (near) { pool.sort(function (a, b) { return Math.hypot(a.cx - near[0], a.cy - near[1]) - Math.hypot(b.cx - near[0], b.cy - near[1]); }); L = pool[Math.floor(Math.random() * Math.min(3, pool.length))]; }
+    else L = pool[Math.floor(Math.random() * pool.length)];
+    lastIdx = L.i; run(type, L, all); return true;
+  };
+  var when = function (t, type, near) {
+    // one line now and then, on a slip of the hold
+    if (type === "hsync" && t - lastLine > 28000 && Math.random() < 0.6) { type = "line"; lastLine = t; }
+    if (!first && !skipped && Math.random() < 0.25) { skipped = true; return; }
+    skipped = false; first = false; pend = { t: t + 110, type: type, near: near };
+  };
+  hook = function (t) {
+    if (busy) return;
+    if (scrollY > innerHeight * 0.12) { pend = null; return; }
+    if (pend) { if (t >= pend.t) { var q = pend; pend = null; fire(q.type, null, q.near); } return; }
+    if (gq) { if (t > own) { own = t + 1600; fire(ALL.indexOf(gq) >= 0 || gq === "line" ? gq : ALL.concat("line")[cyc++ % 5]); } return; }
+    var C = window.__czCrt;
+    if (C) {
+      var live = C.live;
+      if (live && live !== lastLive) { var b = live.c.el.getBoundingClientRect(); when(t, KIND[live.type], [b.left + b.width / 2, b.top + b.height / 2]); }
+      lastLive = live || null;
+    } else { if (!own) own = t + 6000 + Math.random() * 4000; else if (t > own) { own = t + 6000 + Math.random() * 4000; when(t, ALL[Math.floor(Math.random() * 4)]); } }
+  };
+  W.hooks.push(hook);
+  window.__czH1 = {
+    off: function () { off = true; pend = null; var i = W.hooks.indexOf(hook); if (i >= 0) W.hooks.splice(i, 1); if (run.stop) run.stop(); },
+    on: function () { if (!off) return; off = false; W.hooks.push(hook); W.go(); },
+    fire: function (type, idx) { return fire(type, idx); }
+  };
 })();
