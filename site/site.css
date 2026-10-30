@@ -1310,7 +1310,8 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 .pwall { padding: clamp(26px, 3.6vw, 52px) 0 clamp(48px, 6vw, 90px); overflow: hidden; }
 .pw-rows { display: grid; gap: 16px; }
 .pw-row { display: flex; gap: 16px; width: max-content; will-change: transform; }
-.pw-case { position: relative; flex: 0 0 auto; width: clamp(220px, 24vw, 340px); border-radius: 20px; overflow: hidden; isolation: isolate; text-decoration: none; color: #fff;
+.pwall { --pw-w: clamp(220px, 24vw, 340px); } /* a card's width, one place: the first fold reserves its height from it */
+.pw-case { position: relative; flex: 0 0 auto; width: var(--pw-w); border-radius: 20px; overflow: hidden; isolation: isolate; text-decoration: none; color: #fff;
   border: 1px solid var(--ink); box-shadow: 0 3px 0 var(--ink); background: var(--bc); transition: translate .45s var(--bounce), box-shadow .45s var(--bounce); }
 .pw-case img { display: block; width: 100%; height: auto; aspect-ratio: 56 / 38; object-fit: cover; transition: scale .7s var(--eoq); }
 .pw-case::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,12,9,0) 42%, rgba(13,12,9,.72)); opacity: 0; transition: opacity .35s var(--eoq); }
@@ -1321,7 +1322,7 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 .pw-case:is(:hover, :focus-visible, .show)::after, .pw-case:is(:hover, :focus-visible, .show) .pw-name { opacity: 1; translate: 0 0; }
 .pw-case:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 :is(html:not(.js)) .pw-row, .rm .pw-row { width: auto; overflow-x: auto; padding: 4px 16px 10px; }
-@media (max-width: 700px) { .pw-rows, .pw-row { gap: 12px; } .pw-case { width: 62vw; border-radius: 16px; } }
+@media (max-width: 700px) { .pw-rows, .pw-row { gap: 12px; } .pwall { --pw-w: 62vw; } .pw-case { border-radius: 16px; } }
 @media (prefers-reduced-motion: reduce) { .pw-row { width: auto; overflow-x: auto; padding: 4px 16px 10px; transform: none !important; } }
 
 /* 12 · portfolio cards, on hover: more air between the name, the category, the brief and the arrow; the arrow's circle
@@ -1649,8 +1650,19 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
 /* r381: the CRT wall mounts without moving anything (CLS 0.04 at 1440, 0.027 on a phone: the rows' gaps went 16 -> 10 px,
    12 -> 8 on phones, when .crt3 arrived and the wall's centred block shrank 6-8 px). The first wall has the CRT's gaps
    from the first paint, so its height is the same before and after; the canvas is out of the flow from the start */
-.pwall.pw-first .pw-rows, .pwall.pw-first .pw-row { gap: 10px; }
-@media (max-width: 700px) { .pwall.pw-first .pw-rows, .pwall.pw-first .pw-row { gap: 8px; } }
+.pwall.pw-first { --pw-gap: 10px; --pw-pad: 0px; }
+@media (max-width: 700px) { .pwall.pw-first { --pw-gap: 8px; } }
+.pwall.pw-first .pw-rows, .pwall.pw-first .pw-row { gap: var(--pw-gap); }
+/* The first fold's block is centred and its HTML arrives in pieces (about 60 KB of rows on a slow phone), so Chrome could paint one row,
+   then re-centre for each new one: CLS 0 to 0.18 between runs, the same page (.pw-rows in PSI, 30 Oct). The block's full height is
+   there from the first paint: three rows reserved from the card's width, and .pw-alt's own height from an invisible copy
+   that comes before the rows (.pw-alt-ghost: same words, same wrapping in every language and width, no link). */
+.pwall.pw-first { grid-template-rows: minmax(calc(3 * (var(--pw-w) * 38 / 56 + var(--pw-pad)) + 2 * var(--pw-gap)), auto) auto; }
+.pwall.pw-first .pw-rows { grid-area: 1 / 1; align-content: start; }
+.pwall.pw-first .pw-alt { grid-area: 2 / 1; }
+.pw-alt-ghost { visibility: hidden; pointer-events: none; }
+:is(html:not(.js)) .pwall.pw-first, .rm .pwall.pw-first { --pw-pad: 14px; } /* those rows scroll by hand and carry padding (.pw-row, above) */
+@media (prefers-reduced-motion: reduce) { .pwall.pw-first { --pw-pad: 14px; } }
 .pwall .pw-gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .pwall.crt3 .pw-rows { position: relative; z-index: 1; gap: 10px; }
 .pwall.crt3 .pw-row { gap: 10px; }
