@@ -122,6 +122,8 @@ mark.mm-hl { background: var(--y); color: var(--ink); padding: 0 1px; font-style
 /* r371: only the root is locked. overflow: hidden on body too made body the header's scroller, so the sticky header
    (and the panel with it) snapped back to the top of the page as soon as the menu opened anywhere below it */
 html.mm-lock { overflow: hidden; }
+/* TASK-149: a place the menu sent you to takes the focus (for the next Tab), without a ring around the whole section */
+.mm-to:focus { outline: none; }
 
 @media (max-width: 1180px) and (min-width: 861px) {
   .mm-in { width: calc(100% - 40px); }

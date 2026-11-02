@@ -12,7 +12,7 @@
   const RM = matchMedia("(prefers-reduced-motion: reduce)"), PHONE = matchMedia("(max-width: 860px)"), FINE = matchMedia("(hover: hover) and (pointer: fine)");
   const items = $$(".mm-i"), pv = $(".mm-pv"), f = $(".mm-f"), q = f.q, clear = $(".mm-clear"), count = $(".mm-count"), empty = $(".mm-empty");
   const total = +mm.dataset.total || items.length;
-  let open = false, mode = "", opener = null, tHover = 0, tLeave = 0, tHide = 0, cur = null, booted = false, pushed = false;
+  let open = false, mode = "", opener = null, tHover = 0, tLeave = 0, tHide = 0, cur = null, booted = false, pushed = false, quiet = true;
 
   // the select options in the page's language (the dictionary does not reach inside a <select>)
   for (const s of $$(".mm-opts [data-v]")) { const [k, v] = s.dataset.v.split(":"), o = f[k] && [...f[k].options].find((x) => x.value === v); if (o) o.textContent = s.textContent; }
@@ -120,14 +120,15 @@
     if (how === "key" && !PHONE.matches) q.focus({ preventScroll: true });
     else if (how !== "hover") scroller.focus({ preventScroll: true });
   };
-  const hide = (back) => {
+  // now: no closing animation (a page coming back from the back/forward cache is shown already closed)
+  const hide = (back, now) => {
     clearTimeout(tHover); clearTimeout(tLeave);
     if (!open) return;
     open = false; mode = "";
     mm.classList.remove("open");
     btns.forEach((b) => b.setAttribute("aria-expanded", "false"));
     const done = () => { if (open) return; mm.hidden = true; scrim.hidden = true; root.classList.remove("mm-lock"); d.body.style.paddingRight = ""; };
-    if (RM.matches) done(); else tHide = setTimeout(done, PHONE.matches ? 200 : 180);
+    if (RM.matches || now) { clearTimeout(tHide); done(); } else tHide = setTimeout(done, PHONE.matches ? 200 : 180);
     // the sheet's history step (the phone's back gesture closes it) goes away with it, unless a link is taking over
     if (pushed) { pushed = false; if (history.state && history.state.mm) history.back(); }
     if (back && opener) { (opener.offsetParent ? opener : btns.find((b) => b.offsetParent) || opener).focus({ preventScroll: true }); }
@@ -140,7 +141,11 @@
       else hide(true);
     });
     // hover with intent: the pointer rests on "Work" for a moment (not a pass on the way to another link)
-    b.addEventListener("pointerenter", (e) => { if (e.pointerType !== "mouse" || !FINE.matches || PHONE.matches) return; clearTimeout(tLeave); if (!open) tHover = setTimeout(() => show("hover", b), 90); });
+    // TASK-149: a pointer that was already resting there when the page arrived (a load, or Back) does not count: it
+    // waits for a real move, so Back from a case never finds the menu opening by itself
+    const intent = (e) => { if (e.pointerType !== "mouse" || !FINE.matches || PHONE.matches) return; clearTimeout(tLeave); if (!open) { clearTimeout(tHover); tHover = setTimeout(() => show("hover", b), 90); } };
+    b.addEventListener("pointerenter", (e) => { if (!quiet) intent(e); });
+    b.addEventListener("pointermove", (e) => { if (quiet && (e.movementX || e.movementY)) { quiet = false; intent(e); } });
     b.addEventListener("pointerleave", () => { clearTimeout(tHover); if (open && mode === "hover") tLeave = setTimeout(() => hide(false), 280); });
     b.addEventListener("keydown", (e) => {
       if (e.key === "ArrowDown" && !open) { e.preventDefault(); show("key", b); }
@@ -151,7 +156,14 @@
   scroller.addEventListener("pointerleave", (e) => { if (open && mode === "hover" && e.pointerType === "mouse") tLeave = setTimeout(() => hide(false), 280); });
   scrim.addEventListener("click", () => hide(false));
   $(".mm-x").addEventListener("click", () => hide(true));
-  addEventListener("pageshow", (e) => { if (e.persisted) hide(false); });
+  // TASK-149 back from a case (the back/forward cache): the page returns with the menu closed, no fade, the scroll lock
+  // and "Work" reset, the case handoff undone; a pointer that happens to rest on "Work" waits for a real move to open it
+  addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    pushed = false; hide(false, true); unhand();
+    quiet = true;
+  });
+  addEventListener("pointermove", (e) => { if (quiet && (e.movementX || e.movementY)) quiet = false; }, { passive: true });
   addEventListener("popstate", () => { if (open && pushed) { pushed = false; hide(false); } });
   PHONE.addEventListener?.("change", () => open && hide(false));
   addEventListener("resize", () => open && setTop());
@@ -195,22 +207,50 @@
   for (const a of items) {
     a.addEventListener("mouseenter", () => FINE.matches && preview(a));
     a.addEventListener("focus", () => preview(a));
-    a.addEventListener("click", (e) => go(e, a));
   }
-  cv.addEventListener("click", (e) => cur && go(e, cur));
+  // TASK-149 (Coz, 2 Nov): every link in the menu closes it. One listener for all of them: the street and brand rows,
+  // the preview's cover and name, "Every project", the search's first match (the form clicks it). A new tab or window
+  // (Cmd/Ctrl, Shift, a middle click) leaves the menu as it is: the visitor is still here.
+  mm.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href]");
+    if (!a || !open || e.defaultPrevented) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button > 0 || (a.target && a.target !== "_self") || a.hasAttribute("download")) return;
+    const u = new URL(a.href, location.href), own = pushed;
+    pushed = false; // the link takes the sheet's history step (phone), so closing does not step back
+    if (u.origin === location.origin && u.pathname === location.pathname && u.search === location.search) {
+      // this very page (an anchor like #work or #street-c on the home page, or the case you are on): the menu closes
+      // at once and the page goes there; focus lands on the place, or back on "Work" when it is the top of the page
+      e.preventDefault();
+      const t = u.hash ? d.getElementById(decodeURIComponent(u.hash.slice(1))) : null;
+      hide(!t);
+      try {
+        if (u.hash) { if (own) location.replace(u.href); else location.href = u.href; }
+        else { if (own) history.replaceState(clean(), ""); scrollTo({ top: 0, behavior: "instant" }); }
+      } catch {}
+      if (t) { if (t.tabIndex < 0 && !t.hasAttribute("tabindex")) { t.setAttribute("tabindex", "-1"); t.classList.add("mm-to"); } t.focus({ preventScroll: true }); }
+      return;
+    }
+    // another page: the menu stays put until it is replaced (no flash of the page underneath, the cover hands off);
+    // Back brings this page back closed (pageshow above). On a phone the sheet's own history step becomes the new page.
+    const brand = a.classList.contains("mm-i") ? a : (a === cv || a === pn) ? cur : null;
+    if (brand && !brand.hasAttribute("data-nocase")) hand(brand, u);
+    if (own) { e.preventDefault(); location.replace(u.href); }
+  });
+  const pn = $(".mm-pn", pv);
+  const clean = () => { const s = { ...(history.state || {}) }; delete s.mm; return s; };
   // into the case: the preview's cover becomes the case's hero where the browser can (the Street Index's own handoff,
-  // build/streetindex.mjs: the case pages opt in when this flag names them), then the menu closes behind
-  function go(e, a) {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
-    if (pushed) { pushed = false; try { history.replaceState({ ...history.state, mm: 0 }, ""); } catch {} } // the link takes the sheet's history step
-    if (a.hasAttribute("data-nocase")) { hide(false); return; }
-    try { sessionStorage.setItem("si-vt", new URL(a.href, location.href).pathname); } catch {}
+  // build/streetindex.mjs: the case pages opt in when this flag names them)
+  let vt = null;
+  function hand(a, u) {
+    try { sessionStorage.setItem("si-vt", u.pathname); } catch {}
     if (!RM.matches && !PHONE.matches && "onpagereveal" in window) {
-      const s = d.createElement("style"); s.textContent = "@view-transition{navigation:auto}::view-transition-group(*){animation-duration:.2s}"; d.head.append(s);
+      if (!vt) { vt = d.createElement("style"); vt.textContent = "@view-transition{navigation:auto}::view-transition-group(*){animation-duration:.2s}"; }
+      d.head.append(vt);
       $$(".mm-im").forEach((i) => (i.style.viewTransitionName = ""));
       const on = $(".mm-im.on"); if (on && cur === a) on.style.viewTransitionName = "case-hero";
     }
   }
+  function unhand() { if (vt) vt.remove(); $$(".mm-im").forEach((i) => (i.style.viewTransitionName = "")); }
 
   // the sentence filter and the search, live across the streets
   const escH = (t) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
