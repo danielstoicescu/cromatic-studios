@@ -55,7 +55,7 @@ export function makeMegaMenu({ root, pub, R, COVERS }) {
       + `<span class="mm-t"><span class="mm-nm">${esc(name)}</span>${wip ? ` <span class="mm-wip mono">Work in progress</span>` : ""}<span class="mm-ct mono">${esc(cat)}</span></span>`
       + `<span class="mm-d" id="mmd-${id}" hidden>${esc(desc)}</span></a></li>`;
   };
-  const street = (s, si) => {
+  const street = (s) => {
     const rows = s.list.map((p, i) => item(s, `${s.k}${pad(i + 1)}`, { name: p.name, cat: p.cat, desc: p.desc, poster: p.poster, href: p.page ? `/work/${p.page}/` : `/site/#street-${s.k.toLowerCase()}`, cover: p.cover, page: p.page, wip: p.wip, c: p.c, ch: chaptersOf(p).join(" ") }));
     if (s.zd.length) {
       const first = s.zd.find((b) => b.page && b.cover);
@@ -63,7 +63,7 @@ export function makeMegaMenu({ root, pub, R, COVERS }) {
     }
     const n = s.list.length + (s.zd.length ? 1 : 0);
     return `<section class="mm-st${s.k === "D" ? " mm-row" : ""}" data-k="${s.k}" style="--sc:${s.col}" aria-labelledby="mmh-${s.k}">
-<div class="mm-sh"><span class="mm-no mono" aria-hidden="true">${pad(si + 1)}</span><h2 class="mm-sn" id="mmh-${s.k}">${esc(s.street)}</h2><span class="mm-sc mono" data-n="${n}">${pad(n)}</span></div>
+<div class="mm-sh"><h2 class="mm-sn" id="mmh-${s.k}">${esc(s.street)}</h2><span class="mm-sc mono" data-n="${n}">${pad(n)}</span></div>
 <ul class="mm-ul">${rows.join("")}</ul>
 <p class="mm-none mono" hidden>Nothing here for that</p>
 </section>`;
@@ -84,11 +84,9 @@ ${streets.map(street).join("\n")}
 <aside class="mm-pv" aria-hidden="true">
 <a class="mm-cv" href="/site/#work" tabindex="-1"><img class="mm-lq" alt="" decoding="async"><img class="mm-im" alt="" decoding="async"><img class="mm-im" alt="" decoding="async"></a>
 <div class="mm-gal"></div>
-<p class="mm-pk mono"><span class="mm-pst"></span> <span class="mm-pnum"></span></p>
-<p class="mm-pn"></p>
+<a class="mm-pn" href="/site/#work" tabindex="-1"></a>
 <p class="mm-pc mono"></p>
 <p class="mm-pd"></p>
-<p class="mm-pgo"><span class="mm-go-case">Open the case</span><span class="mm-go-st">See it on its street</span> <span aria-hidden="true">→</span></p>
 </aside>
 </div>
 <div class="mm-empty" hidden><p class="mm-e1">Nothing for that yet.</p><p class="mm-e2">Try a client, a field or a street.</p><button type="button" class="mm-reset">Show all the work</button></div>

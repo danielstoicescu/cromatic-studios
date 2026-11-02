@@ -53,7 +53,6 @@
 .mm-row { grid-column: 1 / 4; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) ; column-gap: 36px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(13,12,9,.12); }
 .mm-sh { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(13,12,9,.12); margin-bottom: 6px; }
 .mm-row .mm-sh { border: 0; padding: 0; margin: 0; }
-.mm-no { color: var(--muted); font-size: 10.5px; }
 .mm-sn { font: 800 19px/1.1 var(--f); letter-spacing: -.02em; display: flex; align-items: center; gap: 9px; }
 .mm-sn::after { content: ""; width: 9px; height: 9px; background: var(--sc); flex: none; }
 .mm-sc { margin-left: auto; color: var(--muted); font-size: 10.5px; }
@@ -113,13 +112,11 @@ mark.mm-hl { background: var(--y); color: var(--ink); padding: 0 1px; font-style
 .mm-gal button { padding: 0; border: 0; aspect-ratio: 4 / 3; background: #ebe8df; overflow: hidden; cursor: pointer; opacity: .55; transition: opacity .12s; }
 .mm-gal button.on, .mm-gal button:hover { opacity: 1; }
 .mm-gal img { width: 100%; height: 100%; object-fit: cover; }
-.mm-pk { margin-top: 14px !important; color: var(--muted); font-size: 10.5px; display: flex; justify-content: space-between; }
-.mm-pn { font: 800 28px/1.05 var(--f); letter-spacing: -.03em; margin-top: 6px !important; }
+/* TASK-147: the name takes the eyebrow's place, 14px under the gallery; it links to the case like the cover */
+.mm-pn { display: block; width: fit-content; max-width: 100%; color: var(--ink); text-decoration: none; font: 800 28px/1.05 var(--f); letter-spacing: -.03em; margin-top: 14px !important; background: linear-gradient(var(--y), var(--y)) 0 100% / 0 3px no-repeat; padding-bottom: 2px; transition: background-size .16s var(--eoq); }
+.mm-pn:hover { background-size: 100% 3px; }
 .mm-pc { color: var(--muted); font-size: 10.5px; margin-top: 8px !important; }
 .mm-pd { color: #47443d; font-size: 15.5px; line-height: 1.45; margin-top: 8px !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.mm-pgo { margin-top: 12px !important; font-weight: 800; font-size: 15px; }
-.mm-pgo .mm-go-case, .mm-pgo .mm-go-st { background: linear-gradient(var(--y), var(--y)) 0 100% / 100% 3px no-repeat; padding-bottom: 2px; }
-.mm-pv:not(.case) .mm-go-case, .mm-pv.case .mm-go-st { display: none; }
 .mm-foot { display: flex; justify-content: flex-end; align-items: center; gap: 24px; margin-top: 18px !important; padding-top: 14px; border-top: 1px solid rgba(13,12,9,.12); font-weight: 700; font-size: 15px; }
 .mm-foot a { text-decoration: none; background: linear-gradient(var(--ink), var(--ink)) 0 100% / 100% 1.5px no-repeat; padding-bottom: 2px; }
 /* r371: only the root is locked. overflow: hidden on body too made body the header's scroller, so the sticky header
@@ -178,7 +175,7 @@ html.mm-lock { overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mm-scroll, .mm.open .mm-scroll { clip-path: none !important; transform: none !important; opacity: 1 !important; transition: none !important; }
-  .mm-in, .mm-im, .mm-lq, .mm-i, .mm-i::before, .mm-scrim { transition: none !important; transform: none !important; }
+  .mm-in, .mm-im, .mm-lq, .mm-pn, .mm-i, .mm-i::before, .mm-scrim { transition: none !important; transform: none !important; }
   .mm-in { opacity: 1; }
 }
 .mm.filtering .mm-grid .mm-i { color: var(--ink); }

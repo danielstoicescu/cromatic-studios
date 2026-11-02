@@ -74,7 +74,7 @@
     if (cur) cur.classList.remove("on");
     cur = a; a.classList.add("on");
     if (PHONE.matches || getComputedStyle(pv).display === "none") return;
-    const t = ++tok, st = a.closest(".mm-st"), list = $$(".mm-i:not([hidden])", st).filter((x) => !x.closest("li").hidden);
+    const t = ++tok, st = a.closest(".mm-st");
     const pics = picsOf(a);
     warm(a);
     // the last brand's pictures go at once (no fade out), its colour and small cover take the frame
@@ -89,9 +89,9 @@
     showPic(pics[0] ? pics[0][0] : "", true);
     gal.innerHTML = pics.length > 1 ? pics.map((p, j) => `<button type="button" tabindex="-1" class="${j ? "" : "on"}"><img src="${p[1]}" alt="" decoding="async"></button>`).join("") : "";
     $$("button", gal).forEach((b, j) => { const on = () => { showPic(pics[j][0]); $$("button", gal).forEach((x) => x.classList.toggle("on", x === b)); }; b.addEventListener("mouseenter", on); b.addEventListener("click", on); });
-    $(".mm-pst", pv).textContent = $(".mm-sn", st).textContent;
-    $(".mm-pnum", pv).textContent = String(list.indexOf(a) + 1).padStart(2, "0") + " / " + String(list.length).padStart(2, "0");
-    $(".mm-pn", pv).textContent = names[items.indexOf(a)][1];
+    // TASK-147 (Coz): no street eyebrow, no xx / xx and no "Open the case" line; the cover and the name are the links
+    const pn = $(".mm-pn", pv); pn.setAttribute("href", a.getAttribute("href"));
+    pn.textContent = names[items.indexOf(a)][1];
     $(".mm-pc", pv).textContent = cats[items.indexOf(a)][1];
     $(".mm-pd", pv).textContent = $(".mm-d", a).textContent;
   };
