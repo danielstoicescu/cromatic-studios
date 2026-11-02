@@ -225,7 +225,8 @@
     const el = d.getElementById(a.getAttribute("href").slice(1));
     if (!el) return;
     e.preventDefault();
-    const hdr = d.querySelector(".hdr"), off = (hdr ? hdr.offsetHeight : 72) + snav.offsetHeight * 0.8 + 12;
+    // TASK-145: on the way down the header slides away and the switch rises to the top, so it only counts on the way up
+    const hdr = d.querySelector(".hdr"), down = el.getBoundingClientRect().top > 0, off = (hdr && !down ? hdr.offsetHeight : 0) + snav.offsetHeight * 0.8 + 12;
     scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - off), behavior: reduced ? "auto" : "smooth" });
     // after the scroll has started: the reveal is style work, it must not hold the first frame
     setTimeout(() => { el.classList.add("in"); el.querySelectorAll(".bento, .dom-street").forEach((x) => x.classList.add("in")); el.style.setProperty("--sp", "1"); try { history.replaceState(null, "", a.getAttribute("href")); } catch {} }, 120);
@@ -292,6 +293,36 @@
     d.addEventListener("visibilitychange", sync);
     mqT.addEventListener?.("change", () => { if (piece) mount(); });
     pp.addEventListener("click", () => { paused = !paused; btn(paused); sync(); });
+  }
+
+  // TASK-145 (Daniel, 2 Nov: "meniul principal sa nu mai fie sticky, ci doar sa apara la scroll al paginii in sus"): the
+  // header slides away while the page goes down and comes back as soon as it goes up (html.hdr-off; it keeps its place
+  // in the flow, so nothing below it moves). On the portfolio the street switch rises into its place (site.css). It
+  // stays: near the top of the page, while the phone menu or the mega menu is open, while the keyboard is in it, and
+  // while a brand canvas is pinned under it on a desktop (the canvas is sized to the room under the header). It changes
+  // its mind only after 8 px of travel one way, and the bounce past either end of the page is clamped out (iOS)
+  const hdr = d.querySelector(".hdr");
+  if (hdr && !root.classList.contains("embed") && getComputedStyle(hdr).position === "sticky") {
+    const mn2 = d.getElementById("mnav"), cvs = cv && cv.querySelector(".cv-sticky"), cvFlat = matchMedia("(max-width: 760px), (pointer: coarse)");
+    let lastY = -1, acc = 0, off = false, rq = 0;
+    const set = (v) => { if (v !== off) { off = v; root.classList.toggle("hdr-off", v); } };
+    const hold = (h) => {
+      if ((mn2 && mn2.classList.contains("open")) || root.classList.contains("mm-lock") || hdr.querySelector(":focus-visible")) return true;
+      if (cvs && !cvFlat.matches) { const r = cvs.getBoundingClientRect(); if (r.top <= h + 1 && cv.getBoundingClientRect().bottom >= innerHeight - 1) return true; }
+      return false;
+    };
+    const tick = () => {
+      rq = 0;
+      const max = Math.max(0, root.scrollHeight - innerHeight), y = Math.min(Math.max(scrollY, 0), max), h = hdr.offsetHeight;
+      const dy = lastY < 0 ? 0 : y - lastY; lastY = y;
+      if (y <= h || hold(h)) { acc = 0; set(false); return; }
+      if (dy) acc = (dy > 0) === (acc > 0) ? acc + dy : dy;
+      if (acc > 8) set(true); else if (acc < -8) set(false);
+    };
+    addEventListener("scroll", () => { if (!rq) rq = requestAnimationFrame(tick); }, { passive: true });
+    hdr.addEventListener("focusin", () => { if (hdr.querySelector(":focus-visible")) { acc = 0; set(false); } });
+    if (mn2) new MutationObserver(tick).observe(mn2, { attributes: true, attributeFilter: ["class"] });
+    tick();
   }
 
   // a thin reading progress bar

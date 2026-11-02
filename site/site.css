@@ -1770,3 +1770,16 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
   #what .chapters.asm .chap .tags li { transition: translate .25s var(--eoq), background .25s var(--eoq), rotate .25s var(--eoq), opacity .3s var(--eoq), scale .3s var(--eoq); }
   .js #what .chapters.asm .chap.rv { transition: translate .25s var(--eoq), box-shadow .25s var(--eoq); }
 }
+
+/* TASK-145 (Daniel, 2 Nov: "meniul principal sa nu mai fie sticky, ci doar sa apara la scroll al paginii in sus. dar cand
+   cobori pe pagina sa nu mai apara, ci doar cel de portofoliu"): on the way down the header slides up out of sight
+   (html.hdr-off, site.js), keeping its place in the flow; the street switch rises into the room it leaves and drops back
+   under it when it returns; the sticky text of a case block rides up with it */
+.hdr { transition: translate .2s var(--eoq); }
+html.hdr-off .hdr { translate: 0 -100%; }
+.streets-nav { transition: transform .5s var(--eoq), box-shadow .5s var(--eoq), top .2s var(--eoq); }
+html.hdr-off .streets-nav { top: 12px; }
+@media (max-width: 860px) { html.hdr-off .streets-nav { top: 10px; } }
+.cb-txt { transition: top .2s var(--eoq); }
+html.hdr-off .cb-txt { top: 28px; }
+@media (prefers-reduced-motion: reduce) { .hdr, .streets-nav, .cb-txt { transition: none; } }
