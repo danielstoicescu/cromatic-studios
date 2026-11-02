@@ -200,3 +200,228 @@ index 0000000..df1c7b6
 +  const boot = () => d.querySelectorAll(SEL).forEach(enhance);
 +  if (d.readyState === "loading") d.addEventListener("DOMContentLoaded", boot); else boot();
 +})();
+diff --git a/site/i18n/ro.json b/site/i18n/ro.json
+index 365b172..0da5a10 100644
+--- a/site/i18n/ro.json
++++ b/site/i18n/ro.json
+@@ -4619,8 +4619,6 @@
+  "Independent brand studio in Bucharest since 2014. Strategy, identity, websites and apps, film and content for indie brands. One coffee away.": "Studio independent de branding din București, din 2014. Strategie, identitate, site-uri și aplicații, film și conținut pentru branduri indie.",
+  "Drive": "Condu",
+  "Or take the scenic route through the Cromatic City <span aria-hidden=\"true\">→</span>": "Sau ia-o pe drumul lung, prin orașul Cromatic <span aria-hidden=\"true\">→</span>",
+- "Take a drive in the Cromatic City": "Condu prin orașul Cromatic",
+- "Drive this street": "Condu pe strada asta",
+  "A tour of the city": "Un tur prin oraș",
+  "The coffee stop, filmed in the Cromatic City.": "Oprirea la cafea, filmată în orașul Cromatic.",
+  "Coffee is where we grew up. <a href=\"/work/two-minutes/\">Two Minutes</a> has been our client and our neighbour for a decade, and in the Cromatic City we always stop there for four double espressos. Then the street filled up. Specialty shops like <a href=\"/work/steam/\">Steam</a>, Sip and OMA Coffee in Brașov. Equipment brands like <a href=\"/work/craft-coffee/\">Craft Coffee</a> and Artisan Coffee Gear. And <a href=\"/work/slow-coffee-festival/\">Slow Coffee Festival</a>, the biggest coffee lovers community in the country, whose brand universe we have upgraded every edition since 2021.": "Cafeaua e locul în care am crescut. <a href=\"/work/two-minutes/\">Two Minutes</a> ne e client și vecin de zece ani, iar în orașul Cromatic oprim mereu acolo pentru patru espresso-uri duble. Apoi strada s-a umplut. Cafenele de specialitate precum <a href=\"/work/steam/\">Steam</a>, Sip și OMA Coffee din Brașov. Branduri de echipamente precum <a href=\"/work/craft-coffee/\">Craft Coffee</a> și Artisan Coffee Gear. Și <a href=\"/work/slow-coffee-festival/\">Slow Coffee Festival</a>, cea mai mare comunitate de iubitori de cafea din țară, căruia îi îmbunătățim universul de brand la fiecare ediție, din 2021.",
+diff --git a/site/render.mjs b/site/render.mjs
+index 5a8f98a..f2cd6c8 100644
+--- a/site/render.mjs
++++ b/site/render.mjs
+@@ -78,7 +78,6 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+   const PIN = `<svg class="ftr-pin" viewBox="0 0 16 20" width="16" height="20" aria-hidden="true"><path d="M8 19s6-6.1 6-10.6A6 6 0 0 0 2 8.4C2 12.9 8 19 8 19z" fill="#FED012" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="8.3" r="2.2" fill="currentColor"/></svg>`;
+   // r366 (Ilinca): drawn at 3x for the phones; the still is what loads, the roll strip only on the first hover or focus
+   const DK = () => { const r = A("m:drive-car/dacia-1300-roll.webp"), s = A("m:drive-car/dacia-1300-parked.webp"); return r && s ? `<span class="dk" aria-hidden="true"><i class="dk-roll" style="--dk-s:url(${s.src});--dk-r:url(${r.src})"></i></span>` : ""; };
+-  const DK_STILL = () => { const r = A("m:drive-car/dacia-1300-parked.webp"); return r ? `<span class="dk dk-still" aria-hidden="true"><i class="dk-roll" style="--dk-s:url(${r.src})"></i></span>` : ""; };
+   const logo = A("logoLandscape");
+   const header = (home) => `<a class="skip" href="#main">Skip to content</a>
+ <header class="hdr">
+@@ -272,8 +271,9 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+   // only near the screen, never with reduced motion, Save-Data or 2g. Scroll parallax (site.js, --bp 0 → 1 while the
+   // band crosses the screen): the picture moves slower than the page and settles from a slight zoom, the street's name
+   // in solid CromaticSans moves faster than it; the band fades into the paper the street's cards stand on
+-  const SB_GO = { A: "tm", B: "invest", C: "tac" }; // r359: a place on each street of the map (src/app.js MAP_PLACES)
+-  const streetBand = (k, street, i) => {
++  // r441 (TASK-152, Coz 2 Nov): the band is the clip and the street's name only: no section number, no drive pill, no pause
++  // button (the clip still never plays with reduced motion, Save-Data or 2g, and stops off screen)
++  const streetBand = (street) => {
+     const slug = street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), m = (n) => A(`m:streets/${slug}/${n}`);
+     // r382 (Mira's audit: phones fetched 5.4 MB of video on a full scroll): the phone cut is the 540 px, 8 s, ~300 KB
+     // re-encode (-m2.mp4, H.264) with an AV1 twin first (-m2-av1.webm, ~170-240 KB); the old -m.mp4 only as a fallback
+@@ -285,14 +285,11 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+     return `<div class="street-band${pd ? " has-media" : ""}">
+         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
+         <div class="sb-copy">
+-          <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span></p>
+-          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go); r375: on a phone the shorter label, under the street name */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${DK_STILL()}<span class="sb-dl">Take a drive in the Cromatic City</span><span class="sb-ds">Drive this street</span></a></div>
+           <p class="sb-name${street.length > 18 ? " is-long" : ""}" aria-hidden="true">${esc(street)}</p>
+         </div>
+-        ${video ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : ""}
+       </div>`;
+   };
+-  const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]], si) => {
++  const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]]) => {
+     const list = streetList(k, covers);
+     if (!list.length) return "";
+     const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
+@@ -301,7 +298,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+     // TASK-139 (Daniel, 28 Oct: "next level, să simți că treci dintr-o categorie în alta"): each street opens on its band
+     // (streetBand above), then the street's card and sign land on it (site.js sets --sp, 0 → 1)
+     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
+-      ${streetBand(k, street, si)}
++      ${streetBand(street)}
+       <div class="street-head">
+         <div class="sh-main">
+           <h3 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h3>
+diff --git a/site/site.css b/site/site.css
+index 4e328e4..353ecfc 100644
+--- a/site/site.css
++++ b/site/site.css
+@@ -30,7 +30,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.
+    inherited from body: header, menus, labels, buttons, captions, pills. :where() has no specificity, so any rule that sets
+    its own line-height still wins; only blocks that used to inherit body's value are held here. */
+ :where(.skip, .hdr, .mm-k, .mm-opts, .mm-sh, .mm-t, .mm-none, .mm-pgo, .pw-alt, .eyebrow, .hc-kick, .tags, .hc-classic,
+-  .streets-nav, .sb-top, .bc-cta, .zd-h, .friends, .svc .mono, .svc ul, .svc-more, .svc-pages, .cr-name, .cr-role, .cr-link, figcaption,
++  .streets-nav, .bc-cta, .zd-h, .friends, .svc .mono, .svc ul, .svc-more, .svc-pages, .cr-name, .cr-role, .cr-link, figcaption,
+   summary, .btn, .yt-play, .cv-hint, .c-meta, .c2-num, .c2-count, .hub-card .mono, .chap-k, .hub-links b, .hub-links i, .more, .lp-meta, .lpb-cap,
+   .lps-t, .ftr-links) { line-height: 1.6; }
+ img, video { display: block; max-width: 100%; height: auto; }
+@@ -1241,44 +1241,32 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
+    screen, site.js): the picture slower than the page and settling from a slight zoom, the name faster than it */
+ .dom-street { margin-top: 120px; }
+ .dom-street:first-of-type { margin-top: 56px; }
+-.street-band { --bp: .5; position: relative; margin: 0 calc(50% - 50vw); height: clamp(230px, 40vh, 410px); /* r348 (Daniel): about 58% of the old clamp(380px, 68vh, 700px) */ color: #fff; isolation: isolate; contain: layout paint; }
++.street-band { --bp: .5; position: relative; margin: 0 calc(50% - 50vw); height: clamp(262px, 45.6vh, 467px); /* r348 (Daniel): about 58% of the old clamp(380px, 68vh, 700px); r441 (TASK-152, Coz): 14% taller, was clamp(230px, 40vh, 410px) */ color: #fff; isolation: isolate; contain: layout paint; }
+ .sb-stage { position: absolute; inset: 0; overflow: hidden; background: color-mix(in srgb, var(--dc) 55%, var(--ink)); }
+ .sb-media { position: absolute; inset: -9% 0; transform: translate3d(0, calc((var(--bp) - .5) * 15%), 0) scale(calc(1.08 - var(--bp) * .08)); transform-origin: 50% 40%; will-change: transform; }
+ .sb-pic, .sb-pic img, .sb-vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+ .sb-vid { opacity: 0; transition: opacity 1s var(--eoq); }
+ .sb-vid.on { opacity: 1; }
++/* r441 (TASK-152, Coz: "gradientul ... perfect orizontal"): top to bottom only, the same at every x. A light shade at
++   the top, the name's shade low on the band (where the name sits), then the paper the card stands on */
+ .sb-veil { position: absolute; inset: 0; pointer-events: none;
+-  background: linear-gradient(180deg, rgba(13,12,9,.34) 0%, rgba(13,12,9,0) 26%),
+-    radial-gradient(72% 64% at 16% 64%, rgba(13,12,9,.58), rgba(13,12,9,0) 74%),
+-    linear-gradient(180deg, transparent 76%, color-mix(in srgb, var(--alt) 70%, transparent) 90%, var(--alt) 100%); }
++  background: linear-gradient(180deg, transparent 76%, color-mix(in srgb, var(--alt) 70%, transparent) 90%, var(--alt) 100%),
++    linear-gradient(180deg, rgba(13,12,9,.3) 0%, rgba(13,12,9,0) 24%, rgba(13,12,9,0) 34%, rgba(13,12,9,.44) 66%, rgba(13,12,9,.44) 100%); }
+ .street-band:not(.has-media) .sb-veil { background: linear-gradient(180deg, transparent 60%, var(--alt) 100%); }
+ .sb-copy { position: absolute; left: 0; right: 0; bottom: calc(112px + 9%); width: min(1180px, 100% - 48px); margin: 0 auto; pointer-events: none;
+   transform: translate3d(0, calc((.5 - var(--bp)) * 90px), 0); opacity: clamp(0, calc(var(--bp) * 5 - .4), 1); }
+-.sb-cap { display: flex; align-items: center; margin: 0 0 14px; font-size: 12.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.88); }
+-.sb-cap span:first-child { font-weight: 800; color: #fff; }
+-.sb-cap span + span::before { content: ""; display: inline-block; width: 34px; height: 1px; margin: 0 14px; vertical-align: middle; background: currentColor; opacity: .7; }
+ .sb-name { margin: 0; font: 900 clamp(58px, 9.6vw, 172px)/.9 var(--f); letter-spacing: -.05em; color: #fff; text-wrap: balance; text-shadow: 0 6px 60px rgba(13,12,9,.35); }
+-.sb-pp { position: absolute; right: 18px; top: 18px; z-index: 2; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%;
+-  background: rgba(13,12,9,.42); color: #fff; cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background .3s; }
+-.sb-pp[hidden] { display: none; }
+-.sb-pp:hover { background: rgba(13,12,9,.66); }
+-.sb-pp:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+-.sb-pp i { width: 12px; height: 14px; border-left: 4px solid #fff; border-right: 4px solid #fff; box-sizing: border-box; }
+-.sb-pp[aria-pressed="true"] i { width: 0; height: 0; margin-left: 4px; border-right: 0; border-left: 12px solid #fff; border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
+ .street-band + .street-head { margin-top: -96px; z-index: 2; }
+ .dom-street .street-head { scale: calc(.96 + var(--sp, 1) * .04); transform-origin: 50% 0; }
+ @media (max-width: 700px) {
+-  .street-band { height: min(68vw, 46svh); }
+   .sb-copy { bottom: calc(76px + 13%); width: calc(100% - 36px); }
+   .sb-name { font-size: clamp(44px, 13.4vw, 72px); }
+-  .sb-cap { font-size: 11px; margin-bottom: 10px; }
+   .street-band + .street-head { margin-top: -60px; }
+   .dom-street { margin-top: 84px; }
+-  .sb-pp { right: 12px; top: 12px; width: 36px; height: 36px; }
+ }
+ @media (prefers-reduced-motion: reduce) {
+   .street-band { --bp: .5 !important; } .sb-media { transform: scale(1.04); } .sb-copy { transform: none; opacity: 1; }
+-  .sb-vid, .sb-pp { display: none !important; } .street-intro, .dom-street { --sp: 1 !important; }
++  .sb-vid { display: none !important; } .street-intro, .dom-street { --sp: 1 !important; }
+ }
+ 
+ /* 9 · the city opens the portfolio: its still, the drive's opening words, "Every place on the map" */
+@@ -1465,16 +1453,10 @@ html.embed .drive-mini { display: none; }
+   .streets-nav .sn-ico { width: 30px; height: 30px; }
+ }
+ 
+-/* r359: the street's way into the city, on its banner, right side; the title never rides up under the header and the
+-   street switch (site.js --cf fades it before it gets there; the parallax range is shorter) */
++/* r359: the title never rides up under the header and the street switch (site.js --cf fades it before it gets there;
++   the parallax range is shorter). r441: the drive pill that sat on the banner's right is gone */
+ .sb-copy { transform: translate3d(0, calc((.5 - var(--bp)) * 56px), 0); opacity: min(clamp(0, calc(var(--bp) * 5 - .4), 1), var(--cf, 1)); }
+-.sb-top { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 10px; }
+-.sb-top .sb-cap { margin: 0; }
+-.sb-drive { pointer-events: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 10px; padding: 13px 22px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: rgba(13,12,9,.18); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); text-decoration: none; font-weight: 800; font-size: 16px; white-space: nowrap; transition: background .15s, color .15s; }
+-.sb-drive::after { content: "→"; }
+-.sb-drive:hover { background: #fff; color: var(--ink); }
+-.sb-drive:focus-visible { outline: 3px solid var(--y); outline-offset: 3px; }
+-@media (max-width: 700px) { .street-band { height: min(84vw, 54svh); } .sb-top { flex-wrap: wrap; gap: 10px; } .sb-drive { padding: 8px 14px; font-size: 13px; gap: 8px; } }
++@media (max-width: 700px) { .street-band { height: min(95.76vw, 61.56svh); } /* r441 (TASK-152): 14% taller, was min(84vw, 54svh) */ }
+ 
+ /* r359: the first fold's quiet second way: the scenic route, under the three rows */
+ .pw-alt { position: relative; z-index: 2; width: 100vw; max-width: 100vw; margin: 22px 0 0; text-align: center; }
+@@ -1517,7 +1499,7 @@ html { touch-action: manipulation; }
+ .dk-host:hover { translate: 0 -2px; box-shadow: 0 0 0 2.5px var(--y), 0 12px 24px rgba(13,12,9,.18) !important; }
+ .dk-host:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 4px; }
+ .dk-host > span:not(.dk) { color: var(--ink); }
+-.hc-card .dk-host, .street-band .dk-host { box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38) !important; }
++.hc-card .dk-host { box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38) !important; }
+ .drive-cta .dk-host { box-shadow: 0 0 0 2.5px var(--ink), 0 6px 0 rgba(13,12,9,.18) !important; }
+ .dk { --dk-h: calc(var(--dk-w, 46px) * 34 / 56); position: absolute; left: var(--dk-x, 12px); top: 50%; width: var(--dk-w, 46px); height: var(--dk-h); margin-top: calc(var(--dk-h) / -2); overflow: hidden; pointer-events: none; filter: drop-shadow(0 2px 1.5px rgba(13,12,9,.28)); transition: translate .4s cubic-bezier(.3,1.3,.5,1); }
+ .dk-roll { display: block; width: calc(var(--dk-w, 46px) * 10); height: 100%; background: var(--dk-s) 0 0 / var(--dk-w, 46px) 100% no-repeat; }
+@@ -1527,33 +1509,12 @@ html { touch-action: manipulation; }
+ @keyframes dkRoll { to { transform: translateX(-100%); } }
+ /* the phone's "Drive" in the header: a smaller car, so the pill keeps the logo's room at 360 */
+ .drive-mini.dk-host { --dk-w: 36px; --dk-x: 9px; --dk-g: 7px; height: 44px; padding-right: 14px; margin-left: 8px; }
+-/* the street banners' ghost pill: the parked still, in the flow, the same inset and room before the words */
+-.sb-drive .dk { --dk-w: 46px; position: relative; left: auto; top: auto; display: inline-block; flex: 0 0 var(--dk-w); margin: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+-.sb-drive:has(.dk) { padding-block: 12px; padding-left: 12px; gap: 12px; }
+-.sb-ds { display: none; }
+ /* r375: on a desktop "The Shortest Shortcut" broke onto two lines and pushed the number and the pill above the band,
+    where contain: paint cut them off; a long name keeps one line */
+ @media (min-width: 701px) { .sb-name.is-long { font-size: clamp(52px, 7vw, 124px); } }
+-/* r375 (Daniel, 29 Oct: "The 'Take a drive' buttons on the street headers sit badly on mobile"): on a phone the pill
+-   was wedged between the number and the name (right-aligned next to "01" from 390 up, on its own row at 360, 10 px over
+-   the title) and outline-only on a busy video. Now: number, name, then the pill under the name, left-aligned with it,
+-   auto width, solid paper with the yellow ring of the site's other drive pills, 48 px tall, one line ("Drive this street"),
+-   the parked car inside. .sb-top dissolves (display: contents) so the order is set here and desktop keeps its row */
+-@media (max-width: 700px) {
+-  .sb-copy { display: flex; flex-direction: column; align-items: flex-start; bottom: calc(70px + 6%); }
+-  .sb-top { display: contents; }
+-  .sb-top .sb-cap { order: 0; margin: 0 0 8px; }
+-  .sb-name { order: 1; }
+-  .sb-dl { display: none; } .sb-ds { display: inline; }
+-  .sb-drive { order: 2; margin-top: 16px; min-height: 48px; box-sizing: border-box; padding: 0 18px 0 10px; gap: 10px; border: 0; background: var(--paper); color: var(--ink);
+-    -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 15px; letter-spacing: -.005em;
+-    box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38); transition: translate .2s var(--eoq), box-shadow .2s var(--eoq); }
+-  .sb-drive:has(.dk) { padding-block: 0; padding-left: 10px; gap: 10px; }
+-  .sb-drive .dk { --dk-w: 44px; }
+-  .sb-drive:hover { background: var(--paper); color: var(--ink); }
+-  .sb-drive:active .dk { translate: 5px 0; transition-duration: .12s; }
+-  .sb-drive:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 4px; }
+-}
++/* r441 (TASK-152): the band carries only the name now; on a phone it sits a little lower, just over the card (r375's
++   bottom, kept when its pill went) */
++@media (max-width: 700px) { .sb-copy { bottom: calc(70px + 6%); } }
+ /* a full-width pill on a phone: the label centred in the paper the car leaves free, on one line in Romanian at 360 too */
+ @media (max-width: 700px) { .hc-ed-a .btn.dk-host { padding-right: 16px; } }
+ @media (max-width: 380px) { .hc-ed-a .btn.dk-host { --dk-x: 10px; --dk-g: 10px; font-size: 15px; min-height: 44px; } }
+diff --git a/site/site.js b/site/site.js
+index 958667b..4b4268a 100644
+--- a/site/site.js
++++ b/site/site.js
+@@ -365,16 +365,16 @@
+   // ---- TASK-139 ----
+   // the streets' bands (r346): each clip gets its sources once the page has loaded and the band is near the screen,
+   // never with reduced motion, Save-Data or 2g (the poster stays the band). A phone takes the phone cut. Each one plays
+-  // only while on screen and in a visible tab, or until its button pauses it; it fades in over its poster once it plays
++  // only while on screen and in a visible tab (r441, TASK-152: no pause button on the band any more); it fades in over its poster once it plays
+   const sbs = [...d.querySelectorAll(".street-band .sb-vid")];
+   if (sbs.length) {
+     const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
+     const mq = matchMedia("(max-width: 700px)");
+     if (!reduced && !slow && "IntersectionObserver" in window) {
+-      const st = new Map(sbs.map((v) => [v, { near: false, seen: false, loaded: false, paused: false, pp: v.closest(".street-band").querySelector(".sb-pp") }]));
++      const st = new Map(sbs.map((v) => [v, { seen: false, loaded: false }]));
+       const set = (v) => { const s = v.dataset, m = mq.matches; v.innerHTML = vSrc([m ? s.mw : s.dw, (m && s.m) || s.d]); v.load(); };
+-      const sync = (v) => { const o = st.get(v); if (!o.loaded) return; if (o.seen && !o.paused && !d.hidden) v.play().catch(() => {}); else v.pause(); };
+-      const start = (v) => { const o = st.get(v); if (o.loaded) return; o.loaded = true; v.addEventListener("playing", () => { v.classList.add("on"); if (o.pp) o.pp.hidden = false; }, { once: true }); set(v); };
++      const sync = (v) => { const o = st.get(v); if (!o.loaded) return; if (o.seen && !d.hidden) v.play().catch(() => {}); else v.pause(); };
++      const start = (v) => { const o = st.get(v); if (o.loaded) return; o.loaded = true; v.addEventListener("playing", () => v.classList.add("on"), { once: true }); set(v); };
+       const go = () => {
+         const near = new IntersectionObserver((es) => es.forEach((e) => { if (half(e)) { const v = e.target.querySelector(".sb-vid"); start(v); sync(v); } }), { threshold: HALF }); // r382: was 60% ahead of the screen
+         const seen = new IntersectionObserver((es) => es.forEach((e) => { const v = e.target.querySelector(".sb-vid"); st.get(v).seen = e.isIntersecting; sync(v); }), { threshold: 0.05 });
+@@ -383,7 +383,6 @@
+       if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+       d.addEventListener("visibilitychange", () => sbs.forEach(sync));
+       mq.addEventListener?.("change", () => sbs.forEach((v) => { if (st.get(v).loaded) { set(v); sync(v); } }));
+-      st.forEach((o, v) => o.pp && o.pp.addEventListener("click", () => { o.paused = !o.paused; o.pp.setAttribute("aria-pressed", String(o.paused)); o.pp.setAttribute("aria-label", o.paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(v); }));
+     }
+   }
+   // the city that opens the portfolio: its word turns place → facade → brand once, when it is first seen
