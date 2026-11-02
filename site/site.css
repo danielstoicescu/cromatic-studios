@@ -29,7 +29,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.
    r435 (Daniel): body text at 16px and below takes 1.4. The interface keeps the 1.6 it always
    inherited from body: header, menus, labels, buttons, captions, pills. :where() has no specificity, so any rule that sets
    its own line-height still wins; only blocks that used to inherit body's value are held here. */
-:where(.skip, .hdr, .mm-k, .mm-opts, .mm-sh, .mm-t, .mm-none, .mm-pgo, .mm-foot, .pw-alt, .eyebrow, .hc-kick, .tags, .hc-classic,
+:where(.skip, .hdr, .mm-k, .mm-opts, .mm-sh, .mm-t, .mm-none, .mm-pgo, .pw-alt, .eyebrow, .hc-kick, .tags, .hc-classic,
   .streets-nav, .sb-top, .bc-cta, .zd-h, .friends, .svc .mono, .svc ul, .svc-more, .svc-pages, .cr-name, .cr-role, .cr-link, figcaption,
   summary, .btn, .yt-play, .cv-hint, .c-meta, .c2-num, .c2-count, .hub-card .mono, .chap-k, .hub-links b, .hub-links i, .more, .lp-meta, .lpb-cap,
   .lps-t, .ftr-links) { line-height: 1.6; }

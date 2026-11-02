@@ -209,7 +209,7 @@
     a.addEventListener("focus", () => preview(a));
   }
   // TASK-149 (Coz, 2 Nov): every link in the menu closes it. One listener for all of them: the street and brand rows,
-  // the preview's cover and name, "Every project", the search's first match (the form clicks it). A new tab or window
+  // the preview's cover and name, the search's first match (the form clicks it). A new tab or window
   // (Cmd/Ctrl, Shift, a middle click) leaves the menu as it is: the visitor is still here.
   mm.addEventListener("click", (e) => {
     const a = e.target.closest("a[href]");
