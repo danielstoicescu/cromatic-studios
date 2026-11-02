@@ -65,7 +65,7 @@ html.lp-b .lp-va, html:not(.lp-b) .lp-vb { display: none; }
 
 /* the nudge: every section ends one step closer to the freebie */
 .lp-nudge { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 34px; padding: 14px 16px 14px 20px; border: var(--line); border-radius: 999px; background: #fff; box-shadow: 0 3px 0 var(--ink); width: fit-content; max-width: 100%; }
-.lp-nudge p { margin: 0; font-weight: 700; font-size: 16px; }
+.lp-nudge p { margin: 0; font-weight: 700; font-size: 16px; line-height: 1.4; }
 .lp-nudge a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: var(--line); border-radius: 999px; background: var(--y); color: var(--ink); font: 800 14px/1 var(--f); text-decoration: none; white-space: nowrap;
   transition: translate .4s var(--bounce), box-shadow .4s var(--bounce), rotate .4s var(--bounce); box-shadow: 0 2px 0 var(--ink); }
 .lp-nudge a:hover { translate: 0 -2px; rotate: -2deg; box-shadow: 0 4px 0 var(--ink); }
@@ -157,13 +157,13 @@ html.lp-b .lp-va, html:not(.lp-b) .lp-vb { display: none; }
 .lpf-items li > i svg { width: 18px; height: 18px; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .6s var(--eoq) calc(.3s + var(--i, 0) * .25s); }
 .lpf-items.in li > i svg, :not(.lp-js) .lpf-items li > i svg { stroke-dashoffset: 0; }
 .lpf-items b { font-size: 19px; font-weight: 900; line-height: 1.15; }
-.lpf-items span { font-size: 15px; color: #2e2c27; }
+.lpf-items span { font-size: 15px; line-height: 1.4; color: #2e2c27; }
 .lpf-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; }
 .lpf-cta .btn { font-size: clamp(18px, 1.7vw, 22px); padding: 20px 32px; box-shadow: 0 5px 0 var(--ink); position: relative; translate: var(--gx, 0) var(--gy, 0); transition: transform .25s var(--eoq), box-shadow .25s var(--eoq), translate .5s var(--bounce); }
 .lpf-cta .btn::after { content: ""; position: absolute; inset: -6px; border-radius: 999px; border: 2px solid var(--ink); opacity: 0; animation: lpRing 2.6s var(--eoq) infinite 1s; pointer-events: none; }
 .lpf-cta .btn:hover { box-shadow: 0 8px 0 var(--ink); }
 .lpf-cta .btn:active { box-shadow: 0 1px 0 var(--ink); }
-.lpf-note { font-size: 14px; color: var(--muted); margin: 14px 0 0; }
+.lpf-note { font-size: 14px; line-height: 1.4; color: var(--muted); margin: 14px 0 0; }
 
 /* The Archetype Teller: a crystal ball of every colour, the archetypes' icons orbiting it */
 .lp-teller { position: relative; display: grid; place-items: center; aspect-ratio: 1; max-width: 440px; width: 100%; margin: 0 auto 34px; }

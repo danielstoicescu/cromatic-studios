@@ -25,7 +25,8 @@
 html { scroll-behavior: smooth; scroll-padding-top: 84px; -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.3 var(--f); -webkit-font-smoothing: antialiased; }
-/* TASK-146 (Coz): running body text sits at 1.3 (unitless, so 1.3em at any size). The interface keeps the 1.6 it always
+/* TASK-146 (Coz): running body text sits at 1.3 (unitless, so 1.3em at any size);
+   r435 (Daniel): body text at 16px and below takes 1.4. The interface keeps the 1.6 it always
    inherited from body: header, menus, labels, buttons, captions, pills. :where() has no specificity, so any rule that sets
    its own line-height still wins; only blocks that used to inherit body's value are held here. */
 :where(.skip, .hdr, .mm-k, .mm-opts, .mm-sh, .mm-t, .mm-none, .mm-pgo, .mm-foot, .pw-alt, .eyebrow, .hc-kick, .tags, .hc-classic,
@@ -134,7 +135,7 @@ mark { background: var(--y); color: var(--ink); padding: 0 .25em; border-radius:
 .chap-k { display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: var(--line); background: var(--cc); margin-bottom: 18px; font-size: 13px; letter-spacing: 0; }
 .chap h3 { font-size: 26px; font-weight: 900; }
 .chap-sub { color: var(--muted); margin: 6px 0 14px; font-size: 11px; }
-.chap p { font-size: 15.5px; }
+.chap p { font-size: 15.5px; line-height: 1.4; }
 .tags, .svc ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .tags li { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--cc) 22%, #fff); border: 1px solid color-mix(in srgb, var(--cc) 60%, var(--ink)); }
 @media (max-width: 1000px) { .chapters { grid-template-columns: 1fr 1fr; } }
@@ -266,7 +267,7 @@ a.pcard:hover .pc-cta i { transform: translateX(5px); }
 .ftr { padding: 56px 0 28px; background: var(--paper); }
 .ftr-in { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 36px; }
 .ftr-logo { height: 30px; width: auto; margin-bottom: 14px; }
-.ftr p { color: var(--muted); font-size: 15px; max-width: 26em; }
+.ftr p { color: var(--muted); font-size: 15px; line-height: 1.4; max-width: 26em; }
 .ftr address { font-style: normal; line-height: 1.8; font-size: 15px; }
 .ftr-links { display: grid; gap: 6px; font-size: 15px; font-weight: 600; }
 .ftr-links a { text-decoration: none; } .ftr-links a:hover { text-decoration: underline; text-decoration-color: var(--y); text-decoration-thickness: 3px; }
@@ -686,7 +687,7 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 /* the note under the pill: the brief, and "Read the case" */
 .bc-note { display: grid; gap: 4px; width: 100%; max-height: 0; margin-top: 0; padding: 0 14px; overflow: hidden; border-radius: 16px; background: var(--paper); color: var(--ink); font-size: 14px;
   opacity: 0; box-shadow: inset 0 0 0 1px transparent; transition: max-height .5s var(--eoq), margin .5s var(--eoq), padding .5s var(--eoq), opacity .3s var(--eoq), box-shadow .3s; }
-.bc-desc { line-height: 1.3; color: #2e2c27; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.bc-desc { line-height: 1.4; color: #2e2c27; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .bc-cta { font: 700 10.5px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
 .bc-cta i { font-style: normal; display: inline-block; transition: translate .45s var(--bounce); }
 @media (hover: hover) {
@@ -741,12 +742,12 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 .hub-card::before { content: ""; position: absolute; left: 22px; top: 0; width: 46px; height: 6px; border-radius: 0 0 6px 6px; background: var(--sc); border: var(--line); border-top: 0; }
 .hub-card .mono { color: var(--muted); }
 .hub-card h3 { font-size: 22px; font-weight: 900; margin: 8px 0 8px; }
-.hub-card p { font-size: 15.5px; margin: 0; }
+.hub-card p { font-size: 15.5px; line-height: 1.4; margin: 0; }
 .hub-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; margin-top: 16px; }
 .hub-links a { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 18px 20px; border: var(--line); border-radius: 18px; background: #fff; text-decoration: none; box-shadow: 0 2px 0 var(--ink); transition: transform .25s var(--eoq); }
 .hub-links a:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--y) 30%, #fff); }
 .hub-links b { font-size: 20px; font-weight: 900; }
-.hub-links span { grid-column: 1; font-size: 15px; color: var(--muted); }
+.hub-links span { grid-column: 1; font-size: 15px; line-height: 1.4; color: var(--muted); }
 .hub-links i { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-style: normal; font-size: 22px; font-weight: 900; }
 .hub .c-direct { margin-top: 18px; font-weight: 700; }
 .offices { list-style: none; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
@@ -761,7 +762,7 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 .team-crew .cr-face { width: 132px; height: 132px; }
 .team-crew .cr-name { font-size: 15px; }
 .team-crew .cr-role { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; }
-.team-crew .cr-bio { display: block; margin-top: 8px; font-size: 15px; line-height: 1.3; max-width: 30ch; }
+.team-crew .cr-bio { display: block; margin-top: 8px; font-size: 15px; line-height: 1.4; max-width: 30ch; }
 .team-crew .cr-link { display: inline-block; margin-top: 8px; font-weight: 800; font-size: 14px; }
 /* r133: language switch */
 .lang-sw { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 40px; padding: 0 12px; margin-right: 10px; border: var(--line); border-radius: 999px; background: #fff; font: 800 14px/1 var(--f); text-decoration: none; letter-spacing: .04em; }
@@ -802,7 +803,7 @@ a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--e
 .stats p { margin: 0; display: grid; gap: 8px; border-left: 2px solid rgba(255,255,255,.18); padding-left: 18px; }
 .stats b { font: 900 clamp(46px, 6vw, 84px)/.9 var(--f); letter-spacing: -.04em; color: var(--y); }
 .stats p:nth-child(2) b { color: var(--g); } .stats p:nth-child(3) b { color: #6cc4ff; } .stats p:nth-child(4) b { color: #ff8a78; } .stats p:nth-child(5) b { color: var(--l); }
-.stats span { font-size: 15px; line-height: 1.3; color: rgba(255,255,255,.78); }
+.stats span { font-size: 15px; line-height: 1.4; color: rgba(255,255,255,.78); }
 @media (max-width: 900px) { .stats-in { grid-template-columns: repeat(2, 1fr); } .stats p:last-child { grid-column: 1 / -1; } }
 
 /* the four chapters as coloured cards */
@@ -1138,7 +1139,7 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
 .stats p.st + p.st::before { content: ""; position: absolute; left: 0; top: 14%; bottom: 14%; width: 1px; background: rgba(255,255,255,.16); }
 .stats p.st b { color: var(--sc); font-variant-numeric: tabular-nums; font-size: clamp(64px, 8.4vw, 124px); line-height: .86; display: inline-block; min-width: 1.2ch;
   transition: translate .55s var(--bounce), rotate .55s var(--bounce), text-shadow .4s var(--eoq); text-shadow: 0 0 0 transparent; }
-.stats p.st span { position: relative; max-width: 19ch; font-size: 15.5px; line-height: 1.3; text-wrap: balance; color: rgba(255,255,255,.74); padding-top: 16px;
+.stats p.st span { position: relative; max-width: 19ch; font-size: 15.5px; line-height: 1.4; text-wrap: balance; color: rgba(255,255,255,.74); padding-top: 16px;
   transition: color .35s var(--eoq), translate .55s var(--bounce); }
 .stats p.st span::before { content: ""; position: absolute; left: 50%; top: 0; width: 34px; height: 6px; margin-left: -17px; border-radius: 999px; background: var(--sc);
   transition: width .55s var(--bounce), margin .55s var(--bounce); }
@@ -1569,7 +1570,7 @@ html.embed .dk { display: none; }
 .zd { position: relative; display: grid; gap: 4px; padding-left: 22px; color: var(--ink); text-decoration: none; }
 .zd::before { content: ""; position: absolute; left: 0; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: #e30613; }
 .zd b { justify-self: start; font-weight: 800; font-size: 18px; line-height: 1.25; letter-spacing: -.01em; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; text-decoration-color: #e30613; transition: text-decoration-color .15s, color .15s; }
-.zd small { font-size: 14px; line-height: 1.3; color: var(--muted, #6b665c); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.zd small { font-size: 14px; line-height: 1.4; color: var(--muted, #6b665c); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 a.zd:hover b { color: #c10510; text-decoration-thickness: 2.5px; }
 a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
 .zd-off::before { background: #cfcdc8; }

@@ -211,7 +211,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-direct{margin:0}.czp-direct a{color:#fbfaf5;font-weight:700;font-size:18px;line-height:1.8;text-decoration:underline;text-decoration-color:#FED012;text-decoration-thickness:2px;text-underline-offset:5px}
 @media (min-width:1101px){.contact:has(>.czp){grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:clamp(28px,3.5vw,56px)}}
 @media (max-width:1100px){.czp-wrap{grid-template-columns:1fr;gap:28px}.czp-intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 32px;align-items:end;padding:0}.czp-intro h2{grid-row:2}.czp-eb{grid-column:1/-1}.czp-lead,.czp-direct{grid-column:2}.czp-lead{grid-row:2;margin:0}.czp-direct{grid-row:3;margin-top:10px}}
-@media (max-width:700px){.czp-intro{display:block}.czp-intro h2{margin-bottom:14px}.czp-lead{margin-bottom:16px;font-size:16px}}
+@media (max-width:700px){.czp-intro{display:block}.czp-intro h2{margin-bottom:14px}.czp-lead{margin-bottom:16px;font-size:16px;line-height:1.4}}
 html.embed .czp-sec{padding:40px 0}
 </style>`;
 
