@@ -169,7 +169,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp.done .czp-stub{animation:czpTear .9s cubic-bezier(.5,0,.75,0) .1s forwards}
 @keyframes czpTear{0%{transform:none}25%{transform:rotate(2deg)}100%{transform:translate(4px,160px) rotate(14deg);opacity:0}}
 .czp-ok{outline:none}
-.czp-hello{font-size:18px;line-height:1.45;margin:4px 0 16px;max-width:30em}
+.czp-hello{font-size:18px;line-height:1.3;margin:4px 0 16px;max-width:30em}
 .czp-legs{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:14px 0;margin-bottom:16px;border-block:1.5px dashed var(--ln)}
 .czp-legs span{display:grid}.czp-legs b{font-weight:900;font-size:24px;letter-spacing:-.02em}.czp-legs i{font-style:normal;font-size:12px;color:var(--mut)}
 .czp-legs .hop{color:var(--um);font-weight:800}
@@ -207,7 +207,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-eb{margin:0 0 14px;font:700 12px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(251,250,245,.72)}
 .czp-intro{padding-top:8px}
 .czp-intro h2{margin:0 0 18px;font-weight:900;font-size:clamp(40px,4.4vw,64px);line-height:.95;letter-spacing:-.045em;color:#fbfaf5}
-.czp-lead{margin:0 0 22px;font-size:17px;line-height:1.5;color:rgba(251,250,245,.84);max-width:28em}
+.czp-lead{margin:0 0 22px;font-size:17px;line-height:1.3;color:rgba(251,250,245,.84);max-width:28em}
 .czp-direct{margin:0}.czp-direct a{color:#fbfaf5;font-weight:700;font-size:18px;line-height:1.8;text-decoration:underline;text-decoration-color:#FED012;text-decoration-thickness:2px;text-underline-offset:5px}
 @media (min-width:1101px){.contact:has(>.czp){grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:clamp(28px,3.5vw,56px)}}
 @media (max-width:1100px){.czp-wrap{grid-template-columns:1fr;gap:28px}.czp-intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 32px;align-items:end;padding:0}.czp-intro h2{grid-row:2}.czp-eb{grid-column:1/-1}.czp-lead,.czp-direct{grid-column:2}.czp-lead{grid-row:2;margin:0}.czp-direct{grid-row:3;margin-top:10px}}

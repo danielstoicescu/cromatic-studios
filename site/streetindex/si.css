@@ -45,7 +45,7 @@ button,select,input{font:inherit;color:inherit}
 .si-morph.turn .si-ar{display:none}
 .si-morph.turn .pill{grid-area:1/1;justify-self:start;opacity:0;transform:rotate(var(--rot)) translateY(.4em);transition:opacity .32s var(--eoq),transform .42s cubic-bezier(.34,1.56,.64,1)}
 .si-morph.turn .pill.on{opacity:1;transform:rotate(var(--rot))}
-.si-sub{max-width:600px;margin:22px 0 30px;font-size:20px;line-height:1.6;opacity:.92}
+.si-sub{max-width:600px;margin:22px 0 30px;font-size:20px;line-height:1.3;opacity:.92}
 .si-acts{display:flex;gap:34px;align-items:center;margin:0;flex-wrap:wrap}
 .si-streets{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);list-style:none;margin:0;padding:0;border-top:1px solid rgba(255,255,255,.18);background:rgba(13,12,9,.55)}
 .si-streets li+li{border-left:1px solid rgba(255,255,255,.18)}
@@ -126,7 +126,7 @@ button,select,input{font:inherit;color:inherit}
 .si-cap p{margin:0}
 .si-cap-cat{color:var(--mute)}
 .si-cap-name{font-weight:800;font-size:30px;letter-spacing:-.025em;line-height:1.1;margin:4px 0 6px!important}
-.si-cap-d{color:#47443d;font-size:17px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.si-cap-d{color:#47443d;font-size:17px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 /* the street still and its focus pull (CSS v1: a blurred print, a sharp circle that racks to the place) */
 .si-stage.leave .si-cover img{transform:scale(1.04)}
@@ -182,7 +182,7 @@ mark.hl{background:var(--y);color:var(--ink);padding:0 1px}
   .si-eyebrow{display:none}
   .si-fold h1{font-size:clamp(23px,6.6vw,27px);line-height:1.04;letter-spacing:-.03em;max-width:22ch}
   .si-morph{font-size:clamp(24px,7.2vw,29px);margin-top:6px}
-  .si-sub{font-size:16px;line-height:1.5;margin:12px 0 18px}
+  .si-sub{font-size:16px;line-height:1.3;margin:12px 0 18px}
   .si-btn{height:44px;font-size:16px;padding:0 20px}
   .si-link{font-size:16px}
   .si-acts{gap:22px}
