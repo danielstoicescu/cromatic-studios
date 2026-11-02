@@ -1,8 +1,18 @@
 diff --git a/build/build.mjs b/build/build.mjs
-index 22ed139..8cf34e7 100644
+index b43a5f8..d46f93f 100644
 --- a/build/build.mjs
 +++ b/build/build.mjs
-@@ -544,7 +544,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
+@@ -436,7 +436,8 @@ const A = (name) => {
+ const siteSrc = (f) => join(root, "site", f);
+ let siteCss = readFileSync(siteSrc("site.css"), "utf8"), siteJs = readFileSync(siteSrc("site.js"), "utf8");
+ // r365 (beta): the header's mega menu (the Street Index as "Work"), its own files, carried by the site's stylesheet and script
+-for (const [f, k] of [["megamenu.css", "css"], ["megamenu.js", "js"]]) { try { const t = readFileSync(siteSrc(f), "utf8"); if (k === "css") siteCss += "\n" + t; else siteJs += "\n" + t; } catch {} }
++// r440 (beta, TASK-151): the sentence filter's own list (csel), after the menu so the options are already in the page's language
++for (const [f, k] of [["megamenu.css", "css"], ["megamenu.js", "js"], ["csel.css", "css"], ["csel.js", "js"]]) { try { const t = readFileSync(siteSrc(f), "utf8"); if (k === "css") siteCss += "\n" + t; else siteJs += "\n" + t; } catch {} }
+ try {
+   const { transformSync } = await import("esbuild");
+   siteCss = transformSync(siteCss, { loader: "css", minify: true }).code;
+@@ -544,7 +545,7 @@ for (const k of ["latin", "latin-ext", "vietnamese"]) {
  const GA_ID = process.env.GA_ID ?? "G-BRW5QJTJ77";
  const GTM_ID = process.env.GTM_ID ?? "GTM-K5XBHKND";
  // r165 (Daniel): the build's name, shown small under the logo on the map and the website ("beta 1.6 build")
@@ -11,3 +21,182 @@ index 22ed139..8cf34e7 100644
  const OAI_PIXEL = process.env.OAI_PIXEL_ID ?? "8Kok98JE9jNE1Va2uAQwDG"; // r149: the OpenAI Ads measurement pixel (Cristian), a public id
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
+diff --git a/site/csel.css b/site/csel.css
+new file mode 100644
+index 0000000..fd91c5c
+--- /dev/null
++++ b/site/csel.css
+@@ -0,0 +1,36 @@
++/* r440 (beta, TASK-151) · the sentence filter's own list (site/csel.js): "Show me [all the work] on [every street]" in the
++   Work mega menu and on /streetindex/. The button keeps the sentence's look (big word, ink underline, chevron); the list is
++   the site's panel: paper, a 1px ink line, the hard ink shadow of the cards, UI-sized words. The yellow marks the row
++   under the pointer or the keys, and the choice in force (an underline, like the words above, plus a tick). */
++.csel { position: relative; }
++.csel-btn { display: inline-block; max-width: 100%; margin: 0; padding: 0 .62em 1px 0; border: 0; border-bottom: 3px solid var(--ink); border-radius: 0;
++  background: transparent; color: var(--ink); font: inherit; letter-spacing: inherit; line-height: 1.08; text-align: left; white-space: nowrap;
++  overflow: hidden; text-overflow: ellipsis; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .12s var(--eoq, ease-out); }
++.si-sel .csel-btn { line-height: 1.05; padding: 0 .6em 2px 0; }
++.csel-btn:hover, .csel.open .csel-btn { border-bottom-color: var(--y); }
++.csel-btn:focus-visible { outline: 0; border-bottom-color: var(--y); box-shadow: 0 3px 0 var(--ink); }
++.csel.open::after { transform: translateY(-25%) rotate(225deg); }
++
++.csel-p { position: absolute; z-index: 5; top: calc(100% + 12px); left: 0; box-sizing: border-box; min-width: max(100%, 248px); width: max-content;
++  padding: 6px; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); border-radius: 16px;
++  box-shadow: 0 4px 0 var(--ink); outline: 0; white-space: normal; text-align: left; cursor: default;
++  font: 700 17px/1.25 var(--f, CromaticSans, system-ui, sans-serif); letter-spacing: -.01em;
++  opacity: 0; transform: translateY(-4px); transition: opacity .12s var(--eoq, ease-out), transform .16s var(--eoq, ease-out); }
++.csel-p.up { top: auto; bottom: calc(100% + 12px); transform: translateY(4px); }
++.csel-p.in { opacity: 1; transform: none; }
++.csel-p[hidden] { display: none; }
++.csel-o { position: relative; display: flex; align-items: center; min-height: 44px; padding: 10px 40px 10px 14px; border-radius: 10px; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
++.csel-o.on { background: var(--y); }
++/* the choice in force: heavier, a yellow underline under its words (ink when its row is yellow too), a tick at the end */
++.csel-o[aria-selected="true"] { font-weight: 800; }
++.csel-o[aria-selected="true"] > span { padding-bottom: 2px; background: linear-gradient(var(--y), var(--y)) 0 100% / 100% 3px no-repeat; }
++.csel-o.on[aria-selected="true"] > span { background-image: linear-gradient(var(--ink), var(--ink)); }
++.csel-o[aria-selected="true"]::after { content: ""; position: absolute; right: 18px; top: 50%; width: 6px; height: 12px; border: solid var(--ink); border-width: 0 2.5px 2.5px 0; transform: translateY(-65%) rotate(45deg); }
++/* the list holds the keys (aria-activedescendant): the yellow row is its focus mark, no ring around the whole panel */
++@media (max-width: 860px) {
++  .csel-p { font-size: 18px; }
++  .csel-o { min-height: 48px; }
++}
++@media (prefers-reduced-motion: reduce) {
++  .csel-p, .csel-p.up, .csel-btn { transition: none; transform: none; }
++}
+diff --git a/site/csel.js b/site/csel.js
+new file mode 100644
+index 0000000..df1c7b6
+--- /dev/null
++++ b/site/csel.js
+@@ -0,0 +1,131 @@
++// r440 (beta, TASK-151, Coz 2 Nov): the sentence filter's two choices ("Show me [all the work] on [every street]", in the
++// Work mega menu and on /streetindex/) open the site's own list instead of the browser's: paper, ink, the yellow.
++// A listbox button over the real <select>: the select stays in the form, hidden, and keeps the value the filters read;
++// a choice sets it and fires input + change, so megamenu.js and si.js work as before. Without the script, the select.
++// Keys: Down/Up/Enter/Space open it; inside, Up/Down/Home/End/PageUp/PageDown walk, letters jump, Enter/Space choose,
++// Esc closes back to the button, Tab closes and moves on. A click outside or the focus leaving closes it.
++(() => {
++  const d = document, SEL = ".mm-sel select, .si-sel select";
++  const proto = Object.getOwnPropertyDescriptors(HTMLSelectElement.prototype);
++  let n = 0, openOne = null;
++
++  function enhance(sel) {
++    if (sel.dataset.csel) return;
++    sel.dataset.csel = "1";
++    const id = `csel${++n}`, lab = sel.closest("label");
++    // a <label> around a button would forward every click inside the list to it: the wrapper becomes a span
++    let wrap = lab;
++    if (lab) { wrap = d.createElement("span"); wrap.className = lab.className; lab.replaceWith(wrap); wrap.append(...lab.childNodes); }
++    else { wrap = d.createElement("span"); sel.before(wrap); wrap.append(sel); }
++    wrap.classList.add("csel");
++    const sr = wrap.querySelector(".mm-sr, .si-sr"); if (sr && !sr.id) sr.id = `${id}-l`;
++    const btn = d.createElement("button"), val = d.createElement("span"), list = d.createElement("div");
++    btn.type = "button"; btn.className = "csel-btn"; btn.id = `${id}-b`;
++    btn.setAttribute("aria-haspopup", "listbox"); btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-controls", `${id}-p`);
++    val.className = "csel-v"; val.id = `${id}-v`; btn.append(val);
++    btn.setAttribute("aria-labelledby", `${sr ? sr.id + " " : ""}${val.id}`);
++    list.className = "csel-p"; list.id = `${id}-p`; list.setAttribute("role", "listbox"); list.tabIndex = -1; list.hidden = true;
++    if (sr) list.setAttribute("aria-labelledby", sr.id);
++    sel.hidden = true; sel.tabIndex = -1; sel.setAttribute("aria-hidden", "true");
++    sel.after(btn, list);
++
++    let active = -1, buf = "", tBuf = 0;
++    const opts = () => [...list.children];
++    const sync = () => { const o = sel.options[proto.selectedIndex.get.call(sel)]; val.textContent = o ? o.text : ""; };
++    // the menu's own code sets the value directly (Reset, "Show all the work"): the button follows
++    for (const k of ["value", "selectedIndex"]) Object.defineProperty(sel, k, { configurable: true, get() { return proto[k].get.call(this); }, set(v) { proto[k].set.call(this, v); sync(); } });
++    sel.addEventListener("change", sync);
++    sel.form && sel.form.addEventListener("reset", () => setTimeout(sync));
++
++    const build = () => {
++      // read on every open: megamenu.js puts the options into the page's language after the build
++      const cur = proto.selectedIndex.get.call(sel);
++      list.replaceChildren(...[...sel.options].map((o, i) => {
++        const el = d.createElement("div");
++        el.className = "csel-o"; el.id = `${id}-o${i}`; el.setAttribute("role", "option");
++        el.setAttribute("aria-selected", String(i === cur)); el.dataset.i = i;
++        const t = d.createElement("span"); t.textContent = o.text; el.append(t);
++        return el;
++      }));
++    };
++    const mark = (i, scroll = true) => {
++      const os = opts(); if (!os.length) return;
++      active = Math.max(0, Math.min(os.length - 1, i));
++      os.forEach((o, k) => o.classList.toggle("on", k === active));
++      list.setAttribute("aria-activedescendant", os[active].id);
++      if (scroll) os[active].scrollIntoView({ block: "nearest" });
++    };
++    // where it fits: under the words, inside the screen (and inside the menu's own scroller), up when below is short
++    const place = () => {
++      list.classList.remove("up"); list.style.left = list.style.maxHeight = list.style.maxWidth = "";
++      const vw = d.documentElement.clientWidth, g = vw < 600 ? 16 : 24;
++      const sc = btn.closest(".mm-scroll"), r = btn.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
++      const top = Math.max(sc ? sc.getBoundingClientRect().top : 0, 0), bot = Math.min(sc ? sc.getBoundingClientRect().bottom : innerHeight, innerHeight);
++      list.style.maxWidth = `${vw - g * 2}px`;
++      const h = list.scrollHeight + 2, below = bot - r.bottom - 14, above = r.top - top - 14;
++      const up = h > below && above > below;
++      list.classList.toggle("up", up);
++      list.style.maxHeight = `${Math.max(160, Math.floor(up ? above : below))}px`;
++      const w = list.getBoundingClientRect().width;
++      let x = 0; if (wr.left + w > vw - g) x = vw - g - w - wr.left; if (wr.left + x < g) x = g - wr.left;
++      list.style.left = `${Math.round(x)}px`;
++    };
++    const show = (at) => {
++      if (openOne && openOne !== close) openOne(false);
++      build(); list.hidden = false; wrap.classList.add("open"); btn.setAttribute("aria-expanded", "true");
++      place(); mark(at == null ? proto.selectedIndex.get.call(sel) : at, false);
++      list.focus({ preventScroll: true });
++      requestAnimationFrame(() => { list.classList.add("in"); opts()[active] && opts()[active].scrollIntoView({ block: "nearest" }); });
++      openOne = close;
++    };
++    function close(back) {
++      if (list.hidden) return;
++      list.hidden = true; list.classList.remove("in", "up"); wrap.classList.remove("open"); btn.setAttribute("aria-expanded", "false");
++      list.removeAttribute("aria-activedescendant");
++      if (openOne === close) openOne = null;
++      if (back) btn.focus({ preventScroll: true });
++    }
++    const choose = (i) => {
++      const was = proto.selectedIndex.get.call(sel);
++      close(true);
++      if (i === was || i < 0) return;
++      proto.selectedIndex.set.call(sel, i); sync();
++      sel.dispatchEvent(new Event("input", { bubbles: true }));
++      sel.dispatchEvent(new Event("change", { bubbles: true }));
++    };
++    // type-ahead: the letters typed within half a second find the next option that starts with them
++    const seek = (ch) => {
++      clearTimeout(tBuf); buf += ch.toLowerCase(); tBuf = setTimeout(() => (buf = ""), 500);
++      const os = [...sel.options].map((o) => o.text.toLowerCase()), from = list.hidden ? proto.selectedIndex.get.call(sel) : active;
++      const same = buf.split("").every((c) => c === buf[0]), q = same ? buf[0] : buf;
++      for (let k = 1; k <= os.length; k++) { const i = (from + (same || buf.length === 1 ? k : k - 1) + os.length) % os.length; if (os[i].startsWith(q)) return i; }
++      return -1;
++    };
++
++    btn.addEventListener("click", () => (list.hidden ? show() : close(true)));
++    btn.addEventListener("keydown", (e) => {
++      if (/^(ArrowDown|ArrowUp|Enter| |Home|End)$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); show(e.key === "Home" ? 0 : e.key === "End" ? sel.options.length - 1 : undefined); return; }
++      if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) { const i = seek(e.key); if (i >= 0) { e.preventDefault(); show(i); } }
++    });
++    list.addEventListener("keydown", (e) => {
++      const os = opts(), page = 5;
++      const go = { ArrowDown: active + 1, ArrowUp: active - 1, Home: 0, End: os.length - 1, PageDown: active + page, PageUp: active - page }[e.key];
++      // stopPropagation: the menu's own keys (Esc closes the whole menu, the arrows walk the names) wait outside
++      if (go != null) { e.preventDefault(); e.stopPropagation(); mark(go); return; }
++      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); choose(active); return; }
++      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(true); return; }
++      if (e.key === "Tab") { close(true); return; } // the focus is back on the button, so Tab carries on from there
++      if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) { const i = seek(e.key); e.preventDefault(); e.stopPropagation(); if (i >= 0) mark(i); }
++    });
++    list.addEventListener("pointermove", (e) => { const o = e.target.closest(".csel-o"); if (o && +o.dataset.i !== active) mark(+o.dataset.i, false); });
++    list.addEventListener("click", (e) => { const o = e.target.closest(".csel-o"); if (o) choose(+o.dataset.i); });
++    wrap.addEventListener("focusout", (e) => { if (!list.hidden && !wrap.contains(e.relatedTarget)) close(false); });
++    sync();
++  }
++
++  const outside = (e) => { if (!openOne) return; const w = e.target.closest && e.target.closest(".csel.open"); if (!w) openOne(false); };
++  d.addEventListener("pointerdown", outside, true);
++  addEventListener("resize", () => openOne && openOne(false));
++  const boot = () => d.querySelectorAll(SEL).forEach(enhance);
++  if (d.readyState === "loading") d.addEventListener("DOMContentLoaded", boot); else boot();
++})();
