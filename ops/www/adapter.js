@@ -271,6 +271,11 @@
     return { url: x.href, type: "other" };
   }
   const TYPE_LAB = { youtube: "YouTube", vimeo: "Vimeo", drive: "Google Drive", wetransfer: "WeTransfer", dropbox: "Dropbox", other: "link" };
+  // TASK-148: the same types the server sniffs; the name or extension only decides here, the server still checks the bytes
+  const OK_TYPE = /^(image\/(png|jpeg|webp|avif|svg\+xml)|application\/pdf|video\/(mp4|webm))$/, OK_EXT = /\.(png|jpe?g|webp|avif|svg|pdf|mp4|webm)$/i;
+  const okType = (f) => OK_TYPE.test(f.type || "") || (!f.type && OK_EXT.test(f.name || ""));
+  const MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || ""), PASTE_KEY = MAC ? "⌘V" : "Ctrl+V";
+  const TOUCH = !!(window.matchMedia && matchMedia("(hover: none) and (pointer: coarse)").matches); // a phone pastes from the field's own menu, no shortcut to name
 
   function mount(key, opt) {
     const o = opt || {}, st = boxes.get(key) && !o.fresh ? boxes.get(key) : { files: [], links: [], kind: o.kind || "visual" };
@@ -288,7 +293,7 @@
     // drop zone
     const inp = h("input"); inp.type = "file"; inp.multiple = true; inp.accept = ACCEPT; inp.hidden = true; inp.id = "ops-up-in-" + key;
     const dz = h("label", "ops-drop"); dz.htmlFor = inp.id; dz.tabIndex = 0;
-    dz.append(h("b", "", "Trage fișierele aici"), h("span", "", " sau apasă să alegi"), h("small", "", "PNG, JPG, WebP, AVIF, SVG, PDF, MP4, WebM · max 25 MB · le optimizăm noi"));
+    dz.append(h("b", "", "Trage fișierele aici"), h("span", "", " sau apasă să alegi" + (TOUCH ? "" : ". Ai o captură? Lipește-o cu " + PASTE_KEY + ".")), h("small", "", "PNG, JPG, WebP, AVIF, SVG, PDF, MP4, WebM · max 25 MB · le optimizăm noi"));
     dz.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inp.click(); } };
     dz.ondragover = (e) => { e.preventDefault(); dz.classList.add("over"); }; dz.ondragleave = () => dz.classList.remove("over");
     dz.ondrop = (e) => { e.preventDefault(); dz.classList.remove("over"); add([...(e.dataTransfer.files || [])]); };
@@ -306,9 +311,11 @@
     function add(fs) {
       if (!w.classList.contains("open")) tg.click();
       for (const f of fs) {
-        const it = { name: f.name, size: f.size, state: "up", pct: 0, kind: st.kind, local: /^image\//.test(f.type) ? URL.createObjectURL(f) : "" };
+        const it = { name: f.name, size: f.size, state: "up", pct: 0, kind: st.kind, local: "" };
         st.files.push(it);
-        if (f.size > MAX) { it.state = "err"; it.err = "peste 25 MB"; continue; }
+        if (!okType(f)) { it.state = "err"; it.err = "tip neacceptat. Merg PNG, JPG, WebP, AVIF, SVG, PDF, MP4 și WebM"; continue; }
+        if (f.size > MAX) { it.state = "err"; it.err = "are " + size(f.size) + ", peste limita de 25 MB. Micșorează-l sau pune un link"; continue; }
+        if (/^image\//.test(f.type)) it.local = URL.createObjectURL(f); // the thumbnail shows while it uploads
         const x = new XMLHttpRequest(); it.xhr = x;
         x.open("POST", "/api/ops/upload?kind=" + encodeURIComponent(it.kind) + "&name=" + encodeURIComponent(f.name));
         x.setRequestHeader("Content-Type", f.type || "application/octet-stream");
@@ -349,7 +356,7 @@
         r.append(th, tx, h("span", "kd", "video"), x); return r;
       }));
     }
-    st.draw = draw; draw();
+    st.draw = draw; st.add = add; draw();
     return w;
   }
   const ready = (key) => { const st = boxes.get(key); return st ? st.files.filter((f) => f.state === "ok") : []; };
@@ -368,7 +375,86 @@
       return (up.length ? "\nFișiere: " + up.map((f) => f.name + " (" + abs(f.urls.webp || f.urls.svg || f.urls.png || f.urls.original) + ")").join(", ") : "")
         + (st.links.length ? "\nLinkuri video: " + st.links.map((v) => v.url + " (" + v.type + ")").join(", ") : "");
     },
+    add: (key, files) => {
+      const st = boxes.get(key); if (!st || !st.add || !files || !files.length) return;
+      // two screenshots in the same minute: captura-…-1420.png, captura-…-1420-2.png
+      const taken = new Set(st.files.map((f) => f.name));
+      st.add([...files].map((f) => {
+        if (!taken.has(f.name) || !/^captura-/.test(f.name)) { taken.add(f.name); return f; }
+        const m = /^(.*?)(\.\w+)?$/.exec(f.name); let i = 2; while (taken.has(m[1] + "-" + i + (m[2] || ""))) i++;
+        const nm = m[1] + "-" + i + (m[2] || ""); taken.add(nm);
+        try { return new File([f], nm, { type: f.type, lastModified: f.lastModified }); } catch { return f; }
+      }));
+    },
     reset: (key) => { const st = boxes.get(key); if (!st) return; st.files = []; st.links = []; if (st.draw) st.draw(); },
   };
   document.addEventListener("DOMContentLoaded", () => { document.querySelectorAll("[data-up-slot]").forEach((s) => s.replaceWith(mount(s.dataset.upSlot))); });
+
+  // ---------- TASK-148: ⌘V / Ctrl+V pastes a screenshot straight into the composer's queue; drag and drop on the whole composer ----------
+  // Which box: the nearest composer around the target (the conversation, the quick composer, the bug report, a Conținut request, the offer logo).
+  // Nothing focused: the open pop, else the conversation when it is on screen.
+  const shown = (e) => !!e && e.getClientRects().length > 0;
+  function boxFor(t) {
+    let n = t && t.nodeType === 1 ? t : t && t.parentElement;
+    for (let i = 0; n && n !== document.body && i < 8; i++, n = n.parentElement) {
+      const b = n.matches(".ops-up") ? n : n.querySelector(".ops-up[data-up]");
+      if (b) return b.dataset.up;
+      if (n.matches(".ask, .pop, [role=dialog]")) break; // a composer without a queue: leave it alone
+    }
+    if ((n && n !== document.body) || editable(t)) return ""; // another field on the page keeps its own paste
+    const pop = [...document.querySelectorAll(".pop:not([hidden]) .ops-up[data-up]")].find(shown);
+    if (pop) return pop.dataset.up;
+    const ask = document.querySelector(".ask .ops-up[data-up]");
+    return ask && shown(ask.closest(".ask")) ? ask.dataset.up : "";
+  }
+  const editable = (t) => !!t && t.nodeType === 1 && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+  // a path or file URL on its own line(s): what Finder and some apps put next to the image
+  const pathOnly = (s) => s.split(/\r?\n/).filter(Boolean).every((l) => /^(file:\/\/\S+|~?\/\S.*|[A-Za-z]:\\\S.*)$/.test(l.trim()));
+  const pad = (n) => String(n).padStart(2, "0");
+  const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/avif": "avif", "image/svg+xml": "svg", "image/gif": "gif", "image/tiff": "tiff", "image/heic": "heic", "application/pdf": "pdf", "video/mp4": "mp4", "video/webm": "webm" };
+  function named(files) {
+    const d = new Date(), stamp = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "-" + pad(d.getHours()) + pad(d.getMinutes());
+    let n = 0;
+    return files.map((f) => {
+      // a screenshot arrives as "image.png" (or with no name); a copied file keeps its own
+      if (f.name && !/^(image|blob|clipboard|pasted|untitled)?(\.\w+)?$/i.test(f.name)) return f;
+      const ext = EXT[f.type] || ((f.name || "").split(".").pop() || "png").toLowerCase();
+      n++;
+      try { return new File([f], "captura-" + stamp + (n > 1 ? "-" + n : "") + "." + ext, { type: f.type, lastModified: f.lastModified }); } catch { return f; }
+    });
+  }
+  function clipFiles(dt) {
+    const out = [...(dt.files || [])];
+    if (!out.length) for (const it of dt.items || []) if (it.kind === "file") { const f = it.getAsFile(); if (f) out.push(f); }
+    return out;
+  }
+  document.addEventListener("paste", (e) => {
+    const dt = e.clipboardData; if (!dt || e.defaultPrevented) return;
+    const fs = clipFiles(dt); if (!fs.length) return;
+    const text = (dt.getData("text/plain") || "").trim();
+    if (text && !pathOnly(text)) return; // real text wins: it pastes as text
+    const key = boxFor(e.target); if (!key) return;
+    e.preventDefault();
+    window.__opsUp.add(key, named(fs));
+  });
+  // drag and drop anywhere on a composer, not only on the dashed zone
+  const hasFiles = (e) => !!e.dataTransfer && [...(e.dataTransfer.types || [])].includes("Files");
+  let overBox = null;
+  const lit = (b) => { if (overBox && overBox !== b) overBox.classList.remove("over"); overBox = b; if (b) b.classList.add("over"); };
+  const keyAt = (t) => (t && t.closest && t.closest(".ask, .pop, [role=dialog]") ? boxFor(t) : "");
+  document.addEventListener("dragover", (e) => {
+    if (!hasFiles(e) || e.defaultPrevented) return;
+    const k = keyAt(e.target), b = k && document.querySelector('.ops-up[data-up="' + k + '"]');
+    if (!b) { lit(null); return; }
+    e.preventDefault(); e.dataTransfer.dropEffect = "copy";
+    if (!b.classList.contains("open")) b.querySelector(".ops-up-tg").click(); // show where it lands
+    lit(b.querySelector(".ops-drop"));
+  });
+  document.addEventListener("dragleave", (e) => { if (overBox && !e.relatedTarget) lit(null); });
+  document.addEventListener("drop", (e) => {
+    lit(null);
+    if (!hasFiles(e) || e.defaultPrevented) return;
+    const k = keyAt(e.target); if (!k) return;
+    e.preventDefault(); window.__opsUp.add(k, named([...(e.dataTransfer.files || [])]));
+  });
 })();
