@@ -175,13 +175,16 @@
     stamp.textContent = room ? size(room.used) + " din " + size(room.cap) : "";
   }
 
+  let filesSig = "";
   async function load() {
     loading = !files; if (loading) render();
     try {
       const r = await fetch("/api/ops/files", { credentials: "same-origin", cache: "no-store" });
       if (r.status === 401 || r.status === 403) { body.replaceChildren(el("div", "empty", "Secțiunea asta e doar pentru admini.")); return; }
       const j = await r.json(); if (!j.ok) throw new Error("files");
-      files = j.files; room = j.room;
+      const sig = JSON.stringify([j.files, j.room]); // Daniel 4 Nov: no redraw when the list did not change
+      if (sig === filesSig && !loading) return;
+      filesSig = sig; files = j.files; room = j.room;
     } catch { /* the last list stays, or the message below */ }
     loading = false;
     if (!busy.size && !asking) render();

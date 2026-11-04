@@ -419,12 +419,14 @@
     body.replaceChildren(...parts);
     if (force) { window.scrollTo({ top: y }); if (focusId) { const f = document.getElementById(focusId); if (f && !f.disabled) f.focus({ preventScroll: true }); } }
   }
+  let perfSig = "";
   async function refresh(force) {
     try {
       const r = await fetch("/api/ops/perf", { credentials: "same-origin", cache: "no-store" });
       if (r.status === 403 || r.status === 401) { body.replaceChildren(el("div", "empty", "Secțiunea asta e doar pentru admini.")); return; }
       const j = await r.json(); if (!j.ok) throw new Error("perf");
-      data = j; render(force);
+      const sig = JSON.stringify(j); // Daniel 4 Nov: no redraw when the numbers did not change
+      if (force || sig !== perfSig) { perfSig = sig; data = j; render(force); }
     } catch { if (!data) body.replaceChildren(el("div", "empty", "Nu am putut citi măsurătorile. Reîncerc în curând.")); }
     schedule();
   }

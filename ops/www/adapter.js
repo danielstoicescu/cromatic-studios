@@ -12,7 +12,8 @@
   const prevPending = new Map(), justDone = new Map(), justBack = new Map(), seenPending = new Set();
   const seenRejected = (() => { try { return new Set(JSON.parse(localStorage.getItem("ops-rejected-seen") || "[]")); } catch { return new Set(); } })();
   const saveSeen = () => { try { localStorage.setItem("ops-rejected-seen", JSON.stringify([...seenRejected].slice(-200))); } catch {} };
-  const listeners = new Set();
+  const listeners = new Map(); // run -> the collection it reads, so a poll only re-renders what actually changed
+  const sigs = new Map(); // collection -> its JSON at the last poll
   const ops = (window.__ops = { mirror: true, user: null });
 
   const err = (code) => Object.assign(new Error(code), { code });
@@ -31,7 +32,13 @@
       for (const id of [...pending.keys()]) if (inbox[id]) pending.delete(id);
       trackEdits(snap.collections.tasks || {});
       header();
-      listeners.forEach((f) => { try { f(); } catch (e) { console.error(e); } });
+      // Daniel 4 Nov: no refresh in /ops when nothing changed. Each listener runs only if its own collection did
+      const cols = snap.collections || {}, changed = new Set();
+      for (const name of new Set([...Object.keys(cols), ...sigs.keys()])) {
+        const sig = JSON.stringify(cols[name] || null);
+        if (sigs.get(name) !== sig) { sigs.set(name, sig); changed.add(name); }
+      }
+      listeners.forEach((name, f) => { if (changed.has(name)) try { f(); } catch (e) { console.error(e); } });
     } catch (e) { if (e.code !== "not_granted") console.warn("[ops] snapshot", e.message); }
   }
   function trackEdits(tasks) {
@@ -88,7 +95,7 @@
           if (lim) docs = docs.slice(0, lim);
           cb({ docs, size: docs.length, empty: !docs.length });
         };
-        listeners.add(run); if (snap) run();
+        listeners.set(run, name); if (snap) run();
         return () => listeners.delete(run);
       },
       async add(doc) {
@@ -118,7 +125,7 @@
     const it = j.item;
     pending.set(it.id, { createdAt: it.createdAt, from: "ops:" + it.from, kind: it.kind, text: it.text, payload: it.payload, status: "new", reply: "", by: { email: it.from, name: it.name, role: it.role }, pending: true });
     if (it.payload && it.payload.type === "task-edit") { edits.set(it.id, { ...it.payload, createdAt: it.createdAt, at: Date.now() }); seenPending.add(it.id); }
-    listeners.forEach((f) => f());
+    listeners.forEach((name, f) => f());
     setTimeout(load, 300); // the server's merged view (everyone sees the edit) comes right back
     return { id: it.id };
   }
@@ -128,7 +135,7 @@
     doc(path) {
       const [c, id] = String(path).split("/");
       return {
-        onSnapshot(cb) { const run = () => cb(docSnap(id, coll(c)[id])); listeners.add(run); if (snap) run(); return () => listeners.delete(run); },
+        onSnapshot(cb) { const run = () => cb(docSnap(id, coll(c)[id])); listeners.set(run, c); if (snap) run(); return () => listeners.delete(run); },
         update: async () => { throw err("read_only"); }, delete: async () => { throw err("read_only"); },
         // 26 Oct: "+ Task" and "+ Epic" work here too. A new task or epic goes to Claude as a command (payload.type
         // task-new / epic-new, the whole doc inside); Claude creates it in the artifact and the next snapshot shows it.
