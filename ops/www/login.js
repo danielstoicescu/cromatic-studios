@@ -77,6 +77,15 @@
     draw();
     if (v.length === 6) verify(v);
   });
+  // Daniel 4 Nov: a pasted code works however it was copied from the mail ("123 456", "123456", with text around it):
+  // the digits are taken from the clipboard, anywhere on the page while the code step is open
+  const pasteCode = (e) => {
+    if (lg.dataset.state !== "code") return;
+    const v = ((e.clipboardData || window.clipboardData).getData("text") || "").replace(/\D/g, "").slice(0, 6);
+    if (!v) return;
+    e.preventDefault(); code.value = v; code.dispatchEvent(new Event("input")); code.focus({ preventScroll: true });
+  };
+  document.addEventListener("paste", pasteCode);
   code.addEventListener("focus", draw); code.addEventListener("blur", draw);
   $("dots").addEventListener("click", () => code.focus());
   $("f-code").onsubmit = (e) => { e.preventDefault(); if (code.value.length === 6) verify(code.value); };

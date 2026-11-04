@@ -657,7 +657,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
 export function codeMail(name, code) {
   const pretty = code.slice(0, 3) + " " + code.slice(3), n = esc(name || "");
   const subject = `${pretty} e codul tău pentru cromaticstudios.com ops`;
-  const text = `Salut${name ? ", " + name : ""}.\n\nCodul tău pentru cromaticstudios.com ops: ${pretty}\nValabil 10 minute, o singură dată.\n\nDacă nu l-ai cerut tu, ignoră mailul. Fără cod nu intră nimeni.\n\nCromatic Studios · Str. Olari 9, București`;
+  const text = `Salut${name ? ", " + name : ""}.\n\nCodul tău pentru cromaticstudios.com ops: ${code}\nValabil 10 minute, o singură dată.\n\nDacă nu l-ai cerut tu, ignoră mailul. Fără cod nu intră nimeni.\n\nCromatic Studios · Str. Olari 9, București`;
   const C = ["#FED012", "#28C840", "#119BFE", "#B098C8", "#F65342", "#FED012"];
   const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
   const digit = (d, i) => `<td align="center" valign="middle" style="padding:0 4px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td class="dg" align="center" valign="middle" width="52" height="52" style="width:52px;height:52px;border-radius:26px;background:${C[i]};border:2px solid #0D0C09;font:800 30px/52px ${FONT};color:#0D0C09;text-align:center;mso-line-height-rule:exactly">${d}</td></tr></table></td>`;
@@ -686,6 +686,7 @@ export function codeMail(name, code) {
 <tr><td align="center" class="ink" style="padding:24px 28px 4px;font:800 24px/1.25 ${FONT};color:#0D0C09">Salut${n ? ", " + n : ""}.</td></tr>
 <tr><td align="center" class="mut" style="padding:0 28px 20px;font:400 16px/1.5 ${FONT};color:#5e6168">Codul tău pentru <b class="ink" style="color:#0D0C09">cromaticstudios.com ops</b>:</td></tr>
 <tr><td align="center" style="padding:0 16px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${[...code].map(digit).join("")}</tr></table></td></tr>
+<tr><td align="center" style="padding:18px 28px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td class="mut" valign="middle" style="padding-right:10px;font:500 13px/1.4 ${FONT};color:#8a8d93">De copiat:</td><td class="ring-in ink" valign="middle" style="background:#F2F2F2;border:1px solid #d6d6d6;border-radius:10px;padding:8px 14px;font:700 20px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:3px;color:#0D0C09;-webkit-user-select:all;user-select:all">${code}</td></tr></table></td></tr>
 <tr><td align="center" class="mut" style="padding:20px 28px 0;font:600 15px/1.5 ${FONT};color:#5e6168">Valabil 10 minute, o singură dată.</td></tr>
 <tr><td align="center" class="mut" style="padding:8px 28px 32px;font:400 14px/1.5 ${FONT};color:#5e6168">Dacă nu l-ai cerut tu, ignoră mailul. Fără cod nu intră nimeni.</td></tr>
 </table>
