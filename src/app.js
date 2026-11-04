@@ -35134,7 +35134,7 @@ void main(){
     root.appendChild(header);
     // r165 (Daniel): under the logo, small and faint, the build that is live (the label comes from the page's
     // <meta name="cz-build">, written by build/build.mjs)
-    { const bl = document.querySelector('meta[name="cz-build"]')?.content; if (bl) { const sp = el("span", "cz-build", `${bl} build`); sp.setAttribute("aria-hidden", "true"); header.querySelector(".brand").appendChild(sp); } } // (audit 3.86: not part of the logo's name)
+    { const bl = document.querySelector('meta[name="cz-build"]')?.content; if (bl) { const sp = el("span", "cz-build", bl); sp.setAttribute("aria-hidden", "true"); header.querySelector(".brand").appendChild(sp); } } // (audit 3.86: not part of the logo's name)
     header.querySelector(".brand").onclick = (e) => {
       e.preventDefault();
       api.jumpTo("start");

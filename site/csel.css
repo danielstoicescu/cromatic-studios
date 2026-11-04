@@ -1,0 +1,36 @@
+/* r440 (beta, TASK-151) · the sentence filter's own list (site/csel.js): "Show me [all the work] on [every street]" in the
+   Work mega menu and on /streetindex/. The button keeps the sentence's look (big word, ink underline, chevron); the list is
+   the site's panel: paper, a 1px ink line, the hard ink shadow of the cards, UI-sized words. The yellow marks the row
+   under the pointer or the keys, and the choice in force (an underline, like the words above, plus a tick). */
+.csel { position: relative; }
+.csel-btn { display: inline-block; max-width: 100%; margin: 0; padding: 0 .62em 1px 0; border: 0; border-bottom: 3px solid var(--ink); border-radius: 0;
+  background: transparent; color: var(--ink); font: inherit; letter-spacing: inherit; line-height: 1.08; text-align: left; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .12s var(--eoq, ease-out); }
+.si-sel .csel-btn { line-height: 1.05; padding: 0 .6em 2px 0; }
+.csel-btn:hover, .csel.open .csel-btn { border-bottom-color: var(--y); }
+.csel-btn:focus-visible { outline: 0; border-bottom-color: var(--y); box-shadow: 0 3px 0 var(--ink); }
+.csel.open::after { transform: translateY(-25%) rotate(225deg); }
+
+.csel-p { position: absolute; z-index: 5; top: calc(100% + 12px); left: 0; box-sizing: border-box; min-width: max(100%, 248px); width: max-content;
+  padding: 6px; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); border-radius: 16px;
+  box-shadow: 0 4px 0 var(--ink); outline: 0; white-space: normal; text-align: left; cursor: default;
+  font: 700 17px/1.25 var(--f, CromaticSans, system-ui, sans-serif); letter-spacing: -.01em;
+  opacity: 0; transform: translateY(-4px); transition: opacity .12s var(--eoq, ease-out), transform .16s var(--eoq, ease-out); }
+.csel-p.up { top: auto; bottom: calc(100% + 12px); transform: translateY(4px); }
+.csel-p.in { opacity: 1; transform: none; }
+.csel-p[hidden] { display: none; }
+.csel-o { position: relative; display: flex; align-items: center; min-height: 44px; padding: 10px 40px 10px 14px; border-radius: 10px; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+.csel-o.on { background: var(--y); }
+/* the choice in force: heavier, a yellow underline under its words (ink when its row is yellow too), a tick at the end */
+.csel-o[aria-selected="true"] { font-weight: 800; }
+.csel-o[aria-selected="true"] > span { padding-bottom: 2px; background: linear-gradient(var(--y), var(--y)) 0 100% / 100% 3px no-repeat; }
+.csel-o.on[aria-selected="true"] > span { background-image: linear-gradient(var(--ink), var(--ink)); }
+.csel-o[aria-selected="true"]::after { content: ""; position: absolute; right: 18px; top: 50%; width: 6px; height: 12px; border: solid var(--ink); border-width: 0 2.5px 2.5px 0; transform: translateY(-65%) rotate(45deg); }
+/* the list holds the keys (aria-activedescendant): the yellow row is its focus mark, no ring around the whole panel */
+@media (max-width: 860px) {
+  .csel-p { font-size: 18px; }
+  .csel-o { min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .csel-p, .csel-p.up, .csel-btn { transition: none; transform: none; }
+}

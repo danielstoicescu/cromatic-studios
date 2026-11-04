@@ -78,7 +78,6 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const PIN = `<svg class="ftr-pin" viewBox="0 0 16 20" width="16" height="20" aria-hidden="true"><path d="M8 19s6-6.1 6-10.6A6 6 0 0 0 2 8.4C2 12.9 8 19 8 19z" fill="#FED012" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="8.3" r="2.2" fill="currentColor"/></svg>`;
   // r366 (Ilinca): drawn at 3x for the phones; the still is what loads, the roll strip only on the first hover or focus
   const DK = () => { const r = A("m:drive-car/dacia-1300-roll.webp"), s = A("m:drive-car/dacia-1300-parked.webp"); return r && s ? `<span class="dk" aria-hidden="true"><i class="dk-roll" style="--dk-s:url(${s.src});--dk-r:url(${r.src})"></i></span>` : ""; };
-  const DK_STILL = () => { const r = A("m:drive-car/dacia-1300-parked.webp"); return r ? `<span class="dk dk-still" aria-hidden="true"><i class="dk-roll" style="--dk-s:url(${r.src})"></i></span>` : ""; };
   const logo = A("logoLandscape");
   const header = (home) => `<a class="skip" href="#main">Skip to content</a>
 <header class="hdr">
@@ -212,12 +211,12 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     const size = p.wip ? "full" : plan || SIZES[i % SIZES.length]; // r360 (Daniel, 28 Oct): a work in progress (Lapterra) spans the whole row, with a WIP tag
     const media = media0 && /^<img\b(?![^>]*\bsizes=)[^>]*\bloading="lazy"/.test(media0) ? media0.replace(/^<img\b/, `<img sizes="${cardSizes(size, i, n)}"`) : media0; // r397: the card says its width (cardSizes)
     // TASK-067: the name on a pill at the bottom (for a case, its way in: a circle in the street's colour, drawn by the
-    // pill itself), the category on a chip at the top, the brief and "Read the case" on a paper note that opens under the
-    // pill (site.css). One element more than before per card: the note
+    // pill itself), the category on a chip at the top, the brief on a paper note that opens under the
+    // pill (site.css). One element more than before per card: the note. TASK-153 (Coz, 3 Nov): no "Read the case" line,
+    // the whole card is the link and the pill's arrow says so
     const inner = `${media ? `<span class="bc-media">${media}</span>` : `<span class="bc-poster">${esc(p.poster)}</span>`}
       <span class="bc-cat mono">${esc(p.cat)}</span>${p.wip ? `<span class="bc-wip mono" aria-label="Work in progress">WIP</span>` : ""}
-      <span class="bc-body"><span class="bc-name">${esc(p.name)}</span><span class="bc-note"><span class="bc-desc">${esc(p.desc)}</span>
-      ${p.page ? `<span class="bc-cta">Read the case <i>→</i></span>` : p.wip ? `<span class="bc-cta mono">Work in progress</span>` : ""}</span></span>`;
+      <span class="bc-body"><span class="bc-name">${esc(p.name)}</span><span class="bc-note"><span class="bc-desc">${esc(p.desc)}</span></span></span>`;
     // TASK-139 (Daniel, 29 Oct): the arrow's circle takes the brand's own colour (p.c); a dark one gets a light arrow
     const dk = (() => { const h = String(p.c || "").replace("#", ""); if (h.length !== 6) return false; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); return 0.2126 * r + 0.7152 * g + 0.0722 * b < 140; })();
     const cls = `bcard b-${size}${media ? " has-media" : ""}${dk ? " bc-dk" : ""}`;
@@ -272,9 +271,13 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   // only near the screen, never with reduced motion, Save-Data or 2g. Scroll parallax (site.js, --bp 0 → 1 while the
   // band crosses the screen): the picture moves slower than the page and settles from a slight zoom, the street's name
   // in solid CromaticSans moves faster than it; the band fades into the paper the street's cards stand on
-  const SB_GO = { A: "tm", B: "invest", C: "tac" }; // r359: a place on each street of the map (src/app.js MAP_PLACES)
-  const streetBand = (k, street, i) => {
-    const slug = street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), m = (n) => A(`m:streets/${slug}/${n}`);
+  // r441 (TASK-152, Coz 2 Nov): the band is the clip and the street's name only: no section number, no drive pill, no pause
+  // button (the clip still never plays with reduced motion, Save-Data or 2g, and stops off screen)
+  const bandSlug = (street) => street.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  // r443: the band has a clip (the same test as streetBand's video), so its street card carries the pause button
+  const streetHasClip = (street) => { const slug = bandSlug(street), m = (n) => A(`m:streets/${slug}/${n}`); return !!(m("poster.jpg") && (m(`${slug}.mp4`) || m(`${slug}-d2-av1.webm`) || m(`${slug}.webm`))); };
+  const streetBand = (street) => {
+    const slug = bandSlug(street), m = (n) => A(`m:streets/${slug}/${n}`);
     // r382 (Mira's audit: phones fetched 5.4 MB of video on a full scroll): the phone cut is the 540 px, 8 s, ~300 KB
     // re-encode (-m2.mp4, H.264) with an AV1 twin first (-m2-av1.webm, ~170-240 KB); the old -m.mp4 only as a fallback
     // r398 (desktop scroll 7.2 -> 8.9 MB once r382 started the bands at half view): the wide cut is AV1 too
@@ -285,14 +288,11 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     return `<div class="street-band${pd ? " has-media" : ""}">
         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
         <div class="sb-copy">
-          <div class="sb-top"><p class="sb-cap mono" aria-hidden="true"><span>${String(i + 1).padStart(2, "0")}</span></p>
-          ${/* r359 (Daniel): a way into the city from every street, straight to one of its places (src/app.js ?go); r375: on a phone the shorter label, under the street name */ ""}<a class="sb-drive" href="/?map${SB_GO[k] ? `&amp;go=${SB_GO[k]}` : ""}">${DK_STILL()}<span class="sb-dl">Take a drive in the Cromatic City</span><span class="sb-ds">Drive this street</span></a></div>
           <p class="sb-name${street.length > 18 ? " is-long" : ""}" aria-hidden="true">${esc(street)}</p>
         </div>
-        ${video ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the animation" hidden><i aria-hidden="true"></i></button>` : ""}
       </div>`;
   };
-  const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]], si) => {
+  const workByStreet = (covers) => Object.entries(STREETS).map(([k, [street, col]]) => {
     const list = streetList(k, covers);
     if (!list.length) return "";
     const small = k === "C"; // TASK-074: the Zdrovit park is on Medical Avenue
@@ -301,13 +301,14 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     // TASK-139 (Daniel, 28 Oct: "next level, să simți că treci dintr-o categorie în alta"): each street opens on its band
     // (streetBand above), then the street's card and sign land on it (site.js sets --sp, 0 → 1)
     return `<div class="dom dom-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
-      ${streetBand(k, street, si)}
+      ${streetBand(street)}
       <div class="street-head">
         <div class="sh-main">
           <h3 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h3>
           <p class="sh-lead">${esc(info.lead)}</p>
           ${ind ? `<a class="sh-more" href="/industries/${ind.slug}/" aria-label="${esc(info.t)}: the whole street"><span>The whole street</span> <i aria-hidden="true">→</i></a>` : ""}
         </div>
+        ${/* r443 (TASK-153, Daniel: WCAG 2.2.2): the band's clip can be paused from here, under the band, never on the clip; shown only once the clip plays (site.js) */ ""}${streetHasClip(street) ? `<button class="sb-pp" type="button" aria-pressed="false" aria-label="Pause the video" hidden><i aria-hidden="true"></i></button>` : ""}
       </div>
       ${bentoGrid(list, covers)}
       ${small ? zdRow() : ""}

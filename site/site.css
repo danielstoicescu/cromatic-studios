@@ -30,7 +30,7 @@ body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.
    inherited from body: header, menus, labels, buttons, captions, pills. :where() has no specificity, so any rule that sets
    its own line-height still wins; only blocks that used to inherit body's value are held here. */
 :where(.skip, .hdr, .mm-k, .mm-opts, .mm-sh, .mm-t, .mm-none, .mm-pgo, .pw-alt, .eyebrow, .hc-kick, .tags, .hc-classic,
-  .streets-nav, .sb-top, .bc-cta, .zd-h, .friends, .svc .mono, .svc ul, .svc-more, .svc-pages, .cr-name, .cr-role, .cr-link, figcaption,
+  .streets-nav, .zd-h, .friends, .svc .mono, .svc ul, .svc-more, .svc-pages, .cr-name, .cr-role, .cr-link, figcaption,
   summary, .btn, .yt-play, .cv-hint, .c-meta, .c2-num, .c2-count, .hub-card .mono, .chap-k, .hub-links b, .hub-links i, .more, .lp-meta, .lpb-cap,
   .lps-t, .ftr-links) { line-height: 1.6; }
 img, video { display: block; max-width: 100%; height: auto; }
@@ -684,15 +684,13 @@ a.bcard .bc-name::after { content: ""; position: absolute; right: 5px; top: 50%;
 a.bcard:is(:hover, :focus-visible) .bc-name { rotate: -1.6deg; translate: 0 -2px; }
 a.bcard:is(:hover, :focus-visible) .bc-name::after { animation: bcGo .6s var(--eoq) .05s; }
 @keyframes bcGo { 0% { background-position: 50% 50%, 0 0; } 44% { background-position: 280% 50%, 0 0; } 45% { background-position: -180% 50%, 0 0; } 100% { background-position: 50% 50%, 0 0; } }
-/* the note under the pill: the brief, and "Read the case" */
-.bc-note { display: grid; gap: 4px; width: 100%; max-height: 0; margin-top: 0; padding: 0 14px; overflow: hidden; border-radius: 16px; background: var(--paper); color: var(--ink); font-size: 14px;
+/* the note under the pill: the brief (TASK-153: 16px, 17px on a large screen, at 1.3; no "Read the case", so the brief
+   may take a fourth line, no taller than the note was with it) */
+.bc-note { display: grid; gap: 4px; width: 100%; max-height: 0; margin-top: 0; padding: 0 14px; overflow: hidden; border-radius: 16px; background: var(--paper); color: var(--ink); font-size: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
   opacity: 0; box-shadow: inset 0 0 0 1px transparent; transition: max-height .5s var(--eoq), margin .5s var(--eoq), padding .5s var(--eoq), opacity .3s var(--eoq), box-shadow .3s; }
-.bc-desc { line-height: 1.4; color: #2e2c27; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.bc-cta { font: 700 10.5px/1.3 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
-.bc-cta i { font-style: normal; display: inline-block; transition: translate .45s var(--bounce); }
+.bc-desc { line-height: 1.3; color: #2e2c27; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 @media (hover: hover) {
   .bcard:is(:hover, :focus-visible) .bc-note { max-height: 8em; margin-top: 8px; padding: 11px 14px 12px; opacity: 1; box-shadow: inset 0 0 0 1px var(--ink), 0 2px 0 var(--ink); }
-  a.bcard:is(:hover, :focus-visible) .bc-cta i { translate: 4px 0; }
   /* a card one row high: two lines of the brief, and the note takes the chip's place (they would meet) */
   .bcard:is(.b-s, .b-m, .b-w) .bc-desc { -webkit-line-clamp: 2; }
   .bcard:is(.b-s, .b-m, .b-w) .bc-cat { display: none; }
@@ -1241,40 +1239,39 @@ a.bcard.has-media:is(:hover, :focus-visible) .bc-media :is(img, video) { --zs: 1
    screen, site.js): the picture slower than the page and settling from a slight zoom, the name faster than it */
 .dom-street { margin-top: 120px; }
 .dom-street:first-of-type { margin-top: 56px; }
-.street-band { --bp: .5; position: relative; margin: 0 calc(50% - 50vw); height: clamp(230px, 40vh, 410px); /* r348 (Daniel): about 58% of the old clamp(380px, 68vh, 700px) */ color: #fff; isolation: isolate; contain: layout paint; }
+.street-band { --bp: .5; position: relative; margin: 0 calc(50% - 50vw); height: clamp(262px, 45.6vh, 467px); /* r348 (Daniel): about 58% of the old clamp(380px, 68vh, 700px); r441 (TASK-152, Coz): 14% taller, was clamp(230px, 40vh, 410px) */ color: #fff; isolation: isolate; contain: layout paint; }
 .sb-stage { position: absolute; inset: 0; overflow: hidden; background: color-mix(in srgb, var(--dc) 55%, var(--ink)); }
 .sb-media { position: absolute; inset: -9% 0; transform: translate3d(0, calc((var(--bp) - .5) * 15%), 0) scale(calc(1.08 - var(--bp) * .08)); transform-origin: 50% 40%; will-change: transform; }
 .sb-pic, .sb-pic img, .sb-vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .sb-vid { opacity: 0; transition: opacity 1s var(--eoq); }
 .sb-vid.on { opacity: 1; }
+/* r441 (TASK-152, Coz: "gradientul ... perfect orizontal"): top to bottom only, the same at every x. A light shade at
+   the top, the name's shade low on the band (where the name sits), then the paper the card stands on */
 .sb-veil { position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(13,12,9,.34) 0%, rgba(13,12,9,0) 26%),
-    radial-gradient(72% 64% at 16% 64%, rgba(13,12,9,.58), rgba(13,12,9,0) 74%),
-    linear-gradient(180deg, transparent 76%, color-mix(in srgb, var(--alt) 70%, transparent) 90%, var(--alt) 100%); }
+  background: linear-gradient(180deg, transparent 76%, color-mix(in srgb, var(--alt) 70%, transparent) 90%, var(--alt) 100%),
+    linear-gradient(180deg, rgba(13,12,9,.3) 0%, rgba(13,12,9,0) 24%, rgba(13,12,9,0) 34%, rgba(13,12,9,.44) 66%, rgba(13,12,9,.44) 100%); }
 .street-band:not(.has-media) .sb-veil { background: linear-gradient(180deg, transparent 60%, var(--alt) 100%); }
 .sb-copy { position: absolute; left: 0; right: 0; bottom: calc(112px + 9%); width: min(1180px, 100% - 48px); margin: 0 auto; pointer-events: none;
   transform: translate3d(0, calc((.5 - var(--bp)) * 90px), 0); opacity: clamp(0, calc(var(--bp) * 5 - .4), 1); }
-.sb-cap { display: flex; align-items: center; margin: 0 0 14px; font-size: 12.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.88); }
-.sb-cap span:first-child { font-weight: 800; color: #fff; }
-.sb-cap span + span::before { content: ""; display: inline-block; width: 34px; height: 1px; margin: 0 14px; vertical-align: middle; background: currentColor; opacity: .7; }
 .sb-name { margin: 0; font: 900 clamp(58px, 9.6vw, 172px)/.9 var(--f); letter-spacing: -.05em; color: #fff; text-wrap: balance; text-shadow: 0 6px 60px rgba(13,12,9,.35); }
-.sb-pp { position: absolute; right: 18px; top: 18px; z-index: 2; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%;
-  background: rgba(13,12,9,.42); color: #fff; cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background .3s; }
-.sb-pp[hidden] { display: none; }
-.sb-pp:hover { background: rgba(13,12,9,.66); }
-.sb-pp:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.sb-pp i { width: 12px; height: 14px; border-left: 4px solid #fff; border-right: 4px solid #fff; box-sizing: border-box; }
-.sb-pp[aria-pressed="true"] i { width: 0; height: 0; margin-left: 4px; border-right: 0; border-left: 12px solid #fff; border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
 .street-band + .street-head { margin-top: -96px; z-index: 2; }
+/* r443 (TASK-153, Daniel: WCAG 2.2.2): the clip's pause, under the band, in the street card's top corner, never on the
+   clip. Quiet: a thin ring in ink, the icon in ink; filled on hover. Hidden until the clip plays (site.js) */
+.sb-pp { position: absolute; right: 20px; top: 20px; z-index: 1; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 1.5px solid currentColor; border-radius: 50%;
+  background: transparent; color: color-mix(in srgb, var(--ink) 80%, transparent); cursor: pointer; transition: background .15s, color .15s; }
+.sb-pp[hidden] { display: none; }
+.sb-pp::before { content: ""; position: absolute; inset: -4px; }
+.sb-pp:hover { background: var(--ink); color: var(--paper); }
+.sb-pp:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sb-pp i { width: 11px; height: 13px; border-left: 3.5px solid currentColor; border-right: 3.5px solid currentColor; box-sizing: border-box; }
+.sb-pp[aria-pressed="true"] i { width: 0; height: 0; margin-left: 3px; border-right: 0; border-left: 11px solid currentColor; border-top: 6.5px solid transparent; border-bottom: 6.5px solid transparent; }
 .dom-street .street-head { scale: calc(.96 + var(--sp, 1) * .04); transform-origin: 50% 0; }
 @media (max-width: 700px) {
-  .street-band { height: min(68vw, 46svh); }
   .sb-copy { bottom: calc(76px + 13%); width: calc(100% - 36px); }
   .sb-name { font-size: clamp(44px, 13.4vw, 72px); }
-  .sb-cap { font-size: 11px; margin-bottom: 10px; }
   .street-band + .street-head { margin-top: -60px; }
-  .dom-street { margin-top: 84px; }
   .sb-pp { right: 12px; top: 12px; width: 36px; height: 36px; }
+  .dom-street { margin-top: 84px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .street-band { --bp: .5 !important; } .sb-media { transform: scale(1.04); } .sb-copy { transform: none; opacity: 1; }
@@ -1465,16 +1462,10 @@ html.embed .drive-mini { display: none; }
   .streets-nav .sn-ico { width: 30px; height: 30px; }
 }
 
-/* r359: the street's way into the city, on its banner, right side; the title never rides up under the header and the
-   street switch (site.js --cf fades it before it gets there; the parallax range is shorter) */
+/* r359: the title never rides up under the header and the street switch (site.js --cf fades it before it gets there;
+   the parallax range is shorter). r441: the drive pill that sat on the banner's right is gone */
 .sb-copy { transform: translate3d(0, calc((.5 - var(--bp)) * 56px), 0); opacity: min(clamp(0, calc(var(--bp) * 5 - .4), 1), var(--cf, 1)); }
-.sb-top { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 10px; }
-.sb-top .sb-cap { margin: 0; }
-.sb-drive { pointer-events: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 10px; padding: 13px 22px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: rgba(13,12,9,.18); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); text-decoration: none; font-weight: 800; font-size: 16px; white-space: nowrap; transition: background .15s, color .15s; }
-.sb-drive::after { content: "→"; }
-.sb-drive:hover { background: #fff; color: var(--ink); }
-.sb-drive:focus-visible { outline: 3px solid var(--y); outline-offset: 3px; }
-@media (max-width: 700px) { .street-band { height: min(84vw, 54svh); } .sb-top { flex-wrap: wrap; gap: 10px; } .sb-drive { padding: 8px 14px; font-size: 13px; gap: 8px; } }
+@media (max-width: 700px) { .street-band { height: min(95.76vw, 61.56svh); } /* r441 (TASK-152): 14% taller, was min(84vw, 54svh) */ }
 
 /* r359: the first fold's quiet second way: the scenic route, under the three rows */
 .pw-alt { position: relative; z-index: 2; width: 100vw; max-width: 100vw; margin: 22px 0 0; text-align: center; }
@@ -1517,7 +1508,7 @@ html { touch-action: manipulation; }
 .dk-host:hover { translate: 0 -2px; box-shadow: 0 0 0 2.5px var(--y), 0 12px 24px rgba(13,12,9,.18) !important; }
 .dk-host:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 4px; }
 .dk-host > span:not(.dk) { color: var(--ink); }
-.hc-card .dk-host, .street-band .dk-host { box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38) !important; }
+.hc-card .dk-host { box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38) !important; }
 .drive-cta .dk-host { box-shadow: 0 0 0 2.5px var(--ink), 0 6px 0 rgba(13,12,9,.18) !important; }
 .dk { --dk-h: calc(var(--dk-w, 46px) * 34 / 56); position: absolute; left: var(--dk-x, 12px); top: 50%; width: var(--dk-w, 46px); height: var(--dk-h); margin-top: calc(var(--dk-h) / -2); overflow: hidden; pointer-events: none; filter: drop-shadow(0 2px 1.5px rgba(13,12,9,.28)); transition: translate .4s cubic-bezier(.3,1.3,.5,1); }
 .dk-roll { display: block; width: calc(var(--dk-w, 46px) * 10); height: 100%; background: var(--dk-s) 0 0 / var(--dk-w, 46px) 100% no-repeat; }
@@ -1527,33 +1518,12 @@ html { touch-action: manipulation; }
 @keyframes dkRoll { to { transform: translateX(-100%); } }
 /* the phone's "Drive" in the header: a smaller car, so the pill keeps the logo's room at 360 */
 .drive-mini.dk-host { --dk-w: 36px; --dk-x: 9px; --dk-g: 7px; height: 44px; padding-right: 14px; margin-left: 8px; }
-/* the street banners' ghost pill: the parked still, in the flow, the same inset and room before the words */
-.sb-drive .dk { --dk-w: 46px; position: relative; left: auto; top: auto; display: inline-block; flex: 0 0 var(--dk-w); margin: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
-.sb-drive:has(.dk) { padding-block: 12px; padding-left: 12px; gap: 12px; }
-.sb-ds { display: none; }
 /* r375: on a desktop "The Shortest Shortcut" broke onto two lines and pushed the number and the pill above the band,
    where contain: paint cut them off; a long name keeps one line */
 @media (min-width: 701px) { .sb-name.is-long { font-size: clamp(52px, 7vw, 124px); } }
-/* r375 (Daniel, 29 Oct: "The 'Take a drive' buttons on the street headers sit badly on mobile"): on a phone the pill
-   was wedged between the number and the name (right-aligned next to "01" from 390 up, on its own row at 360, 10 px over
-   the title) and outline-only on a busy video. Now: number, name, then the pill under the name, left-aligned with it,
-   auto width, solid paper with the yellow ring of the site's other drive pills, 48 px tall, one line ("Drive this street"),
-   the parked car inside. .sb-top dissolves (display: contents) so the order is set here and desktop keeps its row */
-@media (max-width: 700px) {
-  .sb-copy { display: flex; flex-direction: column; align-items: flex-start; bottom: calc(70px + 6%); }
-  .sb-top { display: contents; }
-  .sb-top .sb-cap { order: 0; margin: 0 0 8px; }
-  .sb-name { order: 1; }
-  .sb-dl { display: none; } .sb-ds { display: inline; }
-  .sb-drive { order: 2; margin-top: 16px; min-height: 48px; box-sizing: border-box; padding: 0 18px 0 10px; gap: 10px; border: 0; background: var(--paper); color: var(--ink);
-    -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 15px; letter-spacing: -.005em;
-    box-shadow: 0 0 0 2.5px var(--y), 0 10px 26px rgba(0,0,0,.38); transition: translate .2s var(--eoq), box-shadow .2s var(--eoq); }
-  .sb-drive:has(.dk) { padding-block: 0; padding-left: 10px; gap: 10px; }
-  .sb-drive .dk { --dk-w: 44px; }
-  .sb-drive:hover { background: var(--paper); color: var(--ink); }
-  .sb-drive:active .dk { translate: 5px 0; transition-duration: .12s; }
-  .sb-drive:focus-visible { outline: 3px solid var(--um, #2840F0); outline-offset: 4px; }
-}
+/* r441 (TASK-152): the band carries only the name now; on a phone it sits a little lower, just over the card (r375's
+   bottom, kept when its pill went) */
+@media (max-width: 700px) { .sb-copy { bottom: calc(70px + 6%); } }
 /* a full-width pill on a phone: the label centred in the paper the car leaves free, on one line in Romanian at 360 too */
 @media (max-width: 700px) { .hc-ed-a .btn.dk-host { padding-right: 16px; } }
 @media (max-width: 380px) { .hc-ed-a .btn.dk-host { --dk-x: 10px; --dk-g: 10px; font-size: 15px; min-height: 44px; } }

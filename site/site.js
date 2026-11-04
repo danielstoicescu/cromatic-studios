@@ -365,13 +365,14 @@
   // ---- TASK-139 ----
   // the streets' bands (r346): each clip gets its sources once the page has loaded and the band is near the screen,
   // never with reduced motion, Save-Data or 2g (the poster stays the band). A phone takes the phone cut. Each one plays
-  // only while on screen and in a visible tab, or until its button pauses it; it fades in over its poster once it plays
+  // only while on screen and in a visible tab, or until its button pauses it (r443: the button sits under the band, in the
+  // street card, shown once the clip plays; r441 took it off the clip); it fades in over its poster once it plays
   const sbs = [...d.querySelectorAll(".street-band .sb-vid")];
   if (sbs.length) {
     const cn = navigator.connection || {}, slow = cn.saveData || /(^|-)2g$/.test(cn.effectiveType || "");
     const mq = matchMedia("(max-width: 700px)");
     if (!reduced && !slow && "IntersectionObserver" in window) {
-      const st = new Map(sbs.map((v) => [v, { near: false, seen: false, loaded: false, paused: false, pp: v.closest(".street-band").querySelector(".sb-pp") }]));
+      const st = new Map(sbs.map((v) => [v, { seen: false, loaded: false, paused: false, pp: v.closest(".dom-street")?.querySelector(".sb-pp") }]));
       const set = (v) => { const s = v.dataset, m = mq.matches; v.innerHTML = vSrc([m ? s.mw : s.dw, (m && s.m) || s.d]); v.load(); };
       const sync = (v) => { const o = st.get(v); if (!o.loaded) return; if (o.seen && !o.paused && !d.hidden) v.play().catch(() => {}); else v.pause(); };
       const start = (v) => { const o = st.get(v); if (o.loaded) return; o.loaded = true; v.addEventListener("playing", () => { v.classList.add("on"); if (o.pp) o.pp.hidden = false; }, { once: true }); set(v); };
@@ -383,7 +384,8 @@
       if (d.readyState === "complete") go(); else addEventListener("load", go, { once: true });
       d.addEventListener("visibilitychange", () => sbs.forEach(sync));
       mq.addEventListener?.("change", () => sbs.forEach((v) => { if (st.get(v).loaded) { set(v); sync(v); } }));
-      st.forEach((o, v) => o.pp && o.pp.addEventListener("click", () => { o.paused = !o.paused; o.pp.setAttribute("aria-pressed", String(o.paused)); o.pp.setAttribute("aria-label", o.paused ? (RO ? "Pornește animația" : "Play the animation") : (RO ? "Oprește animația" : "Pause the animation")); sync(v); }));
+      // one label (from the page, so in its language), the pressed state says paused
+      st.forEach((o, v) => o.pp && o.pp.addEventListener("click", () => { o.paused = !o.paused; o.pp.setAttribute("aria-pressed", String(o.paused)); sync(v); }));
     }
   }
   // the city that opens the portfolio: its word turns place → facade → brand once, when it is first seen
