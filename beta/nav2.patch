@@ -101,7 +101,7 @@ index cf27113..a7113e5 100644
 + "Not sure where you start? <a href=\"#contact\">Tell us the dream</a> and we will find the place together.": "Nu știi de unde să începi? <a href=\"#contact\">Spune-ne visul</a> și găsim locul împreună."
  }
 diff --git a/site/render.mjs b/site/render.mjs
-index ef4c169..c2970b0 100644
+index ef4c169..6676b8a 100644
 --- a/site/render.mjs
 +++ b/site/render.mjs
 @@ -1,7 +1,7 @@
@@ -113,17 +113,37 @@ index ef4c169..c2970b0 100644
  import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
  import { SAME_AS, clip } from "../build/seo-pages.mjs";
  import { existsSync } from "node:fs";
-@@ -314,7 +314,8 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+@@ -314,7 +314,28 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
        ${small ? zdRow() : ""}
      </div>`;
    }).join("");
 -  const SVC_LINKS = { "Branding & Design": ["brand-strategy", "brand-identity"], "Video Production": ["video-production"], "UX & UI Design": ["websites-apps"], "Growth & Content": ["social-media-content"] };
 +  // r449: the five service pages with their home card (data.mjs: colour, what you get, for when) and the yellow heart as a drawing, not an emoji
 +  const SVC5 = SERVICE_PAGES.map((x) => ({ ...x, ...(SERVICE_CARDS[x.slug] || {}) })).filter((x) => x.get);
++  // r450s (Daniel, 10 Nov: "mult mai mult ux, poate ui mai cool, cu niste illustrations"): one drawing per service, in code, in the
++  // house shapes (flat fills, one ink line, the four-point star). Each is drawn in its END state (what a still page, a
++  // reduced-motion visitor or a printer sees); the classes s5-* only say how it gets there when it plays (site.css).
++  // They sit in their own element beside the text: a block with an <svg> inside is skipped by the Romanian pass.
++  const S5_STAR = "M0-18C2-6 6-2 18 0 6 2 2 6 0 18-2 6-6 2-18 0-6-2-2-6 0-18Z";
++  const s5svg = (inner) => `<svg viewBox="0 0 320 220" focusable="false"><g stroke="#0d0c09" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${inner}</g></svg>`;
++  const s5who = (x, y, r, fill, d) => `<g class="s5-in" style="--d:${d}"><rect x="${x - r - 4}" y="${y + r - 3}" width="${2 * r + 8}" height="130" rx="${r + 4}" fill="${fill}"/><circle cx="${x}" cy="${y}" r="${r}" fill="${fill}"/></g>`;
++  const SV5_ART = {
++    // one table seen from above, two coffees, and the words that fall into one sentence (with its full stop); the dream is the star
++    "brand-strategy": s5svg(`<circle cx="160" cy="114" r="92" fill="#fbfaf5"/><rect x="72" y="52" width="22" height="11" rx="5.5" fill="#fff" transform="rotate(45 104 62)"/><circle cx="104" cy="62" r="17" fill="#fff"/><circle cx="104" cy="62" r="11" fill="#0d0c09" stroke="none"/><rect x="226" y="160.5" width="22" height="11" rx="5.5" fill="#fff" transform="rotate(45 216 166)"/><circle cx="216" cy="166" r="17" fill="#fff"/><circle cx="216" cy="166" r="11" fill="#0d0c09" stroke="none"/><g transform="rotate(-14 118 164)"><rect x="100" y="142" width="36" height="46" rx="5" fill="#fff"/><path d="M108 155h20M108 164h20M108 173h12" fill="none"/></g><rect class="s5-w" style="--x:-14px;--y:-34px;--r:-18deg" x="84" y="105" width="30" height="18" rx="4" fill="#FED012"/><rect class="s5-w" style="--x:20px;--y:30px;--r:12deg" x="119" y="105" width="40" height="18" rx="4" fill="#119BFE"/><rect class="s5-w" style="--x:-30px;--y:28px;--r:24deg" x="164" y="105" width="22" height="18" rx="4" fill="#F65342"/><rect class="s5-w" style="--x:8px;--y:-32px;--r:-10deg" x="191" y="105" width="34" height="18" rx="4" fill="#B098C8"/><circle class="s5-in" style="--d:9" cx="235" cy="118" r="4.5" fill="#0d0c09" stroke="none"/><g transform="translate(274 42)"><path class="s5-spin" d="${S5_STAR}" fill="#FED012"/></g>`),
++    // the three sheets of an identity, fanned out of one pile: colour, type, the mark
++    "brand-identity": s5svg(`<g transform="translate(80 116) rotate(-9)"><g class="s5-fan" style="--x:80px;--r:9deg"><rect x="-40" y="-54" width="80" height="108" rx="14" fill="#fff"/><circle cy="-28" r="11" fill="#28C840"/><circle r="11" fill="#119BFE"/><circle cy="28" r="11" fill="#F65342"/></g></g><g transform="translate(240 116) rotate(9)"><g class="s5-fan" style="--x:-80px;--r:-9deg"><rect x="-40" y="-54" width="80" height="108" rx="14" fill="#fff"/><circle r="26" fill="#119BFE"/><path class="s5-spin" d="${S5_STAR}" fill="#fff"/></g></g><g transform="translate(160 108)"><g class="s5-pop"><rect x="-47" y="-62" width="94" height="124" rx="16" fill="#0d0c09"/><text y="17" text-anchor="middle" font-size="50" font-weight="800" letter-spacing="-1.5" fill="#fbfaf5" stroke="none">Aa</text></g></g>`),
++    // a page being built block by block, its phone twin, and the pointer that arrives on the button
++    "websites-apps": s5svg(`<rect x="30" y="28" width="216" height="162" rx="14" fill="#fbfaf5"/><path d="M30 54h216" fill="none"/><circle cx="48" cy="41" r="4" fill="#F65342" stroke-width="1.5"/><circle cx="62" cy="41" r="4" fill="#FED012" stroke-width="1.5"/><circle cx="76" cy="41" r="4" fill="#28C840" stroke-width="1.5"/><rect class="s5-in" style="--d:0" x="46" y="68" width="104" height="48" rx="8" fill="#FED012"/><rect class="s5-in" style="--d:1" x="162" y="72" width="52" height="8" rx="4" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:2" x="162" y="87" width="36" height="8" rx="4" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:3" x="162" y="102" width="44" height="16" rx="8" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:4" x="46" y="128" width="54" height="46" rx="8" fill="#fff"/><rect class="s5-in" style="--d:5" x="110" y="128" width="54" height="46" rx="8" fill="#fff"/><rect class="s5-in" style="--d:6" x="174" y="128" width="54" height="46" rx="8" fill="#fff"/><rect x="222" y="70" width="72" height="134" rx="14" fill="#fff"/><rect class="s5-in" style="--d:7" x="232" y="86" width="52" height="42" rx="7" fill="#28C840"/><rect class="s5-in" style="--d:8" x="232" y="138" width="44" height="7" rx="3.5" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:9" x="232" y="151" width="30" height="7" rx="3.5" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:10" x="232" y="170" width="52" height="18" rx="9" fill="#F65342"/><g transform="translate(186 108)"><path class="s5-cur" d="M0 0v23l6-6 5 10 5-2.500-5-10h9z" fill="#fff" stroke-width="2"/></g>`),
++    // the slate claps, the sound comes up: film, with post and sound in house
++    "video-production": s5svg(`<rect x="70" y="96" width="180" height="104" rx="14" fill="#fbfaf5"/><circle cx="114" cy="148" r="25" fill="#FED012"/><path d="M107 136v24l20-12z" fill="#0d0c09"/>${[[158, 16], [172, 38], [186, 24], [200, 48], [214, 20], [228, 32]].map(([x, h], i) => `<rect class="s5-bar" style="--d:${i}" x="${x}" y="${148 - h / 2}" width="7" height="${h}" rx="3.5" fill="#0d0c09" stroke="none"/>`).join("")}<g class="s5-clap"><rect x="70" y="66" width="180" height="24" rx="8" fill="#0d0c09"/><path d="M96 67h18l-11 22H85zM136 67h18l-11 22h-18zM176 67h18l-11 22h-18zM216 67h18l-11 22h-18z" fill="#fbfaf5" stroke="none"/></g>`),
++    // one reel, one heart, and the crowd that gathers in front of it
++    "social-media-content": s5svg(`<rect x="116" y="12" width="88" height="134" rx="16" fill="#fbfaf5"/><path class="s5-beat" d="M160 96c-24-16-26-38-12-40 7-1 11 4 12 8 1-4 5-9 12-8 14 2 12 24-12 40z" fill="#FED012"/><rect x="134" y="114" width="52" height="8" rx="4" fill="#0d0c09" stroke="none"/><rect x="134" y="127" width="30" height="8" rx="4" fill="#0d0c09" stroke="none"/>${[[-4, "#fff"], [40, "#119BFE"], [84, "#fff"], [236, "#28C840"], [280, "#FED012"], [326, "#119BFE"]].map(([x, c], i) => s5who(x, 158, 13, c, i * 2 + 1)).join("")}${[[-28, "#28C840"], [18, "#FED012"], [62, "#0d0c09"], [110, "#fff"], [160, "#F65342"], [210, "#119BFE"], [258, "#fff"], [304, "#F65342"], [350, "#FED012"]].map(([x, c], i) => s5who(x, 192, 17, c, i * 2)).join("")}`)
++  };
++  const SV5_DREAM = { "brand-strategy": "Branding", "brand-identity": "Branding", "websites-apps": "Website / App", "video-production": "Video", "social-media-content": "Growth & Social" }; // the boarding pass chip (build/boarding.mjs, data-v) each card ticks on the way to #contact
    const STREET_INK = { A: "#0d0c09", B: "#0d0c09", C: "#0d0c09", D: "#0d0c09", E: "#0d0c09" }; // r387: ink on the Coffee green (8.9:1) and the Fintech blue (6.4:1), was white (2.22, 2.93)
    const SITE_TITLE = "Cromatic Studios · Branding, web & film studio in Bucharest"; // r356: <= 60 characters (the home page now)
    // r356: <= 155 characters
-@@ -394,12 +395,28 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
+@@ -394,12 +415,28 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
        }
        if (rows.some((r) => r.length < 3)) return "";
        if (first) wall.lead = rows[0].slice(0, 2).map((x) => x.page); // r381: preloaded in the head (the first paint shows row 1 from its start)
@@ -158,7 +178,7 @@ index ef4c169..c2970b0 100644
    </section>`;
      };
      // r381: the wall's first two covers (row 1 from its start: what the first paint shows, before site.js slides the
-@@ -413,20 +430,22 @@ ${header(true)}
+@@ -413,20 +450,31 @@ ${header(true)}
    ${/* r349 (Daniel, new order): the wall of work is the first fold, under one line; then the four chapters; then the
       drive (half a screen) where the "place, facade, brand" fold was; then the streets */ ""}${wallFirst}
  
@@ -182,19 +202,28 @@ index ef4c169..c2970b0 100644
 +      <p class="eyebrow mono">Services</p>
 +      <h2 class="sv5-h">From a dream to a <em>crowd</em>.</h2>
 +      <p class="sv5-lead">Five things we do, in the order most brands need them. Start wherever you are.</p>
-+      <ol class="sv5-list">
-+        ${SVC5.map((x) => `<li class="sv5-card" style="--sc:${x.c}">
-+          <h3><a href="/services/${x.slug}/">${esc(x.name)}</a></h3>
-+          <p class="sv5-p"><span class="mono">You get</span> ${esc(x.get)}</p>
-+          <p class="sv5-p"><span class="mono">For when</span> ${esc(x.when)}</p>
-+          <span class="sv5-go" aria-hidden="true">See how we do it <i>→</i></span>
++      ${/* r450s: the five as stops on one road. A stop's head (name + "for when") is always in view and is the control; its
++         panel (the drawing, "you get", the two ways on) opens beside it on a wide screen and under it on a phone, one at
++         a time. All ten phrases are in the document from the start; with no script every panel is simply open. */ ""}<ol class="sv5-list">
++        ${SVC5.map((x, i) => `<li class="sv5-card${i ? "" : " on"}" style="--sc:${x.c};--i:${i + 1}">
++          <div class="sv5-head">
++            <h3><button type="button" id="sv5-b${i}" aria-expanded="${i ? "false" : "true"}" aria-controls="sv5-p${i}">${esc(x.name)}</button></h3>
++            <p class="sv5-p sv5-when"><span class="mono">For when</span> ${esc(x.when)}</p>
++          </div>
++          <div class="sv5-panel" id="sv5-p${i}" role="region" aria-labelledby="sv5-b${i}">
++            <div class="sv5-art" aria-hidden="true">${SV5_ART[x.slug] || ""}</div>
++            <div class="sv5-body">
++              <p class="sv5-p"><span class="mono">You get</span> ${esc(x.get)}</p>
++              <div class="sv5-act"><a class="sv5-go" href="/services/${x.slug}/" aria-describedby="sv5-b${i}">See how we do it <i>→</i></a><a class="sv5-start" href="#contact" data-dream="${esc(SV5_DREAM[x.slug] || "")}">Start a project</a></div>
++            </div>
++          </div>
 +        </li>`).join("")}
 +      </ol>
 +      <p class="sv5-end">Not sure where you start? <a href="#contact">Tell us the dream</a> and we will find the place together.</p>
      </div>
    </section>
  
-@@ -477,22 +496,6 @@ ${header(true)}
+@@ -477,22 +525,6 @@ ${header(true)}
      </div>
     </div>
    </section>
@@ -218,10 +247,10 @@ index ef4c169..c2970b0 100644
      <div class="wrap studio">
        <div class="studio-txt">
 diff --git a/site/site.css b/site/site.css
-index fe01666..104f17f 100644
+index fe01666..56eeadb 100644
 --- a/site/site.css
 +++ b/site/site.css
-@@ -1761,3 +1761,159 @@ html.hdr-off .streets-nav { top: 12px; }
+@@ -1761,3 +1761,220 @@ html.hdr-off .streets-nav { top: 12px; }
  .cb-txt { transition: top .2s var(--eoq); }
  html.hdr-off .cb-txt { top: 28px; }
  @media (prefers-reduced-motion: reduce) { .hdr, .streets-nav, .cb-txt { transition: none; } }
@@ -330,7 +359,7 @@ index fe01666..104f17f 100644
 +@media (max-width: 700px) {
 +  .f5c .pw-row.pw-still { grid-template-columns: repeat(6, minmax(0, 1fr)); width: min(100%, 54svh); }
 +  .f5c .pw-case:nth-child(n + 9) { display: none; }
-+  .pwall.f5c .pw-case { padding: 6px; --d: 2; }
++  .pwall.f5c .pw-case { padding: 3px; border-radius: 7px; --d: 2; }
 +  .f5c .pw-case:nth-child(1) { grid-area: 1 / 1 / auto / span 2; } .f5c .pw-case:nth-child(2) { grid-area: 1 / 5 / auto / span 2; }
 +  .f5c .pw-case:nth-child(3) { grid-area: 2 / 1 / auto / span 2; } .f5c .pw-case:nth-child(4) { grid-area: 2 / 3 / auto / span 2; --d: 0; } .f5c .pw-case:nth-child(5) { grid-area: 2 / 5 / auto / span 2; }
 +  .f5c .pw-case:nth-child(6) { grid-area: 3 / 2 / auto / span 2; } .f5c .pw-case:nth-child(7) { grid-area: 3 / 4 / auto / span 2; }
@@ -341,48 +370,109 @@ index fe01666..104f17f 100644
 +}
 +@media (prefers-reduced-motion: reduce) { .f5c .f5-wall { transition: none; } }
 +
-+/* r449 (Daniel, 10 Nov: "sa facem cardurile de servicii si zona asta cat mai UX si clara"). One services section, right under
-+   the fold: the five service pages as five rows, in the order of the road. Name, what you get, for when, the way in. The
-+   whole card is the link (the h3's link stretched over it). All of it readable from the first paint: no reveal, no assemble. */
++/* r449 (Daniel, 10 Nov: "sa facem cardurile de servicii si zona asta cat mai UX si clara") + r450s (Daniel, 10 Nov: "mult mai
++   mult ux, poate ui mai cool, cu niste illustrations si ceva mai multe interactiuni si microinteractiuni"). One services
++   section, right under the fold: five stops on one road, in the order most brands need them. A stop's head (name + "for
++   when") is always readable and is the control; its panel (the drawing, "you get", the two ways on) opens one at a time:
++   beside the list on a wide screen (a stage, nothing moves when it changes), under its head on a phone (five short rows
++   and one open card, not five tall cards). With no script every panel is open. Nothing here waits on an animation. */
 +.sv5 { padding-top: clamp(52px, 7vw, 96px); }
 +.sv5-h { margin: 0 0 14px; max-width: 12em; font-size: clamp(34px, 5.2vw, 72px); font-weight: 900; line-height: 1; letter-spacing: -.035em; }
 +.sv5-h em { font-style: italic; }
 +.sv5-lead { margin: 0 0 clamp(26px, 4vw, 46px); max-width: 32em; font-size: clamp(18px, 1.5vw, 21px); }
-+.sv5-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
-+.sv5-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1.15fr) auto; align-items: start; gap: 10px clamp(20px, 2.6vw, 40px); padding: 26px 28px; border: var(--line); border-radius: 24px; background: #fff; transition: background .15s linear; }
-+.sv5-card h3 { display: flex; align-items: baseline; gap: .42em; margin: 0; font-size: clamp(24px, 2.1vw, 31px); font-weight: 800; line-height: 1.08; letter-spacing: -.025em; }
-+.sv5-card h3::before { content: ""; flex: 0 0 auto; width: .46em; height: .46em; border: var(--line); border-radius: 50%; background: var(--sc); transition: background .15s linear; }
-+.sv5-card h3 a { color: inherit; text-decoration: none; }
-+.sv5-card h3 a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-+.sv5-card h3 a:focus-visible { outline: none; }
-+.sv5-card:has(a:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
++.sv5-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
++.sv5-card { border: var(--line); border-radius: 22px; background: #fff; }
++.sv5-head { position: relative; padding: 20px 62px 20px 50px; border-radius: 22px; }
++.sv5-card h3 { margin: 0 0 8px; font-size: clamp(24px, 2.1vw, 31px); font-weight: 800; line-height: 1.08; letter-spacing: -.025em; }
++.sv5-card h3::before { content: ""; position: absolute; z-index: 1; left: 20px; top: 28px; width: 16px; height: 16px; box-sizing: border-box; border: var(--line); border-radius: 50%; background: var(--sc); transition: scale .15s var(--bounce); }
++.sv5-card.on h3::before { scale: 1.3; }
++.sv5-card button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
++.sv5-card button::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
++.sv5-card button:focus-visible { outline: none; }
++.sv5-head:has(button:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
 +.sv5-p { margin: 0; font-size: 17px; line-height: 1.38; }
-+.sv5-p .mono { display: block; margin-bottom: 6px; color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
-+.sv5-go { align-self: center; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border: var(--line); border-radius: 999px; background: var(--paper); font-size: 16px; font-weight: 700; white-space: nowrap; transition: background .15s linear, color .15s linear; }
++.sv5-p .mono { display: block; margin-bottom: 4px; color: var(--muted); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
++/* Daniel, 10 Nov: "for when cu font mai mic, you are launching sa se vada mai bine" - the label whispers, the sentence is the second voice after the name */
++.sv5-when { font-size: clamp(19px, 1.55vw, 22px); font-weight: 600; line-height: 1.28; letter-spacing: -.01em; }
++.sv5-card h3 { margin-bottom: 12px; }
++/* the plus of a closed stop (phone and tablet; the wide stage has no use for it) */
++.sv5-head::after { content: ""; position: absolute; right: 18px; top: 20px; width: 32px; height: 32px; box-sizing: border-box; border: var(--line); border-radius: 50%; pointer-events: none;
++  background: linear-gradient(var(--ink), var(--ink)) 50% / 12px 2px no-repeat, linear-gradient(var(--ink), var(--ink)) 50% / 2px 12px no-repeat, var(--paper); transition: rotate .15s var(--eoq), background-color .15s linear; }
++.sv5-card.on .sv5-head::after { background: linear-gradient(var(--ink), var(--ink)) 50% / 12px 2px no-repeat, var(--sc); rotate: 180deg; }
++html:not(.js) .sv5-head::after { display: none; }
++.sv5-panel { padding: 0 16px 18px; }
++.js .sv5-card:not(.on) .sv5-panel { display: none; }
++.sv5-art { border: var(--line); border-radius: 16px; background: var(--sc); overflow: hidden; }
++.sv5-art svg { display: block; width: 100%; height: auto; aspect-ratio: 320 / 220; overflow: visible; }
++.sv5-body { padding: 18px 4px 0; }
++.sv5-act { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
++.sv5-go, .sv5-start { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border: var(--line); border-radius: 999px; font-size: 16px; font-weight: 700; white-space: nowrap; text-decoration: none; transition: background .15s linear, color .15s linear, scale .1s linear; }
++.sv5-go { background: var(--ink); color: var(--paper); }
++.sv5-start { background: #fff; color: var(--ink); }
 +.sv5-go i { font-style: normal; transition: translate .15s var(--eoq); }
++.sv5-go:active, .sv5-start:active { scale: .97; }
++.sv5-go:focus-visible, .sv5-start:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 +@media (hover: hover) {
-+  .sv5-card:hover { background: var(--sc); }
-+  .sv5-card:hover h3::before { background: var(--ink); }
-+  .sv5-card:hover .sv5-p .mono { color: var(--ink); }
-+  .sv5-card:hover .sv5-go { background: var(--ink); color: var(--paper); }
-+  .sv5-card:hover .sv5-go i { translate: 3px 0; }
++  .sv5-card:not(.on) .sv5-head:hover h3::before { scale: 1.3; }
++  .sv5-card:not(.on) .sv5-head:hover::after { background-color: var(--sc); }
++  .sv5-go:hover { background: var(--sc); color: var(--ink); }
++  .sv5-go:hover i { translate: 4px 0; }
++  .sv5-start:hover { background: var(--y); }
 +}
 +.sv5-end { margin: clamp(22px, 3vw, 34px) 0 0; font-size: clamp(17px, 1.5vw, 20px); }
 +.sv5-end a { color: inherit; font-weight: 700; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 +.sv5-end a:hover { text-decoration-thickness: 3px; }
-+@media (max-width: 1040px) {
-+  .sv5-card { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-+  .sv5-card h3, .sv5-go { grid-column: 1 / -1; }
-+  .sv5-go { justify-self: start; margin-top: 6px; }
++@media (min-width: 700px) and (max-width: 999.98px) {
++  .sv5-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 0 24px; padding: 0 20px 20px; }
++  .sv5-body { padding: 0; }
 +}
-+@media (max-width: 700px) {
-+  .sv5-list { gap: 16px; }
-+  .sv5-card { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 22px 20px; border-radius: 20px; }
-+  .sv5-card h3, .sv5-go { grid-column: auto; }
-+  .sv5-card h3 { font-size: 26px; }
++@media (min-width: 1000px) {
++  /* the wide stage: the heads are the left column (the road runs through their dots), every panel sits in the same
++     cell on the right, so the stage is as tall as the list and changing stop moves nothing */
++  .js .sv5-list { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 8px clamp(28px, 4vw, 56px); }
++  .js .sv5-card { display: contents; }
++  .js .sv5-head { grid-column: 1; grid-row: var(--i); padding: 22px 24px 22px 64px; border: 1px solid transparent; transition: background .15s linear, border-color .15s linear; }
++  .js .sv5-card.on .sv5-head { border-color: var(--ink); background: var(--sc); }
++  .js .sv5-card.on .sv5-when .mono { color: var(--ink); }
++  .js .sv5-card.on h3::before { background: #fff; }
++  .js .sv5-head::after { display: none; }
++  .js .sv5-head::before { content: ""; position: absolute; left: 31.5px; top: -5px; bottom: -5px; width: 1px; background: var(--ink); }
++  .js .sv5-card:first-child .sv5-head::before { top: 38px; }
++  .js .sv5-card:last-child .sv5-head::before { bottom: auto; height: 39px; }
++  .js .sv5-card h3::before { left: 24px; top: 30px; }
++  .js .sv5-panel { grid-column: 2; grid-row: 1 / span 5; display: flex; flex-direction: column; padding: 0; border: var(--line); border-radius: 28px; background: #fff; overflow: hidden; visibility: hidden; opacity: 0; }
++  .js .sv5-card.on .sv5-panel { visibility: visible; opacity: 1; transition: opacity .16s linear; }
++  .js .sv5-card:not(.on) .sv5-panel { display: flex; }
++  .js .sv5-art { flex: 1 1 auto; display: grid; place-items: center; min-height: 280px; border: 0; border-bottom: var(--line); border-radius: 0; }
++  .js .sv5-art svg { width: auto; height: min(100%, 400px); max-width: 100%; }
++  .js .sv5-body { padding: 26px 30px 30px; }
++  .js .sv5-body .sv5-p { max-width: 30em; font-size: 19px; }
 +}
++/* the drawings play once when their stop opens, when the section first comes into view, and again when pointed at or
++   tapped (site.js sets .play). Each rule says where a piece comes FROM; the drawing itself is the end state, so with
++   reduced motion (the site's blanket rule) it is simply there. Transform and opacity only. */
++.s5-in, .s5-w, .s5-spin, .s5-fan, .s5-pop, .s5-beat, .s5-bar { transform-box: fill-box; transform-origin: 50% 50%; }
++.s5-clap { transform-origin: 76px 88px; transform: rotate(-16deg); }
++.play .s5-in { animation: s5in .3s var(--bounce) calc(var(--d) * 32ms) both; }
++.play .s5-w { animation: s5w .45s var(--bounce) both; }
++.play .s5-spin { animation: s5spin .5s var(--eoq) both; }
++.play .s5-fan { animation: s5fan .42s var(--bounce) both; }
++.play .s5-pop { animation: s5pop .42s var(--bounce) both; }
++.play .s5-cur { animation: s5cur .45s var(--eoq) .28s both; }
++.play .s5-bar { animation: s5bar .36s var(--bounce) calc(.17s + var(--d) * 36ms) both; }
++.play .s5-clap { animation: s5clap .45s var(--eoq) both; }
++.play .s5-beat { animation: s5beat .4s var(--eoq) .3s both; }
++@keyframes s5in { from { opacity: 0; transform: scale(.6); } }
++@keyframes s5w { from { transform: translate(var(--x), var(--y)) rotate(var(--r)); } }
++@keyframes s5spin { from { transform: rotate(-90deg) scale(.6); } }
++@keyframes s5fan { from { transform: translate(var(--x)) rotate(var(--r)); } }
++@keyframes s5pop { from { transform: scale(.86); } }
++@keyframes s5cur { from { transform: translate(-64px, 58px); } }
++@keyframes s5bar { from { transform: scaleY(.2); } }
++@keyframes s5clap { 38%, 58% { transform: rotate(0deg); } }
++@keyframes s5beat { 40% { transform: scale(1.25); } }
 diff --git a/site/site.js b/site/site.js
-index 820a82b..b527b09 100644
+index 820a82b..c131cd6 100644
 --- a/site/site.js
 +++ b/site/site.js
 @@ -397,7 +397,7 @@
@@ -403,7 +493,56 @@ index 820a82b..b527b09 100644
      const v = matchMedia("(max-width: 700px)").matches ? 3.5 : 5.6; // r362 (Daniel: "poate fi mai lent"): 0.7x of r360
      const loop = (t) => {
        WALL.raf = 0;
-@@ -644,17 +644,18 @@
+@@ -610,6 +610,48 @@
+     c.addEventListener("pointerleave", () => { c.style.transform = ""; });
+   });
+ 
++  // r450s (Daniel, 10 Nov: "mult mai mult ux ... illustrations si ceva mai multe interactiuni si microinteractiuni"): the home's
++  // five services. One stop open at a time: beside the list on a wide screen (pointing at a head, focusing it or the
++  // arrow keys change the stage), under its head on a phone (a tap; the tapped head stays where the finger is while the
++  // one above it closes). A drawing plays when its stop opens, when the section comes into view, and when pointed at or
++  // tapped. "Start a project" ticks the stop's own dream on the boarding pass on its way there. No timers hold anything.
++  const sv = d.querySelector(".sv5-list");
++  if (sv) {
++    const cards = [...sv.children], wide = matchMedia("(min-width: 1000px)");
++    const play = (c) => { const a = c.querySelector(".sv5-art"); if (!a || reduced) return; a.classList.remove("play"); void a.offsetWidth; a.classList.add("play"); };
++    const set = (c, on) => { c.classList.toggle("on", on); c.querySelector("button").setAttribute("aria-expanded", String(on)); };
++    const open = (c) => {
++      if (c.classList.contains("on")) return;
++      const h = c.firstElementChild, y = h.getBoundingClientRect().top;
++      cards.forEach((x) => set(x, x === c));
++      const dy = wide.matches ? 0 : h.getBoundingClientRect().top - y;
++      if (dy) scrollBy({ top: dy, behavior: "instant" });
++      play(c);
++    };
++    let aim = 0;
++    sv.addEventListener("click", (e) => {
++      const c = e.target.closest(".sv5-card"); if (!c) return;
++      if (e.target.closest("button")) { if (!c.classList.contains("on")) open(c); else if (!wide.matches) set(c, false); return; }
++      if (e.target.closest(".sv5-art")) return play(c);
++      const s = e.target.closest(".sv5-start"), chip = s && d.querySelector('#czp-form .czp-chip[data-v="' + s.dataset.dream + '"]');
++      if (chip && chip.getAttribute("aria-pressed") !== "true") chip.click();
++    });
++    sv.addEventListener("keydown", (e) => {
++      const i = cards.indexOf(e.target.closest("button")?.closest(".sv5-card")), n = e.key === "ArrowDown" ? i + 1 : e.key === "ArrowUp" ? i - 1 : -1;
++      if (i < 0 || !cards[n]) return;
++      e.preventDefault(); cards[n].querySelector("button").focus();
++    });
++    cards.forEach((c) => {
++      const h = c.firstElementChild;
++      h.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && wide.matches) { clearTimeout(aim); aim = setTimeout(() => open(c), 60); } }); // 60 ms: crossing a head on the way to the stage does not change it
++      h.addEventListener("pointerleave", () => clearTimeout(aim));
++      h.addEventListener("focusin", (e) => { if (wide.matches && e.target.matches(":focus-visible")) open(c); });
++      c.querySelector(".sv5-art")?.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") play(c); });
++    });
++    wide.addEventListener("change", () => { if (wide.matches && !sv.querySelector(".on")) set(cards[0], true); });
++    if ("IntersectionObserver" in window) { const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { io.disconnect(); const c = sv.querySelector(".on"); if (c) play(c); } }, { threshold: 0.3 }); io.observe(sv); }
++  }
++
+   // YouTube: a poster until clicked, then the privacy-friendly embed
+   d.querySelectorAll(".yt").forEach((y) => y.querySelector(".yt-play")?.addEventListener("click", () => {
+     if (window.__ytPlay && y.hasAttribute("data-yt")) return; // r138d: the build's chromeless player takes it (build/film.mjs)
+@@ -644,17 +686,18 @@
    if (!W || !W.go || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
    var cv = document.createElement("canvas"), gl = null;
    try { gl = cv.getContext("webgl2", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: true, powerPreference: "low-power" }); } catch (e) {}
@@ -412,7 +551,8 @@ index 820a82b..b527b09 100644
    var phone = matchMedia("(max-width: 700px)").matches, Q = new URLSearchParams(location.search);
    var geo = (Q.get("crt") || "").split(",").map(Number), RK = geo[0] > 0.3 ? geo[0] : 0.85, DK = geo[1] > 0.5 ? geo[1] : 2.0;
    var TW = phone ? 384 : 560, TH = phone ? 260 : 380, TL = Math.floor(Math.log2(TW)) + 1, up2d = null;
-   var DPR = Math.min(devicePixelRatio || 1, 1.5), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 6 : 8, RAD = phone ? 10 : 12;
+-  var DPR = Math.min(devicePixelRatio || 1, 1.5), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 6 : 8, RAD = phone ? 10 : 12;
++  var DPR = Math.min(devicePixelRatio || 1, 1.5), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 3 : 8, RAD = phone ? 7 : 12;
    cv.className = "pw-gl"; cv.setAttribute("aria-hidden", "true");
 -  var VS = "#version 300 es\nlayout(location=0) in vec2 aC;layout(location=1) in vec4 iBox;layout(location=2) in vec4 iA;layout(location=3) in vec4 iG;layout(location=4) in vec4 iM;uniform vec2 uRes;out vec2 vP;flat out vec4 vBox,vA,vG,vM;void main(){vec2 p=iBox.xy+aC*iBox.zw;vP=(aC-.5)*iBox.zw;vBox=iBox;vA=iA;vG=iG;vM=iM;gl_Position=vec4(p/uRes*2.-1.,0.,1.);gl_Position.y=-gl_Position.y;}";
 -  var FS = "#version 300 es\nprecision highp float;precision highp sampler2DArray;uniform sampler2DArray uT;uniform float uPitch,uDpr,uBez,uRad,uRk,uDk,uSeed,uMask,uTime,uLimS,uLimK;uniform vec4 uLim;in vec2 vP;flat in vec4 vBox,vA,vG,vM;out vec4 o;" +
@@ -426,7 +566,7 @@ index 820a82b..b527b09 100644
      "void main(){vec2 hf=vBox.zw*.5;float aa=1./uDpr;" +
      // the set: a flat bezel with rounded corners; outside it nothing
      "float so=rr(vP,hf,uRad);float al=1.-smoothstep(-aa,aa,so);if(al<=0.){discard;}" +
-@@ -672,6 +673,8 @@
+@@ -672,6 +715,8 @@
      "float px=1./(sc*dg);if(sd>0.){vec3 cc=sd<1.6*px?vec3(.02):pl;o=vec4(cc*al,al);return;}" +
      "vec2 ras=f*.5+.5,uv=ras;float hov=vA.y,ty=vG.x,p=vG.y,s=vG.z,bl=vG.w,yy=vM.x,ln=max(60.,floor(vBox.w*uDpr/uPitch));" +
      "uv=(uv-.5)/(1.+.05*hov)+.5;" +
@@ -435,7 +575,7 @@ index 820a82b..b527b09 100644
      // the glitches (1 snow, 2 drop, 3 the horizontal hold, 4 the vertical roll)
      "float nz=0.,vbi=0.,bar=0.;" +
      "if(ty>2.5&&ty<3.5){float nb=5.,bd=floor(clamp(ras.y+.04*sin(uTime*11.+ras.y*9.+vM.y),0.,.999)*nb),sg=mod(bd,2.)*2.-1.,bc=(bd+.5)/nb;uv.x+=sg*s*(10.+14.*sin(bd*2.1+vM.y))/(2.*AB.x*dg)+sg*s*.1*(ras.y-bc);float yb=p*1.3-.2;bar=s*.6*exp(-pow((ras.y-yb)/.06,2.));}" +
-@@ -689,6 +692,8 @@
+@@ -689,6 +734,8 @@
      "if(vbi>.5){float m=(mod(ras.y+yy*1.06,1.06)-1.)/.06;col=vec3(.04)+vec3(.22)*exp(-pow((m-.5)/.12,2.));}" +
      // the hover: the picture leans in a little, its bottom darkens under the name
      "col*=1.-hov*.68*smoothstep(.42,1.02,ras.y);" +
@@ -444,7 +584,7 @@ index 820a82b..b527b09 100644
      // scanlines: a Gaussian beam that widens where the picture is bright
      "float Y=ras.y*ln,fw=fwidth(Y),sgm=mix(.24,.42,clamp(lu,0.,1.)),bw=0.;for(int i=-2;i<=2;i++){float fy=fract(Y+fw*.2*float(i))-.5;bw+=exp(-.5*fy*fy/(sgm*sgm));}bw/=5.;float mn=sgm*2.5066*.95;col*=mix(1.,bw/mn,.42*(1.-smoothstep(.3,.55,fw)));" +
      // the mask (only where there are pixels enough for it): an aperture of three phosphor stripes
-@@ -708,14 +713,15 @@
+@@ -708,14 +755,15 @@
    var PAR = gl.getExtension("KHR_parallel_shader_compile"), ready = false, dead = false, U = {};
    // the covers: one layer each in a texture array, uploaded from the wall's own <img> once it is loaded and decoded
    var rowsEl = wall.querySelector(".pw-rows"), rows = [].slice.call(wall.querySelectorAll(".pw-row")), cards = [], layers = {}, NL = 0, queue = [];
@@ -464,7 +604,7 @@ index 820a82b..b527b09 100644
      tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, TL, gl.RGBA8, TW, TH, NL); // mips: the halation reads the blurred levels
      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-@@ -724,17 +730,19 @@
+@@ -724,17 +772,19 @@
      var qb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
      ibuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferData(gl.ARRAY_BUFFER, inst.byteLength, gl.DYNAMIC_DRAW);
@@ -489,7 +629,7 @@ index 820a82b..b527b09 100644
      cards.forEach(function (c) { var b = c.el.getBoundingClientRect(); c.x = b.left - r.left - (X[c.row] || 0); c.y = b.top - r.top; c.w = b.width; c.h = b.height; });
      if (ready || gl.isProgram(prog)) { gl.viewport(0, 0, cv.width, cv.height); }
    };
-@@ -755,7 +763,7 @@
+@@ -755,7 +805,7 @@
    var bloom = function (p) { return p < 0.7 ? 0 : Math.sin(Math.PI * Math.min(1, (p - 0.7) / 0.3)) * Math.exp(-2.2 * (p - 0.7) / 0.3); };
    var rollY = function (p) { var y = Math.min(1, Math.max(0, (p - 0.06) / 0.8)); return y < 0.75 ? 1.03 * Math.pow(y / 0.75, 2.2) : 1 + 0.03 * Math.cos(Math.PI * 1.5 * (y - 0.75) / 0.25) * Math.exp(-4 * (y - 0.75) / 0.25); };
    var fire = function (t) {
@@ -498,7 +638,7 @@ index 820a82b..b527b09 100644
      if (!vis.length) return;
      var c = vis[Math.floor(Math.random() * vis.length)], all = FORCE || TYPES, pool = all.filter(function (x) { return x !== lastType || all.length === 1; }), type = pool[Math.floor(Math.random() * pool.length)], R = DUR[type];
      last = c; lastType = type; live = { c: c, type: TID[type], t0: t, dur: R[0] + Math.random() * (R[1] - R[0]), f1: 22 + Math.random() * 18, f2: 41 + Math.random() * 30, ph: Math.random() * 6 };
-@@ -769,32 +777,111 @@
+@@ -769,32 +819,111 @@
      if (upd) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
      if (!next) next = t + (DEBUG ? 900 : 6000 + Math.random() * 4000);
      if (!live && t >= next) { fire(t); next = t + (DEBUG ? 1600 : 6000 + Math.random() * 4000); }
@@ -622,7 +762,7 @@ index 820a82b..b527b09 100644
  // r380 (beta; Daniel: the intro text, "fine and subtle, very modern"): after the h1's signal lock (the split and the
  // keyframes are in render.mjs + site.css), it lives with the wall. On the wall's own loop (so nothing runs while the
  // wall is off screen): on a desktop pointer it floats ±3 px against the wall, eased; as you scroll the wall away it
-@@ -804,6 +891,7 @@
+@@ -804,6 +933,7 @@
  (function () {
    var W = window.__czWall, h = document.querySelector(".pw-h.si"), wall = h && h.closest(".pwall");
    if (!W || !W.go || !h || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
