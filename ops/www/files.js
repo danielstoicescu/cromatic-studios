@@ -1,5 +1,7 @@
 // TASK-142 · /ops Fișiere (admins only). Drop a file, get a link at once; replace keeps the link; delete kills it.
 // Everything goes through /api/ops/files (ops/files.mjs); the links are /f/<id>/<name>, sandboxed by the server.
+// A file may carry a password (Daniel, 10 Nov): typed next to the drop zone for what comes next, or set later on its row.
+// The server keeps only a hash, so the password shows once, in the yellow card, and never again.
 (() => {
   "use strict";
   const body = document.getElementById("fil-body");
@@ -8,7 +10,8 @@
   const NS = "http://www.w3.org/2000/svg";
   const ACCEPT = { html: ".html,.htm,text/html", pdf: ".pdf,application/pdf", image: ".png,.jpg,.jpeg,.webp,.avif,.gif,.svg,image/*" };
   const ALL = [ACCEPT.html, ACCEPT.pdf, ACCEPT.image].join(",");
-  let files = null, room = null, asking = null, fresh = [], busy = new Map(), loading = false;
+  let files = null, room = null, asking = null, locking = null, fresh = [], busy = new Map(), loading = false;
+  const PW_MIN = 4, said = new Map(); // said: the passwords typed in this visit, by file id, for the yellow card only
 
   const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
   const ic = (id) => { const s = document.createElementNS(NS, "svg"); s.setAttribute("class", "ic"); s.setAttribute("aria-hidden", "true"); const u = document.createElementNS(NS, "use"); u.setAttribute("href", "#" + id); s.append(u); return s; };
@@ -38,12 +41,13 @@
   }
 
   // ---------- one upload: POST with progress; `to` is an id when it replaces ----------
-  function send(file, to, onProgress) {
+  function send(file, to, onProgress, pw) {
     return new Promise((done) => {
       if (room && file.size > room.fileMax) return done({ ok: false, message: "Fișierul e peste " + Math.round(room.fileMax / 1048576) + " MB." });
       const x = new XMLHttpRequest();
       x.open("POST", "/api/ops/files" + (to ? "/" + to : "") + "?name=" + encodeURIComponent(file.name));
       x.setRequestHeader("Content-Type", "application/octet-stream");
+      if (pw && !to) x.setRequestHeader("X-File-Password", encodeURIComponent(pw));
       x.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
       x.onload = () => {
         let j = null; try { j = JSON.parse(x.responseText); } catch {}
@@ -59,7 +63,10 @@
   const queue = el("div", "fil-q"); queue.setAttribute("aria-live", "polite");
   async function addAll(list) {
     list = [...list]; if (!list.length) return;
-    fresh = []; asking = null; queue.replaceChildren(); render();
+    const pw = pwIn.value.trim();
+    if (pw && pw.length < PW_MIN) { pwIn.focus(); return toast("Parola are cel puțin " + PW_MIN + " caractere. Nu am încărcat nimic.", "err"); }
+    pwIn.value = ""; // one batch, one password: the next upload starts open again
+    fresh = []; asking = null; locking = null; queue.replaceChildren(); render();
     const items = list.map((f) => {
       const row = el("div", "fil-qi"), pc = el("span", "fil-pc", "așteaptă"), bar = el("div", "fil-bar"), fill = el("i");
       bar.append(fill); row.append(el("span", "", f.name), pc, bar); queue.append(row);
@@ -67,8 +74,8 @@
     });
     for (const it of items) { // one at a time: the box is small, and the order stays the one you picked
       it.pc.textContent = "0%";
-      const r = await send(it.f, null, (p) => { const v = Math.round(p * 100); it.pc.textContent = v + "%"; it.fill.style.width = v + "%"; });
-      if (r.ok) { fresh.push(r.file); room = r.room; it.row.remove(); files = [r.file, ...(files || [])]; render(); }
+      const r = await send(it.f, null, (p) => { const v = Math.round(p * 100); it.pc.textContent = v + "%"; it.fill.style.width = v + "%"; }, pw);
+      if (r.ok) { if (pw && r.file.locked) said.set(r.file.id, pw); fresh.push(r.file); room = r.room; it.row.remove(); files = [r.file, ...(files || [])]; render(); }
       else { it.pc.remove(); it.bar.remove(); it.row.classList.add("err"); it.row.append(el("span", "fil-msg", r.message || "Nu s-a încărcat.")); }
     }
     const card = body.querySelector(".fil-ready"); // on a phone the new link would sit under the fold
@@ -92,13 +99,44 @@
 
   // ---------- deleting ----------
   async function kill(f) {
-    busy.set(f.id, -1); asking = null; render();
+    busy.set(f.id, -1); asking = null; said.delete(f.id); render();
     let j = null; try { const r = await fetch("/api/ops/files/" + f.id, { method: "DELETE", credentials: "same-origin" }); j = await r.json(); } catch {}
     busy.delete(f.id);
     if (j && (j.ok || j.error === "not_found")) { files = files.filter((x) => x.id !== f.id); fresh = fresh.filter((x) => x.id !== f.id); if (j.room) room = j.room; toast("Șters. Linkul nu mai merge."); }
     else toast((j && j.message) || "Nu s-a șters. Încearcă din nou.", "err");
     render();
     const pick = document.getElementById("fil-pick"); if (pick) pick.focus({ preventScroll: true });
+  }
+
+  // ---------- the password of a file already here ----------
+  async function lock(f, pw) {
+    let j = null; try { const r = await fetch("/api/ops/files/" + f.id + "/password", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) }); j = await r.json(); } catch {}
+    if (!j || !j.ok) { toast((j && j.message) || "Nu s-a salvat. Încearcă din nou.", "err"); if (j && j.error === "not_found") { locking = null; load(); } return false; }
+    files = files.map((x) => (x.id === f.id ? j.file : x)); fresh = fresh.map((x) => (x.id === f.id ? j.file : x));
+    if (pw) said.set(f.id, pw); else said.delete(f.id);
+    locking = null; filesSig = "";
+    toast(pw ? "Parola e pusă. Linkul o cere de acum." : "Parola e scoasă. Linkul se deschide direct.");
+    render();
+    return true;
+  }
+  function lockForm(f) {
+    const q = el("form", "fil-ask fil-pwf"), lab = el("label", "fil-pwl", f.locked ? "Parolă nouă" : "Parolă pentru link"), inp = el("input", "fil-pwi");
+    inp.type = "text"; inp.maxLength = 200; inp.autocomplete = "off"; inp.spellcheck = false; inp.setAttribute("autocapitalize", "none"); inp.placeholder = "cel puțin " + PW_MIN + " caractere";
+    lab.append(inp);
+    const no = btn("", "Renunță", null, () => { locking = null; render(); });
+    const yes = el("button", "btn sm k", "Salvează"); yes.type = "submit";
+    q.append(lab, no);
+    if (f.locked) q.append(btn("ghost", "Scoate parola", null, async (e) => { const b = e.currentTarget; b.disabled = true; if (!(await lock(f, ""))) b.disabled = false; }));
+    q.append(yes);
+    q.addEventListener("keydown", (e) => { if (e.key === "Escape") no.click(); });
+    q.onsubmit = async (e) => {
+      e.preventDefault();
+      const pw = inp.value.trim();
+      if (pw.length < PW_MIN) { inp.focus(); return toast("Parola are cel puțin " + PW_MIN + " caractere.", "err"); }
+      yes.disabled = true; if (!(await lock(f, pw))) yes.disabled = false;
+    };
+    setTimeout(() => { if (inp.isConnected) inp.focus({ preventScroll: true }); }, 0);
+    return q;
   }
 
   // ---------- drawing ----------
@@ -111,7 +149,11 @@
   pick.onclick = (e) => { e.stopPropagation(); input.click(); };
   const title = el("b"); title.append(el("span", "fil-desk", "Trage fișierele aici"), el("span", "fil-phone", "Încarcă un fișier"));
   const hint = el("p", "fil-hint");
-  zone.append(ic("i-up"), title, pick, hint, input);
+  const pwBox = el("label", "fil-pw"), pwIn = el("input", "fil-pwi");
+  pwIn.type = "text"; pwIn.id = "fil-pw"; pwIn.maxLength = 200; pwIn.autocomplete = "off"; pwIn.spellcheck = false; pwIn.setAttribute("autocapitalize", "none"); pwIn.placeholder = "fără parolă";
+  pwBox.append(ic("i-lock"), el("span", "", "Parolă (opțional)"), pwIn);
+  pwBox.onclick = (e) => e.stopPropagation(); // typing here is not "pick a file"
+  zone.append(ic("i-up"), title, pick, hint, pwBox, input);
 
   function ready() {
     if (!fresh.length) return null;
@@ -122,15 +164,22 @@
     for (const f of fresh) {
       const r = el("div", "fil-ready-i"), a = el("a", "", abs(f.url)); a.href = f.url; a.target = "_blank"; a.rel = "noopener noreferrer";
       r.append(el("b", "", f.name), a, btn("fil-copy", "Copiază linkul", "i-copy", (e) => copy(abs(f.url), e.currentTarget)));
+      const pw = f.locked && said.get(f.id);
+      if (pw) { // the only place the password shows: the server cannot give it back
+        const k = el("div", "fil-ready-pw"); k.append(ic("i-lock"), el("span", "", "Parola: "), el("code", "", pw));
+        r.append(k, btn("fil-copy fil-copy2", "Copiază link + parolă", "i-copy", (e) => copy(abs(f.url) + "\nParola: " + pw, e.currentTarget)));
+      }
       c.append(r);
     }
     return c;
   }
   function row(f) {
     const li = el("li", "fil-row"), th = el("div", "fil-th");
-    if (f.kind === "image") { const im = el("img"); im.src = f.url; im.alt = ""; im.loading = "lazy"; th.append(im); } else th.append(f.label);
+    if (f.locked) { th.classList.add("lock"); th.append(ic("i-lock")); } // the picture itself would answer with the password form
+    else if (f.kind === "image") { const im = el("img"); im.src = f.url; im.alt = ""; im.loading = "lazy"; th.append(im); } else th.append(f.label);
     const t = el("div", "fil-txt");
     const meta = [f.label, size(f.size), (f.replaced ? "înlocuit " : "") + when(f.updatedAt)]; if (f.byName) meta.push(f.byName);
+    if (f.locked) meta.unshift("cu parolă");
     t.append(el("div", "fil-nm", f.name), el("div", "fil-me", meta.join(" · ")), el("div", "fil-lk", abs(f.url)));
     li.append(th, t);
     if (busy.has(f.id)) {
@@ -149,10 +198,12 @@
       setTimeout(() => { if (no.isConnected) no.focus({ preventScroll: true }); }, 0);
       return li;
     }
+    if (locking === f.id) { li.append(lockForm(f)); return li; }
     const acts = el("div", "fil-acts");
     const open = el("a", "btn sm ghost", "Deschide"); open.href = f.url; open.target = "_blank"; open.rel = "noopener noreferrer";
     acts.append(btn("k fil-copy", "Copiază linkul", "i-copy", (e) => copy(abs(f.url), e.currentTarget)), open,
-      btn("ghost", "Înlocuiește", null, () => pickReplace(f)), btn("ghost fil-del", "Șterge", null, () => { asking = f.id; render(); }));
+      btn("ghost", "Înlocuiește", null, () => pickReplace(f)), btn("ghost", f.locked ? "Schimbă parola" : "Pune parolă", "i-lock", () => { locking = f.id; asking = null; render(); }),
+      btn("ghost fil-del", "Șterge", null, () => { asking = f.id; locking = null; render(); }));
     li.append(acts);
     return li;
   }
@@ -169,6 +220,7 @@
     parts.push(sec);
     const note = el("div", "fil-note");
     note.append(el("p", "", "Oricine are linkul deschide fișierul, fără cont. Linkurile nu ajung în Google și nu apar nicăieri pe site."),
+      el("p", "", "Cu parolă, linkul o cere întâi și o ține minte 12 ore pe acel dispozitiv. Noi păstrăm doar amprenta ei: dacă o uiți, pui alta."),
       el("p", "", "Paginile HTML rulează izolat de /ops, fără cookie-uri și fără localStorage. Fonturile, mailto și linkurile externe merg."));
     parts.push(note);
     body.replaceChildren(...parts);
@@ -187,7 +239,7 @@
       filesSig = sig; files = j.files; room = j.room;
     } catch { /* the last list stays, or the message below */ }
     loading = false;
-    if (!busy.size && !asking) render();
+    if (!busy.size && !asking && !locking) render();
   }
 
   // ---------- the whole page takes the drop while this section is open ----------

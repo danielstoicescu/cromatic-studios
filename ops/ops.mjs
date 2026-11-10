@@ -37,7 +37,7 @@
 //   POST /api/ops/leads/mark                    (admin session) {id, mark: "real"|"nu"|null}, rate limited; state + audit beside the lead file (ops/leads.mjs)
 //   GET  /api/ops/perf/shot/<page>-<device>     (admin session) the latest PSI screenshot + filmstrip, as data URIs
 //   POST /api/ops/perf/run                      (admin session) "Măsoară acum": 202 at once, the run goes on in the background; at most one per 15 min
-//   GET|POST /api/ops/files, POST|DELETE /api/ops/files/<id>   (admin session) TASK-142: Fișiere; the links are /f/<id>/<name> (ops/files.mjs)
+//   GET|POST /api/ops/files, POST|DELETE /api/ops/files/<id>, POST /api/ops/files/<id>/password   (admin session) TASK-142: Fișiere; the links are /f/<id>/<name> (ops/files.mjs)
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
 import { join, extname } from "node:path";
 import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto";
@@ -199,7 +199,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
 
   // TASK-142: Fișiere. The files share the uploads' cap, so OPS_UPLOAD_CAP_MB stays the one number for this disk
   const FILE_MAX = Number(process.env.OPS_FILE_MAX_MB || 50) * 1048576, userFiles = limiter(60, 10 * 60e3);
-  const fileStore = createFiles({ dataDir, sniff, fileMax: FILE_MAX, capBytes: UP_CAP, usedElsewhere: () => (upUsed === null ? (upUsed = du(UP_DIR)) : upUsed), appendLine, log });
+  const fileStore = createFiles({ dataDir, sniff, fileMax: FILE_MAX, capBytes: UP_CAP, usedElsewhere: () => (upUsed === null ? (upUsed = du(UP_DIR)) : upUsed), appendLine, limiter, ipOf: (req) => ipOf(req), secure: prod, log });
 
   async function upload(req, res, s, u) {
     if (userUpload(s.email)) return json(res, 429, { ok: false, error: "rate", message: "Prea multe fișiere deodată. Mai încearcă în câteva minute." });
@@ -595,6 +595,15 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         json(res, 405, { ok: false }); return true;
       }
       if (r === "upload" && m === "POST") { await upload(req, res, s, u); return true; }
+      const fp = /^files\/([a-f0-9]{16})\/password$/.exec(r);
+      if (fp) { // the password of one file: set, change, or "" to take it off
+        if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        if (m !== "POST") { json(res, 405, { ok: false }); return true; }
+        if (userFiles(s.email)) { json(res, 429, { ok: false, error: "rate", message: "Prea multe într-un timp scurt. Mai încearcă în câteva minute." }); return true; }
+        const b = await body(req, 4e3);
+        const [code, out] = await fileStore.setPassword(s, fp[1], typeof b.password === "string" ? b.password : "");
+        json(res, code, out); return true;
+      }
       const fm = /^files(?:\/([^/]+))?$/.exec(r);
       if (fm) { // TASK-142: admins only, like perf; a member gets nothing, not even the list
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
@@ -604,8 +613,9 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         if (fm[1] && !FILE_ID_RE.test(fm[1])) { json(res, 404, { ok: false, error: "not_found", message: "Fișierul nu mai e aici." }); return true; }
         if (userFiles(s.email)) { json(res, 429, { ok: false, error: "rate", message: "Prea multe într-un timp scurt. Mai încearcă în câteva minute." }, { Connection: "close" }); return true; }
         const name = u.searchParams.get("name") || "";
+        let pw = ""; try { pw = decodeURIComponent(String(req.headers["x-file-password"] || "")); } catch {} // only a new file reads it; a replace keeps what the link has
         try {
-          const [code, out] = m === "DELETE" ? fileStore.remove(s, fm[1]) : fm[1] ? await fileStore.replace(req, s, fm[1], name) : await fileStore.create(req, s, name);
+          const [code, out] = m === "DELETE" ? fileStore.remove(s, fm[1]) : fm[1] ? await fileStore.replace(req, s, fm[1], name) : await fileStore.create(req, s, name, pw);
           json(res, code, out, code >= 400 && m === "POST" ? { Connection: "close" } : undefined);
         } catch (e) {
           if (!e.status) throw e;

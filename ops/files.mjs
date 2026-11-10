@@ -5,7 +5,9 @@
 //   POST   /api/ops/files?name=        (admin, Origin checked) the raw file as the body -> {ok, file}
 //   POST   /api/ops/files/<id>?name=   (admin, Origin checked) replace: same id, same link
 //   DELETE /api/ops/files/<id>         (admin, Origin checked) the link answers 404 from that moment
-//   GET    /f/<id>/<name>              public, for whoever has the link
+//   POST   /api/ops/files/<id>/password (admin, Origin checked) {password} sets or changes it, "" takes it off
+//   GET    /f/<id>/<name>              public, for whoever has the link (and the password, when the file has one)
+//   POST   /f/<id>/<name>              the password form of a locked file: p=<password> -> a cookie for this one link
 //
 // THE ISOLATION. These pages live on the same host as /ops, with whatever script a file brings. So everything that can run
 // script (HTML, SVG) goes out with `Content-Security-Policy: sandbox ...` and WITHOUT allow-same-origin: the browser gives
@@ -25,12 +27,18 @@
 // sandboxed documents), so they get a closed policy instead. The bytes go out as uploaded: `no-transform` stops Cloudflare's email obfuscation from rewriting
 // mailto: links and from injecting its own scripts, which is also why we gzip here.
 //
+// THE PASSWORD (Daniel, 10 Nov: "in ops, acolo unde incarcam fisierele, sa putem pune si o parola"). Optional, per file.
+// meta.json keeps only scrypt(salt, password); nobody can read a password back, /ops included. A locked link answers 401 with
+// a small form of ours (no script, form-action 'self'); the right password sets an HttpOnly cookie that lives 12 hours, on the
+// path /f/<id>/ alone, signed with the stored hash: a changed or removed password ends every open visit at once. The sandboxed
+// page cannot read that cookie (opaque origin, HttpOnly). Guesses are counted per address and per file.
+//
 // Storage: <dataDir>/files/<id>/{meta.json, c-<rev>}. The name in the link never touches the disk: a request is matched against
 // the id's meta.json, and anything else is the same 404. A new file appears by renaming a whole folder, a replacement by
 // renaming meta.json onto the new revision, a delete by renaming the folder away: a reader sees the old file or the new one.
 import { readFileSync, writeFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync, openSync, writeSync, closeSync, fsyncSync, fstatSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import { randomBytes } from "node:crypto";
+import { randomBytes, scrypt, timingSafeEqual, createHmac } from "node:crypto";
 import { createGzip } from "node:zlib";
 
 export const FILE_ID_RE = /^[a-f0-9]{16}$/;
@@ -70,9 +78,32 @@ export function fileSlug(name, ext) {
 }
 const niceName = (name, slug) => String(name || "").replace(/^.*[\\/]/, "").replace(/[\u0000-\u001f\u007f‪-‮⁦-⁩]+/g, "").trim().slice(0, 140) || slug;
 
+const PW_MIN = 4, PW_MAX = 200, PASS_TTL = 12 * 3600e3;
+const PW_RULE = `Parola are între ${PW_MIN} și ${PW_MAX} de caractere.`;
+const pwNorm = (v) => (typeof v === "string" ? v.normalize("NFKC").trim() : "");
+const pwHash = (pw, salt) => new Promise((ok, no) => scrypt(pw, salt, 32, (e, k) => (e ? no(e) : ok(k))));
+async function pwMake(pw) { const salt = randomBytes(16); return { salt: salt.toString("hex"), hash: (await pwHash(pw, salt)).toString("hex"), at: new Date().toISOString() }; }
+const passSign = (meta, exp) => createHmac("sha256", Buffer.from(meta.pw.hash, "hex")).update(meta.id + "." + exp).digest("hex");
+const GATE_CSP = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'self'; base-uri 'none'";
+const GATE_MSG = { wrong: ["Parola nu e cea bună.", "That is not the password."], rate: ["Prea multe încercări. Mai încearcă peste un sfert de oră.", "Too many tries. Come back in fifteen minutes."] };
+/** the form a locked link answers with. No script, no name of the file: whoever has only the link learns nothing but "locked" */
+function gatePage(why) {
+  const m = GATE_MSG[why];
+  return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive"><title>Fișier protejat · Cromatic Studios</title><style>
+*{box-sizing:border-box}html{color-scheme:light dark}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px;background:#f4f1ea;color:#111;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{width:100%;max-width:400px;display:grid;gap:18px}h1{margin:0;font-size:30px;line-height:1.1;letter-spacing:-.02em}p{margin:0}.en{color:#5c5a55;font-size:14px}
+label{display:grid;gap:8px;font-weight:600;font-size:14px}input{font:inherit;font-size:17px;padding:14px 16px;border:2px solid #111;border-radius:14px;background:#fff;color:#111;width:100%}
+button{font:inherit;font-weight:700;font-size:16px;min-height:52px;border:2px solid #111;border-radius:999px;background:#ffd400;color:#111;cursor:pointer}button:hover{background:#111;color:#fff}
+input:focus-visible,button:focus-visible{outline:3px solid #111;outline-offset:3px}.err{font-weight:700;color:#b3261a}.by{font-size:13px;color:#5c5a55}
+@media (prefers-color-scheme:dark){body{background:#111;color:#f4f1ea}.en,.by{color:#a8a59e}input{border-color:#f4f1ea}button{border-color:#ffd400}button:hover{background:#f4f1ea;color:#111}input:focus-visible,button:focus-visible{outline-color:#ffd400}.err{color:#ff8a7a}}
+</style></head><body><main><div><h1>Fișierul ăsta are parolă.</h1><p class="en">This file is locked with a password.</p></div>
+${m ? `<p class="err" role="alert">${m[0]}<br><span class="en">${m[1]}</span></p>` : ""}<form method="post" autocomplete="off" style="display:grid;gap:14px"><label>Parola · Password<input type="password" name="p" required maxlength="${PW_MAX}" autofocus autocomplete="off" autocapitalize="none" spellcheck="false"></label><button type="submit">Deschide · Open</button></form>
+<p class="by">Ai primit-o de la cine ți-a trimis linkul. · Cromatic Studios</p></main></body></html>`;
+}
+
 const NOT_FOUND = { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow, noarchive", "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" };
 
-export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, appendLine, log = console }) {
+export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, appendLine, limiter, ipOf, secure = true, log = console }) {
   const ROOT = join(dataDir, "files");
   mkdirSync(ROOT, { recursive: true, mode: 0o700 });
   const statOr = (p) => { try { return statSync(p); } catch { return null; } };
@@ -81,6 +112,7 @@ export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, 
   const writeMeta = (dir, meta) => { const tmp = join(dir, "meta.json.tmp-" + process.pid); writeFileSync(tmp, JSON.stringify(meta, null, 2), { mode: 0o600 }); renameSync(tmp, join(dir, "meta.json")); };
   const dirSize = (d) => { let n = 0, list = []; try { list = readdirSync(d, { withFileTypes: true }); } catch { return 0; } for (const e of list) { const p = join(d, e.name); n += e.isDirectory() ? dirSize(p) : (statOr(p)?.size || 0); } return n; };
   const used = () => dirSize(ROOT);
+  const ipTries = limiter(8, 15 * 60e3), idTries = limiter(60, 15 * 60e3); // a wrong guess costs a scrypt: one address gets 8 per file, a file 60 in all
 
   // what a crash or a dropped upload may leave behind (names that can never be an id), older than an hour
   function sweep() {
@@ -89,7 +121,7 @@ export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, 
   }
   sweep();
 
-  const pub = (m) => ({ id: m.id, name: m.name, slug: m.slug, url: "/f/" + m.id + "/" + m.slug, ext: m.ext, kind: TYPES[m.ext].kind, label: TYPES[m.ext].label, size: m.size, createdAt: m.createdAt, updatedAt: m.updatedAt, replaced: m.rev > 1, byName: m.byName });
+  const pub = (m) => ({ id: m.id, name: m.name, slug: m.slug, url: "/f/" + m.id + "/" + m.slug, ext: m.ext, kind: TYPES[m.ext].kind, label: TYPES[m.ext].label, size: m.size, createdAt: m.createdAt, updatedAt: m.updatedAt, replaced: m.rev > 1, byName: m.byName, locked: !!m.pw });
   function list() {
     let names = []; try { names = readdirSync(ROOT); } catch {}
     return names.filter((n) => FILE_ID_RE.test(n)).map(metaOf).filter((m) => m && TYPES[m.ext]).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)).map(pub);
@@ -120,7 +152,9 @@ export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, 
   }
 
   /** POST /api/ops/files: returns the JSON answer as [status, body] */
-  async function create(req, s, rawName) {
+  async function create(req, s, rawName, rawPw) {
+    const pw = pwNorm(rawPw);
+    if (pw && (pw.length < PW_MIN || pw.length > PW_MAX)) return [422, { ok: false, error: "password", message: PW_RULE }];
     const id = randomBytes(8).toString("hex"), stage = join(ROOT, ".new-" + id);
     mkdirSync(stage, { mode: 0o700 });
     try {
@@ -128,10 +162,10 @@ export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, 
       const ext = fileType(head, sniff);
       if (!ext) return [415, { ok: false, error: "type", message: REFUSED }];
       const slug = fileSlug(rawName, ext), now = new Date().toISOString();
-      const meta = { id, rev: 1, name: niceName(rawName, slug), slug, ext, size, createdAt: now, updatedAt: now, by: s.email, byName: s.user.name };
-      writeMeta(stage, meta);
+      const meta = { id, rev: 1, name: niceName(rawName, slug), slug, ext, size, createdAt: now, updatedAt: now, by: s.email, byName: s.user.name, ...(pw ? { pw: await pwMake(pw) } : {}) };
+      writeMeta(stage, meta); // locked from its first second: the link never answers without the password
       renameSync(stage, dirOf(id));
-      appendLine("files.jsonl", { at: now, event: "add", id, by: s.email, name: meta.name, ext, size });
+      appendLine("files.jsonl", { at: now, event: "add", id, by: s.email, name: meta.name, ext, size, ...(pw ? { locked: true } : {}) });
       return [200, { ok: true, file: pub(meta), room: room() }];
     } finally { rmSync(stage, { recursive: true, force: true }); }
   }
@@ -147,7 +181,9 @@ export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, 
       if (!ext) return [415, { ok: false, error: "type", message: REFUSED }];
       if (TYPES[ext].kind !== TYPES[old.ext].kind) return [409, { ok: false, error: "kind", message: `Linkul ăsta e pentru ${TYPES[old.ext].kind === "image" ? "o imagine" : "un " + TYPES[old.ext].label}. Înlocuiește-l cu același tip sau adaugă fișierul ca nou.` }];
       renameSync(part, join(dir, "c-" + rev));
-      const now = new Date().toISOString(), meta = { ...old, rev, ext, size, name: niceName(rawName, old.slug), updatedAt: now, replacedBy: s.email };
+      const now = new Date().toISOString(), cur = metaOf(id) || old; // a password set while the bytes were coming in stays
+      const meta = { ...old, rev, ext, size, name: niceName(rawName, old.slug), updatedAt: now, replacedBy: s.email };
+      if (cur.pw) meta.pw = cur.pw; else delete meta.pw;
       writeMeta(dir, meta);
       try { unlinkSync(join(dir, "c-" + old.rev)); } catch {}
       appendLine("files.jsonl", { at: now, event: "replace", id, by: s.email, name: meta.name, ext, size, rev });
@@ -165,14 +201,66 @@ export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, 
     return [200, { ok: true, room: room() }];
   }
 
+  /** POST /api/ops/files/<id>/password: "" takes the password off. The date of the file stays: nothing about its content changed */
+  async function setPassword(s, id, raw) {
+    const pw = pwNorm(raw);
+    if (pw && (pw.length < PW_MIN || pw.length > PW_MAX)) return [422, { ok: false, error: "password", message: PW_RULE }];
+    if (!metaOf(id)) return [404, { ok: false, error: "not_found", message: "Fișierul nu mai e aici." }];
+    const made = pw ? await pwMake(pw) : null, m = metaOf(id); // read again after the hash: a replace may have landed meanwhile
+    if (!m || !TYPES[m.ext]) return [404, { ok: false, error: "not_found", message: "Fișierul nu mai e aici." }];
+    const had = !!m.pw;
+    if (made) m.pw = made; else delete m.pw;
+    if (made || had) {
+      writeMeta(dirOf(id), m);
+      appendLine("files.jsonl", { at: new Date().toISOString(), event: made ? (had ? "password-change" : "password-set") : "password-off", id, by: s.email, name: m.name });
+    }
+    return [200, { ok: true, file: pub(m) }];
+  }
+
+  // ---------- a locked link ----------
+  const passName = (id) => "fk_" + id;
+  function hasPass(req, meta) {
+    const c = new RegExp("(?:^|;\\s*)" + passName(meta.id) + "=([0-9a-z]{1,12})\\.([a-f0-9]{64})(?:;|$)").exec(String(req.headers.cookie || ""));
+    if (!c) return false;
+    const exp = parseInt(c[1], 36);
+    if (!(exp > Date.now()) || exp > Date.now() + PASS_TTL + 60e3) return false;
+    return timingSafeEqual(Buffer.from(c[2], "hex"), Buffer.from(passSign(meta, c[1]), "hex"));
+  }
+  const gateHeaders = (extra) => ({ ...NOT_FOUND, "Content-Type": "text/html; charset=utf-8", "Content-Security-Policy": GATE_CSP, "X-Frame-Options": "SAMEORIGIN", "Strict-Transport-Security": "max-age=31536000", ...(extra || {}) });
+  function gate(req, res, code, why) {
+    const html = req.method === "HEAD" ? "" : gatePage(why);
+    res.writeHead(code, gateHeaders(req.method === "HEAD" ? null : { "Content-Length": Buffer.byteLength(html) }));
+    res.end(html || undefined);
+  }
+  async function unlock(req, res, meta) {
+    const here = "/f/" + meta.id + "/" + meta.slug;
+    if (ipTries(ipOf(req) + " " + meta.id) || idTries(meta.id)) { res.once("finish", () => req.destroy()); return gate(req, res, 429, "rate"); }
+    let n = 0; const chunks = [];
+    for await (const c of req) { n += c.length; if (n > 4096) { res.once("finish", () => req.destroy()); return gate(req, res, 401, "wrong"); } chunks.push(c); }
+    const pw = pwNorm(new URLSearchParams(Buffer.concat(chunks).toString("utf8")).get("p") || "").slice(0, PW_MAX);
+    const now = metaOf(meta.id); // the password may have changed while the form was open
+    if (!now || !now.pw) { res.writeHead(303, { ...NOT_FOUND, Location: here }); return res.end(); }
+    const ok = !!pw && timingSafeEqual(await pwHash(pw, Buffer.from(now.pw.salt, "hex")), Buffer.from(now.pw.hash, "hex"));
+    if (!ok) return gate(req, res, 401, "wrong");
+    const exp = (Date.now() + PASS_TTL).toString(36);
+    res.writeHead(303, { ...NOT_FOUND, Location: here, "Set-Cookie": `${passName(meta.id)}=${exp}.${passSign(now, exp)}; Path=/f/${meta.id}/; Max-Age=${PASS_TTL / 1000}; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}` });
+    res.end();
+  }
+
   /** GET /f/<id>/<name>: one and the same 404 for anything that is not exactly a file's link; a folder is never listed */
   function serve(req, res) {
     const miss = () => { res.writeHead(404, NOT_FOUND); res.end(req.method === "HEAD" ? undefined : "Not found"); };
-    if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405, { ...NOT_FOUND, Allow: "GET, HEAD" }); return res.end(); }
+    const post = req.method === "POST";
+    if (req.method !== "GET" && req.method !== "HEAD" && !post) { res.writeHead(405, { ...NOT_FOUND, Allow: "GET, HEAD" }); return res.end(); }
     const m = /^\/f\/([^/?#]+)\/([^/?#]+)(?:\?.*)?$/.exec(req.url);
     if (!m || !FILE_ID_RE.test(m[1])) return miss();
     let meta = metaOf(m[1]);
     if (!meta || meta.slug !== m[2] || !TYPES[meta.ext]) return miss();
+    if (meta.pw && !hasPass(req, meta)) {
+      if (post) return void unlock(req, res, meta).catch((e) => { log.error?.("files unlock", e?.message); res.destroy(); });
+      return gate(req, res, 401);
+    }
+    if (post) { res.writeHead(meta.pw ? 303 : 405, meta.pw ? { ...NOT_FOUND, Location: "/f/" + meta.id + "/" + meta.slug } : { ...NOT_FOUND, Allow: "GET, HEAD" }); return res.end(); }
     let fd = -1;
     try { fd = openSync(join(dirOf(m[1]), "c-" + meta.rev), "r"); }
     catch { meta = metaOf(m[1]); try { if (meta) fd = openSync(join(dirOf(m[1]), "c-" + meta.rev), "r"); } catch {} } // replaced between the two reads
@@ -210,5 +298,5 @@ export function createFiles({ dataDir, sniff, fileMax, capBytes, usedElsewhere, 
     createReadStream("", { fd, start, end }).on("error", fail).pipe(res);
   }
 
-  return { list, room, create, replace, remove, serve, used };
+  return { list, room, create, replace, remove, setPassword, serve, used };
 }
