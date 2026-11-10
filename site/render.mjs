@@ -82,7 +82,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
   const header = (home) => `<a class="skip" href="#main">Skip to content</a>
 <header class="hdr">
   <div class="wrap hdr-in">
-    <a class="brand" href="/site/" aria-label="Cromatic Studios, home">${logo ? `<img src="${logo.src}" alt="Cromatic Studios" width="${logo.w}" height="${logo.h}">` : "Cromatic Studios"}</a>
+    <a class="brand" href="/site/">${logo ? `<img src="${logo.src}" alt="Cromatic Studios" width="${logo.w}" height="${logo.h}">` : "Cromatic Studios"}</a>
     <nav class="nav" aria-label="Main">
       ${NAV.map(([h, l]) => `<a href="${h.startsWith("/") || home ? h : "/site/" + h}">${l}</a>`).join("")}
     </nav>

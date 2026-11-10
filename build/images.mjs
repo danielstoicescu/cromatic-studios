@@ -11,6 +11,10 @@ const WIDTHS = [480, 960, 1600];
 // (621 px at 1.75x): with only 480/960/1600 it took the 960 file. Only card pictures get it (43 pictures, not all 938),
 // and never an AVIF copy (a case page's AVIF set stays as it was; its WebP source simply has one choice more)
 const MID = 720;
+// r447: a 1200 px step for the same card pictures. A phone shows a card ~370 CSS px wide and asks for 980-1050 px at
+// 2.625-3x: past 960 the next file was the 1600 one (Sticker Republic's card: 431 KB). Card pictures (CARD_IMG, not the
+// bands' phone posters) also get AVIF copies at every step, on every page that shows them (cardAvif below)
+const WIDE = 1200;
 // r397: a band's phone poster (<picture><source media="(max-width: 700px)" srcset="/assets/m/...-poster-m.jpg">, the hero
 // and the four streets) was its 900-960 px JPEG (46-101 KB, one is the phone's LCP): it gets WebP copies at 480, 720
 // and its own width, with sizes="100vw"
@@ -50,10 +54,11 @@ export async function optimizeImages(pub, root, log = console.log) {
   const posters = new Set();
   const caseSrcs = new Set(); // TASK-015: pictures a case page shows get AVIF copies too
   const cardSrcs = new Set(); // r397: card pictures get the 720 step too
+  const cardImgs = new Set(); // r447: the card pictures themselves (no phone posters): AVIF copies too
   for (const f of htmls) {
     const t = readFileSync(f, "utf8");
     for (const m of t.matchAll(/<img\b[^>]*?\bsrc="(\/assets\/[^"]+\.(?:jpe?g|png)|\/assets\/m\/[^"]+\.webp)"[^>]*>/gi)) if (!/\bdata-full\b/.test(m[0])) { srcs.add(m[1]); if (isCase(f)) caseSrcs.add(m[1]); }
-    for (const m of t.matchAll(CARD_IMG)) cardSrcs.add(m[1]);
+    for (const m of t.matchAll(CARD_IMG)) { cardSrcs.add(m[1]); cardImgs.add(m[1]); }
     for (const m of t.matchAll(PHONE_SRC)) { srcs.add(m[2]); cardSrcs.add(m[2]); }
     for (const m of t.matchAll(/<video\b[^>]*?\bposter="(\/assets\/[^"]+\.(?:jpe?g|png))"/gi)) { srcs.add(m[1]); posters.add(m[1]); }
     // r139d: a case page's hero pictures (shown after the title, see heroAfterTitle) get the tiny preview too
@@ -109,7 +114,7 @@ export async function optimizeImages(pub, root, log = console.log) {
       return;
     }
     // a WebP of ours is already the compressed file at its full size: it stays the largest choice, only smaller copies are made
-    const WS = cardSrcs.has(src) ? [...WIDTHS, MID].sort((a, b) => a - b) : WIDTHS;
+    const WS = cardSrcs.has(src) ? [...WIDTHS, MID, WIDE].sort((a, b) => a - b) : WIDTHS;
     const widths = webp ? WS.filter((w) => w < W * 0.95) : [...new Set([...WS.filter((w) => w < W * 0.95), Math.min(W, 1600)])].sort((a, b) => a - b);
     if (!widths.length) return;
     const set = [];
@@ -140,9 +145,9 @@ export async function optimizeImages(pub, root, log = console.log) {
     // is not worth its weight in the repo; only the kept files are committed in site/.img-cache); a copy
     // missing from the cache on a machine without sharp (the server) drops the AVIF set, never the picture
     let avif = null;
-    if (caseSrcs.has(src) && !avifSkip.has(h)) {
+    if ((caseSrcs.has(src) || cardImgs.has(src)) && !avifSkip.has(h)) {
       const list = [];
-      const aset = set.filter((x) => x.w !== MID || x.src === src); // r397: no AVIF copy of the 720 step
+      const aset = set.filter((x) => cardImgs.has(src) || x.w !== MID || x.src === src); // r397: no AVIF copy of the 720 step (r447: a card picture has one at every step)
       for (const x of aset) {
         const name = `${h}-${x.w}.avif`, cached = join(cacheDir, name);
         let fresh = null; // encoded here, written to the cache only if the set is kept
@@ -168,6 +173,9 @@ export async function optimizeImages(pub, root, log = console.log) {
   // TASK-015: the AVIF sets, by the address the page ends up with
   const avifOf = new Map();
   for (const v of out.values()) if (v.avif) avifOf.set(v.src, v);
+  // r447: on the other pages (home, hubs, team) only the card pictures become <picture> with an AVIF source
+  const cardAvif = new Map();
+  for (const v of out.values()) if (v.avif && cardImgs.has(v.orig)) cardAvif.set(v.src, v);
   // rewrite the pages
   for (const f of htmls) {
     const html = readFileSync(f, "utf8");
@@ -193,6 +201,7 @@ export async function optimizeImages(pub, root, log = console.log) {
     });
     // r139d: a case page loads in order: the title and its one LCP picture first, the rest after (gatePage)
     if (isCase(f)) next = pictures(gatePage(next, f, lqipOf), avifOf);
+    else next = pictures(next, cardAvif);
     if (next.includes(" data-poster=") && !next.includes("r139a-poster")) next = next.replace(/<\/body>(?![\s\S]*<\/body>)/, `${POSTER_JS}\n</body>`);
     if (next.includes(" data-anim-srcset=") && !next.includes("r139a-anim")) next = next.replace(/<\/body>(?![\s\S]*<\/body>)/, `${ANIM_JS}\n</body>`);
     if (next !== html) writeFileSync(f, next);
