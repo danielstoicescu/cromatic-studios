@@ -1816,6 +1816,7 @@ html.hdr-off .cb-txt { top: 28px; }
 .f5c .f5-wall .pw-gl { inset: -28px; width: calc(100% + 56px); height: calc(100% + 56px); }
 .pwall.f5c .pw-case { padding: 8px; border-radius: 12px; background: #161513; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
 .pwall.f5c .pw-case.crt-ready { background: transparent; border-color: transparent; transition: box-shadow .2s; }
+.pwall.f5c.crt3 .pw-case { transition: box-shadow .2s; } /* r467: with the rig a set's box never eases its translate: it moves on the same frame as its tube, so the two cannot drift apart */
 .pwall.f5c.away .pw-case.crt-ready { box-shadow: none; }
 .pwall.f5c .pw-case img { border-radius: 13% / 19%; }
 .pwall.f5c .pw-case::after { display: none; }

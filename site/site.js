@@ -787,16 +787,25 @@
     cards.forEach(function (c) { if (c.img && !c.L.dec) { var go = function () { if (c.L.dec) return; c.L.dec = 1; (c.img.decode ? c.img.decode() : Promise.resolve()).then(function () { queue.push(c); }, function () { c.L.dec = 0; }); }; if (c.img.complete && c.img.naturalWidth) go(); else c.img.addEventListener("load", go, { once: true }); } });
   };
   // where everything is (on resize only): each set's box in the wall, without its row's current drift
-  var vw = 1, wh = 1, secTop = 0, D = 1, lim = null, limK = 0, gen = 0, hTop = 0, measure = function () { gen++;
+  var nudge = function (el) { var tr = getComputedStyle(el).translate, p = tr && tr !== "none" ? tr.split(" ") : []; return [parseFloat(p[0]) || 0, parseFloat(p[1]) || 0]; };
+  var vw = 1, wh = 1, secTop = 0, D = 1, lim = null, limK = 0, gen = 0, hTop = 0, mw = 0, mh = 0, chk = 0, heal = 0, measure = function () { gen++;
     var r0 = host.getBoundingClientRect(), wr = wall.getBoundingClientRect(); if (PAD) { PL = Math.max(PAD, r0.left - wr.left); PR = Math.max(PAD, wr.right - r0.right); cv.style.left = -PL + "px"; cv.style.width = r0.width + PL + PR + "px"; }
     var r = { left: r0.left - PL, top: r0.top - PAD, width: r0.width + PL + PR, height: r0.height + 2 * PAD }, X = W.x || []; vw = r.width; HX = PL + r0.width / 2; HW = r0.width / 2 + PAD; wh = r.height; secTop = r.top + scrollY; D = innerWidth * (phone ? 4 : 1.8);
     cv.width = Math.round(vw * DPR); cv.height = Math.round(wh * DPR);
     var h1 = /* r449: the h1 sits on its own ink plate, nothing behind it to limit */ wall.classList.contains("f5") ? null : wall.querySelector(".pw-h"); if (h1) { var fs = parseFloat(getComputedStyle(h1).fontSize) || 60; lim = [h1.offsetLeft + h1.offsetWidth / 2, h1.offsetTop + h1.offsetHeight / 2, h1.offsetWidth / 2, h1.offsetHeight / 2 + fs * 0.04, fs * 1.1]; wall.style.setProperty("--pwl", h1.offsetLeft + "px"); wall.style.setProperty("--pwt", h1.offsetTop + "px"); wall.style.setProperty("--pww", h1.offsetWidth + "px"); wall.style.setProperty("--pwh", h1.offsetHeight + "px"); wall.style.setProperty("--pwf", fs + "px"); }
-    cards.forEach(function (c) { var b = c.el.getBoundingClientRect(); c.x = b.left - r.left - (X[c.row] || 0) - (parseFloat(c.el.style.translate) || 0); /* r454: without the heart's forming nudge */ c.y = b.top - r.top; c.w = b.width; c.h = b.height; });
+    // r467 (Daniel, 11 Nov: the TVs came back "defazat" after a scroll away and back): the nudge taken off is the one the box
+    // really has now (its computed translate), not the one asked for in its style: a set that is not on the GPU yet still
+    // eased its translate (.45 s with an overshoot), so a measure in that window kept its tube off its box for good
+    cards.forEach(function (c) { var b = c.el.getBoundingClientRect(), nt = b.width ? nudge(c.el) : [0, 0]; c.x = b.left - r.left - (X[c.row] || 0) - nt[0]; /* r454: without the heart's forming nudge */ c.y = b.top - r.top - nt[1]; c.w = b.width; c.h = b.height; });
+    mw = r0.width; mh = r0.height; chk = 0;
     if (ready || gl.isProgram(prog)) { gl.viewport(0, 0, cv.width, cv.height); }
   };
   var rz = 0; on(window, "resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (ready && !dead) measure(); }, 150); });
   on(window, "load", function () { if (ready && !dead) measure(); });
+  // r467: and on whatever else lays the fold out again without a window resize (fonts, a scrollbar, a restored page)
+  on(window, "pageshow", function () { if (ready && !dead) measure(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (ready && !dead) measure(); });
+  if (window.ResizeObserver) { var ro = new ResizeObserver(function () { if (ready && !dead) measure(); }); ro.observe(host); offs.push(function () { ro.disconnect(); }); }
   // the pointer and the keyboard: the set under them leans in (the DOM decides which one, so it is always the right one)
   var over = null, focus = null;
   on(wall, "pointerover", function (e) { over = e.target.closest && e.target.closest("a.pw-case"); /* r395: never a mural */ if (live && live.c.el === over) live = null; });
@@ -826,7 +835,12 @@
     if (upd) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     if (!next) next = t + (DEBUG ? 900 : 6000 + Math.random() * 4000);
     if (!live && t >= next) { fire(t); next = t + (DEBUG ? 1600 : 6000 + Math.random() * 4000); }
-    var X = W.x || [], ex = HX, ey = PAD ? innerHeight / 2 - (hTop = host.getBoundingClientRect().top) + PAD : scrollY + innerHeight / 2 - secTop, n = 0, k = 1 - Math.exp(-(dt || 0.016) / 0.06);
+    // r467: one geometry. Back on screen (the loop's first frame, dt 0) the sets are measured again; and every frame one set's box
+    // is checked against the place its tube is drawn from: if the two ever disagree by more than a pixel, everything is measured again
+    var hr = host.getBoundingClientRect();
+    if (!dt || Math.abs(hr.width - mw) > 0.5 || Math.abs(hr.height - mh) > 0.5) measure();
+    else if (cards.length) { var cc = cards[chk = (chk + 1) % cards.length]; if (cc.w > 0) { var bb = cc.el.getBoundingClientRect(), nt = nudge(cc.el); if ((Math.abs(bb.left - (hr.left - PL) - ((W.x || [])[cc.row] || 0) - nt[0] - cc.x) > 1 || Math.abs(bb.top - (hr.top - PAD) - nt[1] - cc.y) > 1 || Math.abs(bb.width - cc.w) > 1) && t - heal > 250) { heal = t; measure(); } } }
+    var X = W.x || [], ex = HX, ey = PAD ? innerHeight / 2 - (hTop = hr.top) + PAD : scrollY + innerHeight / 2 - secTop, n = 0, k = 1 - Math.exp(-(dt || 0.016) / 0.06);
     var S = CC.scale, mx = CC.cx == null ? HX : CC.cx, my = CC.cy == null ? wh / 2 : CC.cy;
     if (live && (t - live.t0) / live.dur >= 1) live = null;
     for (var i = 0; i < cards.length; i++) {
