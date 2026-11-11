@@ -12,6 +12,7 @@ import zlib from "node:zlib";
 import { createHash, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
 import { passHtml, passText } from "./mail-template.js";
+import { oneLine, multiLine, clientIp } from "./form-safety.js";
 import { createCore30 } from "./core30/core30.mjs";
 import { isInternalEmail } from "./ops/leads.mjs"; // who counts as us: one list, on the server only
 import { createOps, isOps, PROPOSAL_SLUG_RE, PROPOSAL_FILE_RE } from "./ops/ops.mjs";
@@ -193,11 +194,12 @@ const limited = (ip) => {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const str = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+// every field is one line with no control characters (they end up in mail headers); only the message keeps its line breaks
+const str = oneLine;
 function clean(b) {
   return {
     ref: str(b.ref, 12).replace(/[^A-Z0-9]/gi, "") || "CS00000",
-    name: str(b.name, 120), first: str(b.first, 60), email: str(b.email, 160), phone: str(b.phone, 40), msg: str(b.msg, 2000),
+    name: str(b.name, 120), first: str(b.first, 60), email: str(b.email, 160), phone: str(b.phone, 40), msg: multiLine(b.msg, 2000),
     date: str(b.date, 20), time: str(b.time, 8), flight: str(b.flight, 12), klass: str(b.klass, 30), boarding: str(b.boarding, 40),
     biz: str(b.biz, 40), when: str(b.when, 40), seat: "1A", gate: "9", terminal: "Coffee", lang: b.lang === "ro" ? "ro" : "en", // beta 3.48 r217: the passenger's e-mail in Romanian from the Romanian website
     dreams: Array.isArray(b.dreams) ? b.dreams.slice(0, 6).map((d) => str(d, 40)).filter(Boolean) : [],
@@ -264,7 +266,7 @@ async function boarding(req, res, tag = SUBJECT_TAG) {
   let b;
   try { b = JSON.parse(body); } catch { return send(res, 400, { ok: false }); }
   if (b.company_site) return send(res, 200, { ok: true }); // the honeypot caught a bot: pretend all is well
-  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+  const ip = clientIp(req); // never the client's own X-Forwarded-For: see form-safety.js
   if (limited(ip)) return send(res, 429, { ok: false });
   const t = clean(b);
   if (!t.name || !EMAIL_RE.test(t.email) || t.phone.replace(/\D/g, "").length < 6) return send(res, 422, { ok: false }); // r309: the phone is required (Daniel, 26 Oct)
@@ -273,12 +275,12 @@ async function boarding(req, res, tag = SUBJECT_TAG) {
   const mark = internal ? { internal: true } : {};
   try {
     await transport.sendMail({
-      from: MAIL_FROM, to: MAIL_TO, replyTo: `${t.name} <${t.email}>`,
+      from: MAIL_FROM, to: MAIL_TO, replyTo: { name: t.name, address: t.email }, // as an object: the name can never be read as more addresses
       subject: `${tag} \u2708 Boarding pass ${t.ref} \u00B7 ${t.name}${t.biz ? " \u00B7 " + t.biz : ""}`,
       html: passHtml(t, "studio"), text: passText(t, "studio")
     });
     await transport.sendMail({
-      from: MAIL_FROM, to: `${t.name} <${t.email}>`, replyTo: MAIL_TO,
+      from: MAIL_FROM, to: { name: t.name, address: t.email }, replyTo: MAIL_TO,
       subject: t.lang === "ro" ? `Boarding pass-ul tău spre Olari 9 \u00B7 ${t.ref}` : `Your boarding pass to Olari 9 \u00B7 ${t.ref}`,
       html: passHtml(t, "passenger"), text: passText(t, "passenger")
     });
