@@ -397,7 +397,7 @@
   // the wall of work under the hero (/onboarding/'s wall, site/onboarding/onb.js): the rows slide in opposite
   // directions with the scroll, each a little faster than the one above; with reduced motion they are plain
   // scrollable rows (site.css). On a touch screen the first tap on a card shows its name, the second opens it
-  const pwall = d.querySelector(".pwall"), pwRows = pwall ? [...pwall.querySelectorAll(".pw-row")] : [];
+  const pwall = d.querySelector(".pwall"), pwRows = pwall ? [...pwall.querySelectorAll(".pw-row:not(.pw-still)")] : [], pwStill = !!(pwall && pwall.classList.contains("f5")); // r450: a still wall (.f5) has no drifting rows, but keeps the loop (the CRT and the fold's own script hook on it)
   if (pwall) {
     pwall.addEventListener("click", (e) => {
       const a = e.target.closest("a.pw-case"); // r395: the murals (div.pw-mural) are no links: no name card, no tap
@@ -442,7 +442,7 @@
     (WALL.x || (WALL.x = []))[i] = tx; // beta: the CRT wall reads where each row is
     row.style.transform = `translate3d(${tx.toFixed(1)}px,0,0)`;
   });
-  if (!reduced && pwRows.length && "IntersectionObserver" in window) {
+  if (!reduced && (pwRows.length || pwStill) && "IntersectionObserver" in window) {
     const v = matchMedia("(max-width: 700px)").matches ? 3.5 : 5.6; // r362 (Daniel: "poate fi mai lent"): 0.7x of r360
     const loop = (t) => {
       WALL.raf = 0;
@@ -610,6 +610,55 @@
     c.addEventListener("pointerleave", () => { c.style.transform = ""; });
   });
 
+  // r450s (Daniel, 10 Nov: "mult mai mult ux ... illustrations si ceva mai multe interactiuni si microinteractiuni"): the home's
+  // five services. One stop open at a time beside the list on a wide screen (pointing at a head, focusing it or the
+  // arrow keys change the stage); under 1000 px all five are open (r454, below). A drawing plays when its stop opens, when the section comes into view, and when pointed at or
+  // tapped. "Start a project" ticks the stop's own dream on the boarding pass on its way there. No timers hold anything.
+  const sv = d.querySelector(".sv5-list");
+  if (sv) {
+    const cards = [...sv.children], wide = matchMedia("(min-width: 1000px)");
+    const play = (c) => { const a = c.querySelector(".sv5-art"); if (!a || reduced) return; a.classList.remove("play"); void a.offsetWidth; a.classList.add("play"); };
+    const set = (c, on) => { c.classList.toggle("on", on); c.querySelector("button").setAttribute("aria-expanded", String(on)); };
+    const open = (c) => {
+      if (c.classList.contains("on")) return;
+      const h = c.firstElementChild, y = h.getBoundingClientRect().top;
+      cards.forEach((x) => set(x, x === c));
+      const dy = wide.matches ? 0 : h.getBoundingClientRect().top - y;
+      if (dy) scrollBy({ top: dy, behavior: "instant" });
+      play(c);
+    };
+    let aim = 0;
+    sv.addEventListener("click", (e) => {
+      const c = e.target.closest(".sv5-card"); if (!c) return;
+      if (e.target.closest("button")) { if (wide.matches) open(c); return; } // r454: under 1000 px every stop is open, the head is only a title
+      if (e.target.closest(".sv5-art")) return play(c);
+      const s = e.target.closest(".sv5-start"), chip = s && d.querySelector('#czp-form .czp-chip[data-v="' + s.dataset.dream + '"]');
+      if (chip && chip.getAttribute("aria-pressed") !== "true") chip.click();
+    });
+    sv.addEventListener("keydown", (e) => {
+      const i = cards.indexOf(e.target.closest("button")?.closest(".sv5-card")), n = e.key === "ArrowDown" ? i + 1 : e.key === "ArrowUp" ? i - 1 : -1;
+      if (i < 0 || !cards[n]) return;
+      e.preventDefault(); cards[n].querySelector("button").focus();
+    });
+    cards.forEach((c) => {
+      const h = c.firstElementChild;
+      h.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse" && wide.matches) { clearTimeout(aim); aim = setTimeout(() => open(c), 60); } }); // 60 ms: crossing a head on the way to the stage does not change it
+      h.addEventListener("pointerleave", () => clearTimeout(aim));
+      h.addEventListener("focusin", (e) => { if (wide.matches && e.target.matches(":focus-visible")) open(c); });
+      c.querySelector(".sv5-art")?.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") play(c); });
+    });
+    // r454 (Daniel, 10 Nov: "cardurile de jos ar putea să fie direct deschise ... să nu mai ai butonul de închis/deschis, dar să
+    // aibă o intrare interesantă"): under 1000 px all five stops are open, no plus, no toggling; each one comes in as it reaches
+    // the screen (its dot lands, the card rises, then its own drawing plays). The wide stage keeps its hover (approved, 10 Nov).
+    const lay = () => { if (wide.matches) { if (sv.querySelectorAll(".on").length !== 1) cards.forEach((x, k) => set(x, !k)); } else cards.forEach((x) => set(x, true)); cards.forEach((x) => { const b = x.querySelector("button"); if (wide.matches) b.removeAttribute("tabindex"); else b.tabIndex = -1; }); }; // a head that does nothing is not a tab stop
+    lay(); wide.addEventListener("change", lay);
+    if (!reduced && "IntersectionObserver" in window) {
+      const vh = innerHeight, io2 = new IntersectionObserver((es) => es.forEach((x) => { if (!x.isIntersecting) return; io2.unobserve(x.target); x.target.classList.add("in"); if (!wide.matches) play(x.target); }), { rootMargin: "0px 0px -12% 0px" });
+      cards.forEach((c) => { if (c.getBoundingClientRect().top > vh * 0.88) { c.classList.add("rv"); io2.observe(c); } }); // a card already on screen is never hidden
+    }
+    if ("IntersectionObserver" in window && wide.matches) { const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { io.disconnect(); const c = sv.querySelector(".on"); if (c) play(c); } }, { threshold: 0.3 }); io.observe(sv); }
+  }
+
   // YouTube: a poster until clicked, then the privacy-friendly embed
   d.querySelectorAll(".yt").forEach((y) => y.querySelector(".yt-play")?.addEventListener("click", () => {
     if (window.__ytPlay && y.hasAttribute("data-yt")) return; // r138d: the build's chromeless player takes it (build/film.mjs)
@@ -644,17 +693,18 @@
   if (!W || !W.go || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   var cv = document.createElement("canvas"), gl = null;
   try { gl = cv.getContext("webgl2", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: true, powerPreference: "low-power" }); } catch (e) {}
-  if (!gl) return;
+  if (!gl) { document.documentElement.classList.remove("crt-w"); return; } // r451: no tubes after all: the flat sets switch themselves on (site.css)
   var phone = matchMedia("(max-width: 700px)").matches, Q = new URLSearchParams(location.search);
   var geo = (Q.get("crt") || "").split(",").map(Number), RK = geo[0] > 0.3 ? geo[0] : 0.85, DK = geo[1] > 0.5 ? geo[1] : 2.0;
   var TW = phone ? 384 : 560, TH = phone ? 260 : 380, TL = Math.floor(Math.log2(TW)) + 1, up2d = null;
-  var DPR = Math.min(devicePixelRatio || 1, 1.5), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 6 : 8, RAD = phone ? 10 : 12;
+  var DPR = Math.min(devicePixelRatio || 1, 1.5), PITCH = Math.max(3, 3 * (devicePixelRatio || 1) / DPR), BEZ = phone ? 3 : 8, RAD = phone ? 7 : 12;
   cv.className = "pw-gl"; cv.setAttribute("aria-hidden", "true");
-  var VS = "#version 300 es\nlayout(location=0) in vec2 aC;layout(location=1) in vec4 iBox;layout(location=2) in vec4 iA;layout(location=3) in vec4 iG;layout(location=4) in vec4 iM;uniform vec2 uRes;out vec2 vP;flat out vec4 vBox,vA,vG,vM;void main(){vec2 p=iBox.xy+aC*iBox.zw;vP=(aC-.5)*iBox.zw;vBox=iBox;vA=iA;vG=iG;vM=iM;gl_Position=vec4(p/uRes*2.-1.,0.,1.);gl_Position.y=-gl_Position.y;}";
-  var FS = "#version 300 es\nprecision highp float;precision highp sampler2DArray;uniform sampler2DArray uT;uniform float uPitch,uDpr,uBez,uRad,uRk,uDk,uSeed,uMask,uTime,uLimS,uLimK;uniform vec4 uLim;in vec2 vP;flat in vec4 vBox,vA,vG,vM;out vec4 o;" +
+  var VS = "#version 300 es\nlayout(location=0) in vec2 aC;layout(location=1) in vec4 iBox;layout(location=2) in vec4 iA;layout(location=3) in vec4 iG;layout(location=4) in vec4 iM;layout(location=5) in vec4 iU;layout(location=6) in vec4 iX;uniform vec2 uRes;out vec2 vP;flat out vec4 vBox,vA,vG,vM,vU,vX;void main(){vec2 p=iBox.xy+aC*iBox.zw;vP=(aC-.5)*iBox.zw;vBox=iBox;vA=iA;vG=iG;vM=iM;vU=iU;vX=iX;gl_Position=vec4(p/uRes*2.-1.,0.,1.);gl_Position.y=-gl_Position.y;}";
+  var FS = "#version 300 es\nprecision highp float;precision highp sampler2DArray;uniform sampler2DArray uT;uniform sampler2D uB;uniform float uPitch,uDpr,uBez,uRad,uRk,uDk,uSeed,uMask,uTime,uLimS,uLimK,uGain;uniform vec4 uLim;in vec2 vP;flat in vec4 vBox,vA,vG,vM,vU,vX;out vec4 o;" +
     "float rr(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}" +
     "float h1(vec2 p){p=fract(p*vec2(.1031,.1030));p+=dot(p,p.yx+33.33);return fract((p.x+p.y)*p.x);}" +
-    "vec3 tx(vec2 u){return textureLod(uT,vec3(clamp(u,.001,.999),vA.x),0.).rgb;}vec3 tb(vec2 u,float l){return textureLod(uT,vec3(clamp(u,.001,.999),vA.x),l).rgb;}" +
+    // r450: each set reads a window (vU) of its picture; vM.w = 1 reads the one big picture (uB) instead of its own layer
+    "vec3 tb(vec2 u,float l){vec2 w=vU.xy+clamp(u,.001,.999)*vU.zw;return vM.w>.5?textureLod(uB,w,l).rgb:textureLod(uT,vec3(w,vA.x),l).rgb;}vec3 tx(vec2 u){return tb(u,0.);}" +
     "void main(){vec2 hf=vBox.zw*.5;float aa=1./uDpr;" +
     // the set: a flat bezel with rounded corners; outside it nothing
     "float so=rr(vP,hf,uRad);float al=1.-smoothstep(-aa,aa,so);if(al<=0.){discard;}" +
@@ -672,6 +722,8 @@
     "float px=1./(sc*dg);if(sd>0.){vec3 cc=sd<1.6*px?vec3(.02):pl;o=vec4(cc*al,al);return;}" +
     "vec2 ras=f*.5+.5,uv=ras;float hov=vA.y,ty=vG.x,p=vG.y,s=vG.z,bl=vG.w,yy=vM.x,ln=max(60.,floor(vBox.w*uDpr/uPitch));" +
     "uv=(uv-.5)/(1.+.05*hov)+.5;" +
+    // r451: the set switching on (vX.y, 0 off to 1 on): a white line that opens into the picture
+    "float pw=vX.y,pon=1.;if(pw<.999){float hh=max(.014,pw*pw*(3.-2.*pw)),ww=min(1.,.12+pw*3.2);vec2 dq=abs(ras-.5)*2.;pon=step(dq.y,hh)*step(dq.x,ww)*step(.001,pw);uv=vec2((uv.x-.5)/ww+.5,(uv.y-.5)/hh+.5);}" +
     // the glitches (1 snow, 2 drop, 3 the horizontal hold, 4 the vertical roll)
     "float nz=0.,vbi=0.,bar=0.;" +
     "if(ty>2.5&&ty<3.5){float nb=5.,bd=floor(clamp(ras.y+.04*sin(uTime*11.+ras.y*9.+vM.y),0.,.999)*nb),sg=mod(bd,2.)*2.-1.,bc=(bd+.5)/nb;uv.x+=sg*s*(10.+14.*sin(bd*2.1+vM.y))/(2.*AB.x*dg)+sg*s*.1*(ras.y-bc);float yb=p*1.3-.2;bar=s*.6*exp(-pow((ras.y-yb)/.06,2.));}" +
@@ -689,6 +741,7 @@
     "if(vbi>.5){float m=(mod(ras.y+yy*1.06,1.06)-1.)/.06;col=vec3(.04)+vec3(.22)*exp(-pow((m-.5)/.12,2.));}" +
     // the hover: the picture leans in a little, its bottom darkens under the name
     "col*=1.-hov*.68*smoothstep(.42,1.02,ras.y);" +
+    "col*=uGain*vX.x;if(pw<.999){col=mix(vec3(1.,.98,.92),col,smoothstep(.12,.85,pw))*pon*(1.+1.1*(1.-pw));}" +
     // scanlines: a Gaussian beam that widens where the picture is bright
     "float Y=ras.y*ln,fw=fwidth(Y),sgm=mix(.24,.42,clamp(lu,0.,1.)),bw=0.;for(int i=-2;i<=2;i++){float fy=fract(Y+fw*.2*float(i))-.5;bw+=exp(-.5*fy*fy/(sgm*sgm));}bw/=5.;float mn=sgm*2.5066*.95;col*=mix(1.,bw/mn,.42*(1.-smoothstep(.3,.55,fw)));" +
     // the mask (only where there are pixels enough for it): an aperture of three phosphor stripes
@@ -708,14 +761,15 @@
   var PAR = gl.getExtension("KHR_parallel_shader_compile"), ready = false, dead = false, U = {};
   // the covers: one layer each in a texture array, uploaded from the wall's own <img> once it is loaded and decoded
   var rowsEl = wall.querySelector(".pw-rows"), rows = [].slice.call(wall.querySelectorAll(".pw-row")), cards = [], layers = {}, NL = 0, queue = [];
-  rows.forEach(function (row, i) { [].forEach.call(row.querySelectorAll(".pw-case"), function (el) { var k = el.getAttribute("href") || el.getAttribute("data-k"); if (!(k in layers)) layers[k] = { i: NL++, up: 0, cards: [] }; var L = layers[k]; var c = { el: el, img: el.querySelector("img"), row: i, L: L, hov: 0 }; L.cards.push(c); cards.push(c); }); });
-  var tex = null, inst = new Float32Array(cards.length * 16), ibuf = null, vao = null;
+  rows.forEach(function (row, i) { [].forEach.call(row.querySelectorAll(".pw-case"), function (el) { var k = el.getAttribute("href") || el.getAttribute("data-k"); if (!(k in layers)) layers[k] = { i: NL++, up: 0, cards: [] }; var L = layers[k]; var c = { el: el, img: el.querySelector("img"), row: i, L: L, hov: 0, p: el.getAttribute("data-p"), big: 0, uv: [0, 0, 1, 1], s: 1, ox: 0, oy: 0, gn: 1, pw: 1 }; L.cards.push(c); cards.push(c); }); });
+  var host = wall.querySelector(".f5-wall") || wall, PAD = host === wall ? 0 : 28, PL = PAD, PR = PAD, HX = 0, HW = 1, NF = 24; // r454: the canvas spans the fold's whole width (PL/PR), so a slid row is never cut by its edge
+  var tex = null, inst = new Float32Array(cards.length * NF), big = null, CC = { scale: 1, gain: 1 }, ibuf = null, vao = null;
   var offs = [], on = function (el, k, f, o) { el.addEventListener(k, f, o); offs.push(function () { el.removeEventListener(k, f, o); }); };
-  var lost = function () { if (dead) return; dead = true; wall.classList.remove("crt3"); cv.remove(); setTimeout(function () { var i = W.hooks.indexOf(frame); if (i >= 0) W.hooks.splice(i, 1); }, 0); offs.forEach(function (f) { f(); }); offs = []; queue = []; window.__czCrt = null; };
+  var lost = function () { if (dead) return; dead = true; document.documentElement.classList.remove("crt-w"); wall.classList.remove("crt3"); cv.remove(); setTimeout(function () { var i = W.hooks.indexOf(frame); if (i >= 0) W.hooks.splice(i, 1); }, 0); offs.forEach(function (f) { f(); }); offs = []; queue = []; window.__czCrt = null; };
   cv.addEventListener("webglcontextlost", function (e) { e.preventDefault(); lost(); });
   var setup = function () {
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { lost(); return; }
-    gl.useProgram(prog); ["uRes", "uT", "uPitch", "uDpr", "uBez", "uRad", "uRk", "uDk", "uSeed", "uMask", "uTime", "uLim", "uLimS", "uLimK"].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
+    gl.useProgram(prog); ["uRes", "uT", "uPitch", "uDpr", "uBez", "uRad", "uRk", "uDk", "uSeed", "uMask", "uTime", "uLim", "uLimS", "uLimK", "uB", "uGain"].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
     tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
     gl.texStorage3D(gl.TEXTURE_2D_ARRAY, TL, gl.RGBA8, TW, TH, NL); // mips: the halation reads the blurred levels
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -724,18 +778,21 @@
     var qb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     ibuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferData(gl.ARRAY_BUFFER, inst.byteLength, gl.DYNAMIC_DRAW);
-    for (var a = 1; a <= 4; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, 64, (a - 1) * 16); gl.vertexAttribDivisor(a, 1); }
+    for (var a = 1; a <= 6; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, NF * 4, (a - 1) * 16); gl.vertexAttribDivisor(a, 1); }
+    big = gl.createTexture(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, big); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([13, 12, 9, 255]));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.generateMipmap(gl.TEXTURE_2D); gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U.uB, 1);
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.uniform1i(U.uT, 0); gl.uniform1f(U.uDpr, DPR); gl.uniform1f(U.uPitch, PITCH); gl.uniform1f(U.uBez, BEZ); gl.uniform1f(U.uRad, RAD); gl.uniform1f(U.uRk, RK); gl.uniform1f(U.uDk, DK); gl.uniform1f(U.uMask, DPR >= 1.9 ? 1 : 0);
-    wall.insertBefore(cv, wall.firstChild); wall.classList.add("crt3"); measure(); ready = true;
+    host.insertBefore(cv, host.firstChild); wall.classList.add("crt3"); measure(); ready = true;
     cards.forEach(function (c) { if (c.img && !c.L.dec) { var go = function () { if (c.L.dec) return; c.L.dec = 1; (c.img.decode ? c.img.decode() : Promise.resolve()).then(function () { queue.push(c); }, function () { c.L.dec = 0; }); }; if (c.img.complete && c.img.naturalWidth) go(); else c.img.addEventListener("load", go, { once: true }); } });
   };
   // where everything is (on resize only): each set's box in the wall, without its row's current drift
-  var vw = 1, wh = 1, secTop = 0, D = 1, lim = null, limK = 0, measure = function () {
-    var r = wall.getBoundingClientRect(), X = W.x || []; vw = r.width; wh = r.height; secTop = r.top + scrollY; D = innerWidth * (phone ? 4 : 1.8);
+  var vw = 1, wh = 1, secTop = 0, D = 1, lim = null, limK = 0, gen = 0, hTop = 0, measure = function () { gen++;
+    var r0 = host.getBoundingClientRect(), wr = wall.getBoundingClientRect(); if (PAD) { PL = Math.max(PAD, r0.left - wr.left); PR = Math.max(PAD, wr.right - r0.right); cv.style.left = -PL + "px"; cv.style.width = r0.width + PL + PR + "px"; }
+    var r = { left: r0.left - PL, top: r0.top - PAD, width: r0.width + PL + PR, height: r0.height + 2 * PAD }, X = W.x || []; vw = r.width; HX = PL + r0.width / 2; HW = r0.width / 2 + PAD; wh = r.height; secTop = r.top + scrollY; D = innerWidth * (phone ? 4 : 1.8);
     cv.width = Math.round(vw * DPR); cv.height = Math.round(wh * DPR);
-    var h1 = wall.querySelector(".pw-h"); if (h1) { var fs = parseFloat(getComputedStyle(h1).fontSize) || 60; lim = [h1.offsetLeft + h1.offsetWidth / 2, h1.offsetTop + h1.offsetHeight / 2, h1.offsetWidth / 2, h1.offsetHeight / 2 + fs * 0.04, fs * 1.1]; wall.style.setProperty("--pwl", h1.offsetLeft + "px"); wall.style.setProperty("--pwt", h1.offsetTop + "px"); wall.style.setProperty("--pww", h1.offsetWidth + "px"); wall.style.setProperty("--pwh", h1.offsetHeight + "px"); wall.style.setProperty("--pwf", fs + "px"); }
-    cards.forEach(function (c) { var b = c.el.getBoundingClientRect(); c.x = b.left - r.left - (X[c.row] || 0); c.y = b.top - r.top; c.w = b.width; c.h = b.height; });
+    var h1 = /* r449: the h1 sits on its own ink plate, nothing behind it to limit */ wall.classList.contains("f5") ? null : wall.querySelector(".pw-h"); if (h1) { var fs = parseFloat(getComputedStyle(h1).fontSize) || 60; lim = [h1.offsetLeft + h1.offsetWidth / 2, h1.offsetTop + h1.offsetHeight / 2, h1.offsetWidth / 2, h1.offsetHeight / 2 + fs * 0.04, fs * 1.1]; wall.style.setProperty("--pwl", h1.offsetLeft + "px"); wall.style.setProperty("--pwt", h1.offsetTop + "px"); wall.style.setProperty("--pww", h1.offsetWidth + "px"); wall.style.setProperty("--pwh", h1.offsetHeight + "px"); wall.style.setProperty("--pwf", fs + "px"); }
+    cards.forEach(function (c) { var b = c.el.getBoundingClientRect(); c.x = b.left - r.left - (X[c.row] || 0) - (parseFloat(c.el.style.translate) || 0); /* r454: without the heart's forming nudge */ c.y = b.top - r.top; c.w = b.width; c.h = b.height; });
     if (ready || gl.isProgram(prog)) { gl.viewport(0, 0, cv.width, cv.height); }
   };
   var rz = 0; on(window, "resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (ready && !dead) measure(); }, 150); });
@@ -769,31 +826,174 @@
     if (upd) gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     if (!next) next = t + (DEBUG ? 900 : 6000 + Math.random() * 4000);
     if (!live && t >= next) { fire(t); next = t + (DEBUG ? 1600 : 6000 + Math.random() * 4000); }
-    var X = W.x || [], ex = vw / 2, ey = scrollY + innerHeight / 2 - secTop, n = 0, k = 1 - Math.exp(-(dt || 0.016) / 0.06);
-    var g = live, gp = 0, gs = 0, gb = 0;
-    if (g) { gp = (t - g.t0) / g.dur; if (gp >= 1) { live = g = null; } else { gs = sig(gp, g); gb = bloom(gp); } }
+    var X = W.x || [], ex = HX, ey = PAD ? innerHeight / 2 - (hTop = host.getBoundingClientRect().top) + PAD : scrollY + innerHeight / 2 - secTop, n = 0, k = 1 - Math.exp(-(dt || 0.016) / 0.06);
+    var S = CC.scale, mx = CC.cx == null ? HX : CC.cx, my = CC.cy == null ? wh / 2 : CC.cy;
+    if (live && (t - live.t0) / live.dur >= 1) live = null;
     for (var i = 0; i < cards.length; i++) {
-      var c = cards[i], x = c.x + (X[c.row] || 0);
-      c.on = x + c.w > -2 && x < vw + 2 && c.L.up; if (!c.on) continue;
-      var cx = x + c.w / 2, cy = c.y + c.h / 2; c.nx = (cx - vw / 2) / (vw / 2);
+      var c = cards[i], x = c.x + (X[c.row] || 0), g = live && live.c === c ? live : null, gp = 0, gs = 0, gb = 0;
+      if (g) { gp = (t - g.t0) / g.dur; if (gp >= 1) { g = null; gp = 0; } else { gs = sig(gp, g); gb = bloom(gp); } }
+      c.on = x + c.w > -2 && x < vw + 2 && (c.L.up || c.big) && c.w > 0; if (!c.on) continue;
+      var cx = x + c.w / 2, cy = c.y + c.h / 2; c.nx = (cx - HX) / HW;
       c.hov += ((c.el === over || c.el === focus || c.el.classList.contains("show") ? 1 : 0) - c.hov) * k;
-      var gg = g && g.c === c, o = n * 16;
-      inst[o] = x; inst[o + 1] = c.y; inst[o + 2] = c.w; inst[o + 3] = c.h;
+      var gg = !!g, o = n * NF, s1 = S * c.s, px = mx + (cx + c.ox - mx) * S, py = my + (cy + c.oy - my) * S;
+      inst[o] = px - c.w * s1 / 2; inst[o + 1] = py - c.h * s1 / 2; inst[o + 2] = c.w * s1; inst[o + 3] = c.h * s1; inst[o + 20] = c.gn; inst[o + 21] = c.pw;
+      inst[o + 16] = c.uv[0]; inst[o + 17] = c.uv[1]; inst[o + 18] = c.uv[2]; inst[o + 19] = c.uv[3];
       inst[o + 4] = c.L.i; inst[o + 5] = c.hov; inst[o + 6] = (ex - cx) / D; inst[o + 7] = (ey - cy) / D;
       inst[o + 8] = gg ? g.type : 0; inst[o + 9] = gg ? gp : 0; inst[o + 10] = gg ? gs : 0; inst[o + 11] = gg ? gb : 0;
-      inst[o + 12] = gg && g.type === 4 ? rollY(gp) : 0; inst[o + 13] = gg ? g.ph : 0; inst[o + 14] = 0; inst[o + 15] = 0; n++;
+      inst[o + 12] = gg && g.type === 4 ? rollY(gp) : 0; inst[o + 13] = gg ? g.ph : 0; inst[o + 15] = c.big; n++;
     }
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     if (!n) return;
-    gl.useProgram(prog); gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, inst, 0, n * 16);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
+    gl.useProgram(prog); gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, ibuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, inst, 0, n * NF);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, big); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex); gl.uniform1f(U.uGain, CC.gain);
     gl.uniform2f(U.uRes, vw, wh); gl.uniform1f(U.uSeed, Math.floor(Math.random() * 997)); gl.uniform1f(U.uTime, t / 1000);
     if (lim) { var sp = Math.min(1, Math.max(0, scrollY / (wh * 0.62))); limK += ((1 - sp * sp * (3 - 2 * sp)) - limK) * (1 - Math.exp(-(dt || 0.016) / 0.1)); gl.uniform4f(U.uLim, lim[0], lim[1], lim[2], lim[3]); gl.uniform1f(U.uLimS, lim[4]); gl.uniform1f(U.uLimK, limK); } else gl.uniform1f(U.uLimK, 0);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
   };
   W.hooks.push(frame);
-  window.__czCrt = { cards: cards, get live() { return live; }, R: RK, d: DK };
+  // r450: what the fold's own script may ask of the rig: the one big picture (pic: any loaded <img>), a new measure, the beat (C.scale, C.gain)
+  window.__czCrt = { cards: cards, get live() { return live; }, get gen() { return gen; }, get top() { return hTop; }, get h() { return wh - 2 * PAD; }, get pl() { return PL; }, get hw() { return vw - PL - PR; }, get vw() { return vw; }, R: RK, d: DK, C: CC, get ready() { return ready && !dead; }, measure: function () { if (ready && !dead) measure(); },
+    pic: function (im) { if (!ready || dead) return false; try { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, big); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im); gl.generateMipmap(gl.TEXTURE_2D); gl.activeTexture(gl.TEXTURE0); return true; } catch (e) { gl.activeTexture(gl.TEXTURE0); return false; } } };
   W.go();
+})();
+// r451 (Daniel, 10 Nov: "imi place cel cu inima. hai sa il dezvoltam, sa facem mai mutla animatie si solutie pe mobile si
+// finisat cat se paote de mult"). The heart's whole life, all of it on the CRT rig's own calls (window.__czCrt; per set: scale,
+// gain, power, a nudge; nothing in the DOM moves, nothing is laid out again), on the wall's loop (nothing off screen or in a
+// hidden tab):
+//  load   the sets wait switched off and switch on from the middle outwards, each one as a line that opens into its picture;
+//  rest   it beats: two short pulses that travel from the middle to the edge, every 3.2 s; now and then one set loses its signal;
+//  away   as the heart leaves the screen the sets drift a little apart and dim.
+//  form   r454 (Daniel, 10 Nov: "când scrollezi să se formeze: inima să înceapă deformată ... Să fie defazate rândurile și să se
+//         formeze ulterior"): the heart opens with its rows slid sideways like loose bricks, every row its own way and amount,
+//         and the scroll lays them in, the top row first and the tip last, scrubbed: it is whole by the time the heart reaches
+//         the top of the screen (just before "away" starts). The links move with their pictures (a translate: no layout, no CLS;
+//         the fold clips, so nothing widens the page). Only with the rig: without it the heart is whole from the start.
+// r452 (Daniel, 10 Nov: "Hai să renunțăm la sortarea pe servicii în hero"): the five service keys and the lighting of each
+// service's work are gone; the services live in their own section (.sv5). Without the rig or with reduced motion it is a still picture.
+(function () {
+  var wall = document.querySelector(".pwall.pw-first.f5c"), W = window.__czWall;
+  if (!wall || !W || !W.hooks || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var rig = function () { var C = window.__czCrt; return C && C.ready ? C : null; };
+  var pulse = function (x) { return x <= 0 || x >= 1 ? 0 : Math.pow(Math.sin(Math.PI * x), 2) * (1 - 0.35 * x); };
+  var G = -1, T0 = 0, mx = 0, my = 0, AW = false, armed = false, HT = -1e9, FD = 150, NR = 1, RS = [], SLIDE = [0.6, -0.5, 0.55, -0.45, 0.6], ST = 0.35;
+  var phone = matchMedia("(max-width: 700px)"), stacked = matchMedia("(max-width: 900px)"), host = wall.querySelector(".f5-wall");
+  var sets = [].slice.call(wall.querySelectorAll(".pw-case")), slid = false;
+  var hdr = document.querySelector(".hdr");
+  W.hooks.push(function (t, dt) {
+    var C = rig(); if (!C) { if (slid) { slid = false; sets.forEach(function (el) { el.style.translate = ""; }); } return; } // the rig went: the still heart is whole
+    slid = true;
+    if (G !== C.gen) { // where the heart's middle is and how far each set is from it (0 the middle, 1 the tip): on a new measure only
+      G = C.gen; var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, far = 1;
+      C.cards.forEach(function (c) { if (c.w > 0) { x0 = Math.min(x0, c.x); y0 = Math.min(y0, c.y); x1 = Math.max(x1, c.x + c.w); y1 = Math.max(y1, c.y + c.h); } });
+      mx = (x0 + x1) / 2; my = y0 + (y1 - y0) * 0.44;
+      C.cards.forEach(function (c) { c.dx = c.x + c.w / 2 - mx; c.dy = c.y + c.h / 2 - my; c.d = Math.hypot(c.dx, c.dy * 1.2); if (c.w > 0) far = Math.max(far, c.d); });
+      C.cards.forEach(function (c) { c.d /= far; });
+      var ys = []; C.cards.forEach(function (c) { if (c.w > 0 && !ys.some(function (y) { return Math.abs(y - c.y) < 4; })) ys.push(c.y); }); ys.sort(function (a, b) { return a - b; }); NR = Math.max(1, ys.length);
+      C.cards.forEach(function (c) { c.ri = 0; ys.forEach(function (y, k) { if (Math.abs(y - c.y) < 4) c.ri = k; }); });
+      // how far each row may slide: inside the fold, never over the title column (side by side), off the screen's edge by
+      // under half a set on a phone (the edge of a small screen is the frame); a row with no room on its side slides the other way
+      var hr = host.getBoundingClientRect(), wr = wall.getBoundingClientRect(), o0 = hr.left - C.pl, tw = 0, side = !stacked.matches;
+      if (side) [].forEach.call(wall.querySelectorAll(".f5-h, .f5-say"), function (el) { tw = Math.max(tw, el.getBoundingClientRect().right); });
+      var w0 = 1; C.cards.forEach(function (c) { if (c.w > 0) w0 = c.w; });
+      var lo = (side ? Math.max(tw + 12, wr.left + 8) : phone.matches ? wr.left - 0.4 * w0 : wr.left + 8) - o0, hi = (phone.matches ? wr.right + 0.4 * w0 : wr.right - 8) - o0;
+      RS = ys.map(function (y, k) {
+        var l = 1e9, r = -1e9; C.cards.forEach(function (c) { if (c.w > 0 && c.ri === k) { l = Math.min(l, c.x); r = Math.max(r, c.x + c.w); } });
+        var want = SLIDE[k % SLIDE.length] * w0, dir = want > 0 ? 1 : -1, room = function (d) { return d > 0 ? hi - r : l - lo; };
+        if (room(dir) < 0.2 * w0 && room(-dir) > room(dir) * 1.5) dir = -dir;
+        return dir * Math.max(0, Math.min(Math.abs(want), room(dir)));
+      });
+      FD = Math.max(60, hr.top + scrollY + hr.height / 2 - innerHeight / 2); // r456: whole as the heart's middle reaches the screen's middle
+      if (!side) { var h1t = wall.querySelector(".pw-h").getBoundingClientRect().top + scrollY; FD = Math.max(60, Math.min(FD, h1t - 12)); } // r461: stacked, it is whole before the title leaves the screen (Daniel: "în dreptul textului")
+      C.C.cx = mx; C.C.cy = my; C.C.scale = 1; C.C.gain = 1;
+    }
+    var sp = Math.min(1, Math.max(0, (4 - C.top) / (C.h * 0.9))), e = sp * sp * (3 - 2 * sp);
+    if ((e > 0.01) !== AW) { AW = !AW; wall.classList.toggle("away", AW); } // the sets drift off their DOM boxes: the boxes' shadows go
+    var fp = Math.min(1, Math.max(0, scrollY / FD)) * (1 + ST * (NR - 1));
+    // r456: the moment. Once the heart has been seen loose (armed), laying its last row in is "you formed it": one big beat
+    // from the middle out, the key words flare, a short sound (window.__czBeep: only if a tap or a key
+    // has unlocked audio and the site's sound is on). Once per forming: it re-arms only when the heart has come loose again.
+    var fq = fp / (1 + ST * (NR - 1));
+    if (fq < 0.6) armed = true;
+    else if (armed && fq > 0.99) {
+      armed = false; HT = t; wall.classList.remove("formed"); void wall.offsetWidth; wall.classList.add("formed");
+      if (window.__czBeep) window.__czBeep();
+    }
+    var hp = t - HT;
+    // r463 (Daniel, 11 Nov: "poate si tv-urile la scroll, cand raman sus sa aiba un efect interesant prin care dispar si cat mai
+    // contextual"): each set switches off as it reaches the top of the screen (the header's height, shown or not: the same place both ways), the way a
+    // tube does: the picture folds into a bright line, the line shrinks to a dot, the dot goes out. It is the switching-on
+    // played backwards, on the scroll itself: scroll back and each set comes on again. Only the rig's power value moves.
+    var hd = hdr ? hdr.offsetHeight : 0, y0 = C.top - 28;
+    for (var i = 0; i < C.cards.length; i++) {
+      var c = C.cards[i]; if (!(c.w > 0)) continue;
+      var q = Math.min(1, Math.max(0, fp - c.ri * ST)), fx = Math.round((RS[c.ri] || 0) * (1 - q * q * (3 - 2 * q)) * 2) / 2;
+      if (fx !== c.fx) { c.fx = fx; c.el.style.translate = fx ? fx + "px 0" : ""; }
+      if (c.t1 == null) { if (!c.L.up) { c.pw = 0; continue; } if (!T0) T0 = t; c.t1 = Math.max(t, T0 + 60 + c.d * 340); }
+      var p = (t - c.t1) / 460; c.pw = p <= 0 ? 0 : p >= 1 ? 1 : p;
+      var off = Math.min(1, Math.max(0, (hd + 0.55 * c.h - (y0 + c.y)) / (0.85 * c.h))); if (off > 0) c.pw = Math.min(c.pw, 1 - off * off * (3 - 2 * off));
+      var ph = t - T0 - 1500 - c.d * 190, b = 0; if (ph > 0) { ph %= 3200; b = pulse(ph / 320) + 0.6 * pulse((ph - 370) / 300); }
+      var on = p > 0 && p < 1.6 ? Math.exp(-3 * Math.max(0, p - 0.55)) * Math.min(1, p / 0.55) : 0; // the tube overshoots as it comes on, then settles
+      var hb = hp < 1200 ? pulse((hp - c.d * 150) / 420) : 0; // r456: the big beat, the middle first
+      c.s = 1 + 0.026 * b + 0.02 * on + 0.07 * hb - 0.05 * e;
+      c.gn = (1 + 0.15 * b + 0.3 * on + 0.55 * hb) * (1 - 0.45 * e);
+      c.ox = c.dx * 0.12 * e + fx; c.oy = c.dy * (c.dy < 0 ? 0.12 : 0.03) * e; // upwards and sideways; the tip stays inside the heart's own box
+    }
+  });
+})();
+// r456 (Daniel: "un sunet 8-bit scurt" when the heart forms; then: a success sound, subtle, "you feel it is there"). The
+// heart's one sound, synthesised (no file): a soft lub-dub and a rising major arpeggio on a square voice, about 0.5 s, the
+// whole thing under a low master (0.07) and a low-pass. The rules it keeps:
+//  - the site's sound switch: localStorage "cz-sound" = "off" (the drive's and the game's speaker) keeps it silent;
+//  - autoplay: nothing is made at load. A real gesture (pointerup, touchend, keydown; a scroll is not one) unlocks it:
+//    WebKit (Safari, every iOS browser) needs the context made and resumed inside that gesture, plus one silent buffer;
+//    Chromium and Firefox let a context made later run once the page has had a gesture, so there it is made in the next
+//    idle moment (new AudioContext() is a 100+ ms task: never inside the tap, never on a scroll frame);
+//  - with no unlock, a hidden tab or a context that is not running it simply does not play. Never an error.
+// window.__czBeep() plays it (true) or says why not (false); __czBeep.state for QA.
+(function () {
+  var wall = document.querySelector(".pwall.pw-first.f5c");
+  if (!wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  var ua = navigator.userAgent, wk = /iP(hone|ad|od)/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) || (/AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg|Android/.test(ua));
+  var ctx = null, last = -1e9, idle = window.requestIdleCallback || function (f) { return setTimeout(f, 200); };
+  var off = function () { try { return localStorage.getItem("cz-sound") === "off"; } catch (e) { return false; } };
+  var make = function () { if (!ctx) { try { ctx = new AC(); } catch (e) { ctx = null; } } return ctx; };
+  var EV = ["pointerup", "touchend", "keydown"];
+  var unlock = function (ev) {
+    if (ev && ev.type === "keydown" && (ev.key === "Escape" || ev.key === "Tab" || ev.metaKey || ev.ctrlKey || ev.altKey)) return; // not an activation in every browser
+    if (off()) return;
+    if (wk) {
+      if (!make()) return;
+      try { var r = ctx.resume(); if (r && r.catch) r.catch(function () {}); } catch (e) {}
+      try { var b = ctx.createBuffer(1, 1, 22050), s0 = ctx.createBufferSource(); s0.buffer = b; s0.connect(ctx.destination); s0.start(0); } catch (e) {}
+    } else if (!ctx) { var ua2 = navigator.userActivation; if (ua2 && !ua2.hasBeenActive) return; idle(function () { make(); }, { timeout: 1500 }); } // the end of a scroll swipe is no activation: wait for a real one (no "not allowed to start" warning)
+    else if (ctx.state === "suspended") { try { var r2 = ctx.resume(); if (r2 && r2.catch) r2.catch(function () {}); } catch (e) {} }
+  };
+  EV.forEach(function (n) { addEventListener(n, unlock, { capture: true, passive: true }); });
+  document.addEventListener("visibilitychange", function () { if (ctx && document.hidden && ctx.state === "running") try { ctx.suspend(); } catch (e) {} });
+  var beep = function () {
+    if (off()) return (beep.state = "off"), false;
+    if (!ctx) return (beep.state = "locked"), false;
+    if (document.hidden) return (beep.state = "hidden"), false;
+    if (ctx.state !== "running") { try { var r = ctx.resume(); if (r && r.catch) r.catch(function () {}); } catch (e) {} return (beep.state = "suspended"), false; }
+    var now = performance.now(); if (now - last < 3000) return (beep.state = "soon"), false; last = now;
+    try {
+      var t0 = ctx.currentTime + 0.03, m = ctx.createGain(), lp = ctx.createBiquadFilter();
+      m.gain.value = 0.07; lp.type = "lowpass"; lp.frequency.value = 3400; lp.Q.value = 0.3; m.connect(lp); lp.connect(ctx.destination);
+      var v = function (type, f0, f1, at, dur, g, atk) {
+        var o = ctx.createOscillator(), e = ctx.createGain(), a = t0 + at;
+        o.type = type; o.frequency.setValueAtTime(f0, a); if (f1) o.frequency.exponentialRampToValueAtTime(f1, a + dur);
+        e.gain.setValueAtTime(0, a); e.gain.linearRampToValueAtTime(g, a + atk); e.gain.exponentialRampToValueAtTime(0.0005, a + dur);
+        o.connect(e); e.connect(m); o.start(a); o.stop(a + dur + 0.03);
+      };
+      v("triangle", 210, 80, 0, 0.1, 0.9, 0.006); v("triangle", 190, 75, 0.13, 0.09, 0.65, 0.006); // lub-dub, with the big beat
+      [[784, 0.24], [988, 0.29], [1175, 0.34], [1568, 0.39]].forEach(function (n, i) { v("square", n[0], 0, n[1], i < 3 ? 0.065 : 0.12, 0.26, 0.012); }); // G5 B5 D6 G6: up, resolved
+      setTimeout(function () { try { m.disconnect(); lp.disconnect(); } catch (e) {} }, 900);
+      beep.state = "played"; return true;
+    } catch (e) { beep.state = "error"; return false; }
+  };
+  beep.state = "idle"; beep.ctx = function () { return ctx ? ctx.state : "none"; };
+  window.__czBeep = beep;
 })();
 // r380 (beta; Daniel: the intro text, "fine and subtle, very modern"): after the h1's signal lock (the split and the
 // keyframes are in render.mjs + site.css), it lives with the wall. On the wall's own loop (so nothing runs while the
@@ -804,6 +1004,7 @@
 (function () {
   var W = window.__czWall, h = document.querySelector(".pw-h.si"), wall = h && h.closest(".pwall");
   if (!W || !W.go || !h || !wall || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (h.closest(".f5")) return; // r450: the title is part of a still composition; it does not float, sink or blur
   var phone = matchMedia("(max-width: 700px)").matches, fine = matchMedia("(hover: hover) and (pointer: fine)").matches && !phone;
   var wh = 1, measure = function () { wh = wall.getBoundingClientRect().height; };
   measure(); addEventListener("resize", measure); addEventListener("load", measure);
@@ -850,17 +1051,19 @@
     var hb = h.getBoundingClientRect(), out = [];
     [].forEach.call(h.querySelectorAll(".si-w"), function (w, wi) {
       var n = w.firstChild; if (!n || n.nodeType !== 3) return;
+      var kk = w.classList.contains("si-k"), fs = kk ? getComputedStyle(w).fontSize : ""; // r456: the key words are bigger and yellow: their copies must be too
       var re = /\p{L}\p{M}*|./gu, m;
-      while ((m = re.exec(n.data))) { var r = document.createRange(); r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length); var b = r.getClientRects()[0]; if (b) out.push({ c: m[0], r: r, w: wi, x: b.left - hb.left, y: b.top - hb.top, W: b.width, H: b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, wide: /\p{L}/u.test(m[0]) && !/^[iljtfr]/.test(m[0]) }); }
+      while ((m = re.exec(n.data))) { var r = document.createRange(); r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length); var b = r.getClientRects()[0]; if (b) out.push({ c: m[0], r: r, w: wi, x: b.left - hb.left, y: b.top - hb.top, W: b.width, H: b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, wide: /\p{L}/u.test(m[0]) && !/^[iljtfr]/.test(m[0]), k: kk, fs: fs }); }
     });
     return out;
   };
-  var piece = function (o, txt, x, y, W2, H, cls) { var e = document.createElement("span"); e.className = "h1g-p" + (cls ? " " + cls : ""); e.setAttribute("data-c", txt); e.style.cssText = "left:" + x + "px;top:" + y + "px;width:" + W2 + "px;height:" + H + "px;line-height:" + H + "px"; o.appendChild(e); return e; };
+  var KF = "";
+  var piece = function (o, txt, x, y, W2, H, cls) { var e = document.createElement("span"); e.className = "h1g-p" + (cls ? " " + cls : "") + (KF ? " h1g-k" : ""); e.setAttribute("data-c", txt); e.style.cssText = "left:" + x + "px;top:" + y + "px;width:" + W2 + "px;height:" + H + "px;line-height:" + H + "px" + (KF ? ";font-size:" + KF : ""); o.appendChild(e); return e; };
   var AT = [0, 0.1, 0.22, 0.38, 0.55, 0.7, 0.86, 1], SL = [0, 1, 0.55, 0.95, 0.4, 0.75, 0.12, 0];
   var kf = function (vals, fn, ease) { return vals.map(function (v, i) { var f = fn(v); f.offset = AT[i]; if (ease) f.easing = ease; return f; }); };
   // the hold slipping: bands sliding in turn against each other, the red and blue guns showing where they part
   var slip = function (o, a, txt, x, y, W2, H, nb, amp, gun, dur, lag) {
-    var em = parseFloat(getComputedStyle(h).fontSize);
+    var em = parseFloat(KF || getComputedStyle(h).fontSize);
     [["h1g-r", gun], ["h1g-b", -gun]].forEach(function (g) { var e = piece(o, txt, x, y, W2, H, g[0]); a.push(e.animate(kf(SL, function (v) { return { transform: "translate3d(" + (g[1] * em * v).toFixed(2) + "px,0,0)", opacity: v > 0.05 ? 1 : 0 }; }), { duration: dur, fill: "both" })); });
     for (var i = 0; i < nb; i++) (function (i) {
       var e = piece(o, txt, x, y, W2, H), s = (i % 2 ? 1 : -1) * amp * em * (0.65 + 0.35 * Math.random()), t = H * 0.1, band = (H - 2 * t) / nb;
@@ -877,6 +1080,7 @@
     x.putImageData(d, 0, 0); return (noise = c.toDataURL("image/png"));
   };
   var run = function (type, L, all, quick) {
+    KF = L.k ? L.fs : "";
     var o = document.createElement("span"); o.className = "h1g-o"; o.setAttribute("aria-hidden", "true");
     var a = [], rs = [L.r], dur = 640, k = quick ? 0.72 : 1;
     if (type === "line" || type === "lsnow") {
@@ -909,6 +1113,7 @@
       a.push(e.animate([{ opacity: 1, offset: 0 }, { opacity: 0.3, offset: 0.12 }, { opacity: 0.58, offset: 0.3, easing: "steps(2)" }, { opacity: 0.3, offset: 0.46 }, { opacity: 0.55, offset: 0.6 }, { opacity: 0.34, offset: 0.7 }, { opacity: 1, offset: 0.86 }, { opacity: 1, offset: 1 }], { duration: dur, fill: "both" }));
       bloom(o, a, L, dur);
     }
+    if (KF) { var er = line ? piece(o, txt, line[0].x, L.y, lw, L.H, "h1g-e") : piece(o, L.c, L.x, L.y, L.W, L.H, "h1g-e"); o.insertBefore(er, o.firstChild); } // r458: a key letter's weight and plate are shadows, which the highlight cannot hide: a paper copy covers them while it glitches
     busy = true; h.appendChild(o); CSS.highlights.set("h1g", new Highlight(...rs));
     var done = false, end2 = function () { if (done) return; done = true; a.forEach(function (x) { x.cancel(); }); o.remove(); CSS.highlights.delete("h1g"); busy = false; };
     Promise.all(a.map(function (x) { return x.finished; })).then(end2, end2);
@@ -921,7 +1126,7 @@
     var L;
     if (idx != null && all[idx]) L = all[idx];
     else if (near) { pool.sort(function (a, b) { return Math.hypot(a.cx - near[0], a.cy - near[1]) - Math.hypot(b.cx - near[0], b.cy - near[1]); }); L = pool[Math.floor(Math.random() * Math.min(3, pool.length))]; }
-    else L = pool[Math.floor(Math.random() * pool.length)];
+    else { var kp = pool.filter(function (q0) { return q0.k; }); if (kp.length && Math.random() < 0.6) pool = kp; L = pool[Math.floor(Math.random() * pool.length)]; } // r456: the type's own clock leans on the key words
     lastIdx = L.i; run(type, L, all, quick); return true;
   };
   // a set lost its signal: the letters near it go too (or the whole line), the same way

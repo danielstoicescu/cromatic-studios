@@ -29,7 +29,12 @@ const T = {
     e: { name: "We'd love to know your name.", mail: "That email doesn't look right.", phone: "Leave us a phone number too." },
     printing: "Printing your boarding pass…", busy: "Too many passes from here for now. Write to hi@cromaticstudios.com and we'll answer.",
     hello: "Welcome aboard,", sent: "Your pass is in your inbox, and we'll answer within one working day.", mailto: "Your email app should open with the details; send it and we'll answer within one working day.",
-    passenger: "PASSENGER", flight: "FLIGHT", klass: "CLASS", boardingU: "BOARDING", fix: "Two things to fix before take-off:"
+    passenger: "PASSENGER", flight: "FLIGHT", klass: "CLASS", boardingU: "BOARDING", fix: "Two things to fix before take-off:",
+    // r458 · the constellation mod (html.m-sky) says it plainly, without the flight metaphor. Swapped in by mods.js.
+    sky: { eb: "Contact · Strada Olari 9", lead: "Pick what fits you and we answer within one working day. You get a copy too.",
+      doc: "Your request", q3: "When do you want to start?", pax: "About you", go: "Send",
+      printing: "Sending…", busy: "Too many messages from here. Write to hi@cromaticstudios.com.",
+      hello: "We got it,", sent: "A copy is in your inbox. We answer within one working day.", passenger: "NAME", fix: "Still to fill in:" }
   },
   ro: {
     eb: "Ultimul apel · Strada Olari 9", h: "La ce visezi?",
@@ -44,7 +49,11 @@ const T = {
     e: { name: "Ne-ar plăcea să știm cum te cheamă.", mail: "Adresa de email nu pare corectă.", phone: "Lasă-ne și un număr de telefon." },
     printing: "Îți tipărim cartea de îmbarcare…", busy: "Prea multe carduri de îmbarcare de aici, deocamdată. Scrie-ne la hi@cromaticstudios.com și îți răspundem.",
     hello: "Bine ai venit la bord,", sent: "Cartea de îmbarcare e deja în inboxul tău și îți răspundem într-o zi lucrătoare.", mailto: "Aplicația ta de email ar trebui să se deschidă cu detaliile; trimite-le și îți răspundem într-o zi lucrătoare.",
-    passenger: "PASAGER", flight: "ZBOR", klass: "CLASĂ", boardingU: "ÎMBARCARE", fix: "Mai sunt de completat câteva lucruri înainte de decolare:"
+    passenger: "PASAGER", flight: "ZBOR", klass: "CLASĂ", boardingU: "ÎMBARCARE", fix: "Mai sunt de completat câteva lucruri înainte de decolare:",
+    sky: { eb: "Contact · Strada Olari 9", lead: "Alege ce ți se potrivește și îți răspundem în cel mult o zi lucrătoare. Primești și tu o copie.",
+      doc: "Cererea ta", q3: "Când vrei să începem?", pax: "Despre tine", go: "Trimite",
+      printing: "Se trimite…", busy: "Prea multe mesaje de aici. Scrie-ne la hi@cromaticstudios.com.",
+      hello: "Am primit,", sent: "Ai o copie în inbox. Îți răspundem într-o zi lucrătoare.", passenger: "NUME", fix: "Mai e de completat:" }
   }
 };
 const EN = T.en;
@@ -275,7 +284,7 @@ function client() {
     });
   });
 }
-const CLIENT_T = Object.fromEntries(Object.entries(T).map(([k, v]) => [k, { e: v.e, printing: v.printing, busy: v.busy, hello: v.hello, sent: v.sent, mailto: v.mailto, passenger: v.passenger, flight: v.flight, klass: v.klass, boardingU: v.boardingU, fix: v.fix }]));
+const CLIENT_T = Object.fromEntries(Object.entries(T).map(([k, v]) => [k, { e: v.e, printing: v.printing, busy: v.busy, hello: v.hello, sent: v.sent, mailto: v.mailto, passenger: v.passenger, flight: v.flight, klass: v.klass, boardingU: v.boardingU, fix: v.fix, sky: v.sky }]));
 export const PASS_JS = `<script id="czp-js">window.__CZP_T=${JSON.stringify(CLIENT_T).replace(/</g, "\\u003c")};(${client.toString()})();</script>`;
 
 // the content pages that end with the pass (relative to public/, before the home move: site/ is the home)

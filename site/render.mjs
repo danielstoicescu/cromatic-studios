@@ -1,7 +1,7 @@
 // Renders the lo-fi website: /site/ (home) and /work/<slug>/ (case pages). Plain HTML, a small
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
-import { NAV, CHAPTERS, SERVICES, PROJECTS, ZDROVIT_BRANDS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
+import { NAV, SERVICE_CARDS, PROJECTS, ZDROVIT_BRANDS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
 import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
 import { SAME_AS, clip } from "../build/seo-pages.mjs";
 import { existsSync } from "node:fs";
@@ -114,7 +114,6 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       <a href="/">Drive in the Cromatic City</a><a href="${STUDIO.legalUrl}">cromaticstudios.com</a>
     </div>
   </div>
-  <div class="wrap ftr-motto"><p>There is always a coffee.</p></div>
   ${/* r139c: the last line is the strip every page ends with (build/footer.mjs fills it in, in the page's language) */ ""}<div class="cz-foot" data-czf></div>
 </footer>
 </body></html>`;
@@ -314,7 +313,28 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       ${small ? zdRow() : ""}
     </div>`;
   }).join("");
-  const SVC_LINKS = { "Branding & Design": ["brand-strategy", "brand-identity"], "Video Production": ["video-production"], "UX & UI Design": ["websites-apps"], "Growth & Content": ["social-media-content"] };
+  // r449: the five service pages with their home card (data.mjs: colour, what you get, for when) and the yellow heart as a drawing, not an emoji
+  const SVC5 = SERVICE_PAGES.map((x) => ({ ...x, ...(SERVICE_CARDS[x.slug] || {}) })).filter((x) => x.get);
+  // r450s (Daniel, 10 Nov: "mult mai mult ux, poate ui mai cool, cu niste illustrations"): one drawing per service, in code, in the
+  // house shapes (flat fills, one ink line, the four-point star). Each is drawn in its END state (what a still page, a
+  // reduced-motion visitor or a printer sees); the classes s5-* only say how it gets there when it plays (site.css).
+  // They sit in their own element beside the text: a block with an <svg> inside is skipped by the Romanian pass.
+  const S5_STAR = "M0-18C2-6 6-2 18 0 6 2 2 6 0 18-2 6-6 2-18 0-6-2-2-6 0-18Z";
+  const s5svg = (inner) => `<svg viewBox="0 0 320 220" focusable="false"><g stroke="#0d0c09" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${inner}</g></svg>`;
+  const s5who = (x, y, r, fill, d) => `<g class="s5-in" style="--d:${d}"><rect x="${x - r - 4}" y="${y + r - 3}" width="${2 * r + 8}" height="130" rx="${r + 4}" fill="${fill}"/><circle cx="${x}" cy="${y}" r="${r}" fill="${fill}"/></g>`;
+  const SV5_ART = {
+    // one table seen from above, two coffees, and the words that fall into one sentence (with its full stop); the dream is the star
+    "brand-strategy": s5svg(`<circle cx="160" cy="114" r="92" fill="#fbfaf5"/><rect x="72" y="52" width="22" height="11" rx="5.5" fill="#fff" transform="rotate(45 104 62)"/><circle cx="104" cy="62" r="17" fill="#fff"/><circle cx="104" cy="62" r="11" fill="#0d0c09" stroke="none"/><rect x="226" y="160.5" width="22" height="11" rx="5.5" fill="#fff" transform="rotate(45 216 166)"/><circle cx="216" cy="166" r="17" fill="#fff"/><circle cx="216" cy="166" r="11" fill="#0d0c09" stroke="none"/><g transform="rotate(-14 118 164)"><rect x="100" y="142" width="36" height="46" rx="5" fill="#fff"/><path d="M108 155h20M108 164h20M108 173h12" fill="none"/></g><rect class="s5-w" style="--x:-14px;--y:-34px;--r:-18deg" x="84" y="105" width="30" height="18" rx="4" fill="#FED012"/><rect class="s5-w" style="--x:20px;--y:30px;--r:12deg" x="119" y="105" width="40" height="18" rx="4" fill="#119BFE"/><rect class="s5-w" style="--x:-30px;--y:28px;--r:24deg" x="164" y="105" width="22" height="18" rx="4" fill="#F65342"/><rect class="s5-w" style="--x:8px;--y:-32px;--r:-10deg" x="191" y="105" width="34" height="18" rx="4" fill="#B098C8"/><circle class="s5-in" style="--d:9" cx="235" cy="118" r="4.5" fill="#0d0c09" stroke="none"/><g transform="translate(274 42)"><path class="s5-spin" d="${S5_STAR}" fill="#FED012"/></g>`),
+    // the three sheets of an identity, fanned out of one pile: colour, type, the mark
+    "brand-identity": s5svg(`<g transform="translate(80 116) rotate(-9)"><g class="s5-fan" style="--x:80px;--r:9deg"><rect x="-40" y="-54" width="80" height="108" rx="14" fill="#fff"/><circle cy="-28" r="11" fill="#28C840"/><circle r="11" fill="#119BFE"/><circle cy="28" r="11" fill="#F65342"/></g></g><g transform="translate(240 116) rotate(9)"><g class="s5-fan" style="--x:-80px;--r:-9deg"><rect x="-40" y="-54" width="80" height="108" rx="14" fill="#fff"/><circle r="26" fill="#119BFE"/><path class="s5-spin" d="${S5_STAR}" fill="#fff"/></g></g><g transform="translate(160 108)"><g class="s5-pop"><rect x="-47" y="-62" width="94" height="124" rx="16" fill="#0d0c09"/><text y="17" text-anchor="middle" font-size="50" font-weight="800" letter-spacing="-1.5" fill="#fbfaf5" stroke="none">Aa</text></g></g>`),
+    // a page being built block by block, its phone twin, and the pointer that arrives on the button
+    "websites-apps": s5svg(`<rect x="30" y="28" width="216" height="162" rx="14" fill="#fbfaf5"/><path d="M30 54h216" fill="none"/><circle cx="48" cy="41" r="4" fill="#F65342" stroke-width="1.5"/><circle cx="62" cy="41" r="4" fill="#FED012" stroke-width="1.5"/><circle cx="76" cy="41" r="4" fill="#28C840" stroke-width="1.5"/><rect class="s5-in" style="--d:0" x="46" y="68" width="104" height="48" rx="8" fill="#FED012"/><rect class="s5-in" style="--d:1" x="162" y="72" width="52" height="8" rx="4" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:2" x="162" y="87" width="36" height="8" rx="4" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:3" x="162" y="102" width="44" height="16" rx="8" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:4" x="46" y="128" width="54" height="46" rx="8" fill="#fff"/><rect class="s5-in" style="--d:5" x="110" y="128" width="54" height="46" rx="8" fill="#fff"/><rect class="s5-in" style="--d:6" x="174" y="128" width="54" height="46" rx="8" fill="#fff"/><rect x="222" y="70" width="72" height="134" rx="14" fill="#fff"/><rect class="s5-in" style="--d:7" x="232" y="86" width="52" height="42" rx="7" fill="#28C840"/><rect class="s5-in" style="--d:8" x="232" y="138" width="44" height="7" rx="3.5" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:9" x="232" y="151" width="30" height="7" rx="3.5" fill="#0d0c09" stroke="none"/><rect class="s5-in" style="--d:10" x="232" y="170" width="52" height="18" rx="9" fill="#F65342"/><g transform="translate(186 108)"><path class="s5-cur" d="M0 0v23l6-6 5 10 5-2.500-5-10h9z" fill="#fff" stroke-width="2"/></g>`),
+    // the slate claps, the sound comes up: film, with post and sound in house
+    "video-production": s5svg(`<rect x="70" y="96" width="180" height="104" rx="14" fill="#fbfaf5"/><circle cx="114" cy="148" r="25" fill="#FED012"/><path d="M107 136v24l20-12z" fill="#0d0c09"/>${[[158, 16], [172, 38], [186, 24], [200, 48], [214, 20], [228, 32]].map(([x, h], i) => `<rect class="s5-bar" style="--d:${i}" x="${x}" y="${148 - h / 2}" width="7" height="${h}" rx="3.5" fill="#0d0c09" stroke="none"/>`).join("")}<g class="s5-clap"><rect x="70" y="66" width="180" height="24" rx="8" fill="#0d0c09"/><path d="M96 67h18l-11 22H85zM136 67h18l-11 22h-18zM176 67h18l-11 22h-18zM216 67h18l-11 22h-18z" fill="#fbfaf5" stroke="none"/></g>`),
+    // one reel, one heart, and the crowd that gathers in front of it
+    "social-media-content": s5svg(`<rect x="116" y="12" width="88" height="134" rx="16" fill="#fbfaf5"/><path class="s5-beat" d="M160 96c-24-16-26-38-12-40 7-1 11 4 12 8 1-4 5-9 12-8 14 2 12 24-12 40z" fill="#FED012"/><rect x="134" y="114" width="52" height="8" rx="4" fill="#0d0c09" stroke="none"/><rect x="134" y="127" width="30" height="8" rx="4" fill="#0d0c09" stroke="none"/>${[[-4, "#fff"], [40, "#119BFE"], [84, "#fff"], [236, "#28C840"], [280, "#FED012"], [326, "#119BFE"]].map(([x, c], i) => s5who(x, 158, 13, c, i * 2 + 1)).join("")}${[[-28, "#28C840"], [18, "#FED012"], [62, "#0d0c09"], [110, "#fff"], [160, "#F65342"], [210, "#119BFE"], [258, "#fff"], [304, "#F65342"], [350, "#FED012"]].map(([x, c], i) => s5who(x, 192, 17, c, i * 2)).join("")}`)
+  };
+  const SV5_DREAM = { "brand-strategy": "Branding", "brand-identity": "Branding", "websites-apps": "Website / App", "video-production": "Video", "social-media-content": "Growth & Social" }; // the boarding pass chip (build/boarding.mjs, data-v) each card ticks on the way to #contact
   const STREET_INK = { A: "#0d0c09", B: "#0d0c09", C: "#0d0c09", D: "#0d0c09", E: "#0d0c09" }; // r387: ink on the Coffee green (8.9:1) and the Fintech blue (6.4:1), was white (2.22, 2.93)
   const SITE_TITLE = "Cromatic Studios · Branding, web & film studio in Bucharest"; // r356: <= 60 characters (the home page now)
   // r356: <= 155 characters
@@ -394,12 +414,29 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
       }
       if (rows.some((r) => r.length < 3)) return "";
       if (first) wall.lead = rows[0].slice(0, 2).map((x) => x.page); // r381: preloaded in the head (the first paint shows row 1 from its start)
-      const card = (x, hid, k = 99) => x.mural ? `<div class="pw-case pw-mural" data-k="${x.page}"${hid ? ' aria-hidden="true"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : "Mural at the Cromatic Studios studio"}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}" decoding="async" width="560" height="380"></div>` : `<a class="pw-case" href="/work/${x.page}/" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name"${hid ? ' aria-hidden="true"' : ""}>${esc(x.name)}</span></a>`; // r387: the card's name names the link, the cover is alt="" (image-redundant-alt)
-      return `<section class="pwall${first ? " pw-first" : ""}" ${first ? 'aria-labelledby="pw-h"' : 'aria-label="Selected work"'}>
-    ${first ? `<p class="pw-alt pw-alt-ghost" aria-hidden="true"><a>Or take the scenic route through the Cromatic City <span aria-hidden="true">→</span></a></p>` : ""}
-    <div class="pw-rows">${rows.map((l) => `<div class="pw-row">${l.map((x, k) => card(x, false, k)).join("")}${l.map((x) => card(x, true)).join("")}</div>`).join("")}</div>
-    ${first ? `<div class="pw-over"><h1 class="pw-h" id="pw-h">We’re here for the brand experiences <span class="pw-heart" aria-hidden="true">💛</span></h1><script>${/* r380 (beta): the h1's "signal lock". Split into inline word spans before the first paint (no flash, no layout change, the same line breaks, still one text block for LCP); the h1 keeps its real text, read once through aria-label. Never with reduced motion. */ ""}(function(){var h=document.getElementById("pw-h");if(!h||!h.animate||matchMedia("(prefers-reduced-motion: reduce)").matches)return;var t=h.textContent.replace(/\\s+/g," ").replace(/💛/g,"").trim(),i=0,ks=-1,ke=-1,ws=[];h.setAttribute("aria-label",t);[].slice.call(h.childNodes).forEach(function(n){if(n.nodeType===3){var f=document.createDocumentFragment();n.data.split(/(\\s+)/).forEach(function(p){if(!p)return;if(/^\\s+$/.test(p)){f.appendChild(document.createTextNode(p));return;}var s=document.createElement("span");s.className="si-w";s.setAttribute("aria-hidden","true");s.textContent=p;s.setAttribute("data-t",p);s.style.setProperty("--i",i);if(/^(brand|experien)/i.test(p)){if(ks<0)ks=i;ke=i;}ws.push(s);i++;f.appendChild(s);});h.replaceChild(f,n);}else if(n.nodeType===1){n.style.setProperty("--i",i);}});for(var k=ks;k>=0&&k<=ke;k++)ws[k].classList.add("si-k");h.style.setProperty("--n",i);h.style.setProperty("--k0",Math.max(ks,0));h.classList.add("si");})();</script></div>
-    <p class="pw-alt"><a href="/">Or take the scenic route through the Cromatic City <span aria-hidden="true">→</span></a></p>` : ""}
+      // r454 (Daniel, 10 Nov: "la Steam aș vrea să scrie doar Steam și poate le mai scurtăm pe unde se poate, să fie pe un singur
+      // rând"): the caption on a set is the brand as people say it, one line; the link still carries the full name (aria-label)
+      const HEART_NAME = { steam: "Steam", "unchain-festival": "Unchain", "yoshi-izakaya": "Yoshi", "slow-coffee-festival": "Slow Coffee", "sip-coffee-wine": "Sip", "techventures-bank": "Techventures" };
+      const card = (x, hid, k = 99) => x.mural ? `<div class="pw-case pw-mural" data-k="${x.page}"${hid ? ' aria-hidden="true"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="${hid ? "" : "Mural at the Cromatic Studios studio"}" loading="${first && !hid && k < 5 ? "eager" : "lazy"}" decoding="async" width="560" height="380"></div>` : `<a class="pw-case" href="/work/${x.page}/" data-p="${x.page}" style="--bc:${x.c};--bt:${x.t}"${hid ? ' aria-hidden="true" tabindex="-1"' : ""}><img src="/onboarding/media/covers/${x.page}.webp" alt="" loading="${first && !hid && k < 5 ? "eager" : "lazy"}"${first && !hid && k < 3 ? ' fetchpriority="high"' : ""} decoding="async" width="560" height="380"><span class="pw-name"${hid ? ' aria-hidden="true"' : ""}>${esc(HEART_NAME[x.page] || x.name)}</span></a>`.replace('<a class="pw-case"', HEART_NAME[x.page] && !hid ? `<a class="pw-case" aria-label="${esc(x.name)}"` : '<a class="pw-case"'); // r387: the card's name names the link, the cover is alt="" (image-redundant-alt)
+      // r450 (Daniel, 10 Nov, on r449: "nu arata bine cu tv-urile de dimnesiuni diferite si nici textul pe negru mult. vreau alta
+      // solutie, mult mai creativa si vizuala"). The first fold is a still composition: the title in ink on the paper, sets of one
+      // size standing still. r452 (Daniel, 10 Nov: "Hai să renunțăm la sortarea pe servicii în hero"): no service keys here any more,
+      // the services live in their own section under the fold (.sv5); the fold is the title, the heart, the offer and the two ways on.
+      // r451: the first eight are the phone's heart (eight bigger sets, the other eight are not even fetched there). Pictures that read on a small tube: the pale ones (white boxes, a logo on white) are out.
+      const F5_PICK = ["two-minutes", "steam", "investimental", "clinica-sante", "casa-berero", "unchain-festival", "pain-plaisir", "yoshi-izakaya", "antila", "slow-coffee-festival", "sip-coffee-wine", "techventures-bank", "elithia", "bepco", "echo-school", "patiline"].filter(has).map((pg) => byPage.get(pg));
+      // r456/r457 (Daniel, on beta 4.41: "closer than ever"; the type leads: a bigger title, "brand experiences" the one thing to
+      // look at, in yellow): the lead-in and the key words are two spans, the key words yellow on their own ink plate (site.css r457).
+      const h1 = `<h1 class="pw-h" id="pw-h"><span class="pw-lead">We’re here for the</span> <span class="pw-k">brand experiences</span> <span class="pw-heart" aria-hidden="true"></span></h1><script>${/* r380 (beta): the h1's "signal lock". Split into inline word spans before the first paint (no flash, no layout change, the same line breaks, still one text block for LCP); the h1 keeps its real text, read once through aria-label. r456: the split goes into the lead-in and the key words' spans; the key words are .si-k. Never with reduced motion. */ ""}(function(){var h=document.getElementById("pw-h");if(!h||!h.animate||matchMedia("(prefers-reduced-motion: reduce)").matches)return;var i=0,k0=-1;h.setAttribute("aria-label",h.textContent.replace(/\\s+/g," ").replace(/💛/g,"").trim());var sp=function(el,key){[].slice.call(el.childNodes).forEach(function(n){if(n.nodeType===3){var f=document.createDocumentFragment();n.data.split(/(\\s+)/).forEach(function(p){if(!p)return;if(/^\\s+$/.test(p)){f.appendChild(document.createTextNode(p));return;}var s=document.createElement("span");s.className=key?"si-w si-k":"si-w";s.setAttribute("aria-hidden","true");s.textContent=p;s.setAttribute("data-t",p);s.style.setProperty("--i",i);if(key&&k0<0)k0=i;i++;f.appendChild(s);});el.replaceChild(f,n);}else if(n.nodeType===1){var c=n.classList;if(c.contains("pw-lead")||c.contains("pw-k"))sp(n,c.contains("pw-k"));else n.style.setProperty("--i",i);}});};sp(h,false);h.style.setProperty("--n",i);h.style.setProperty("--k0",Math.max(k0,0));h.classList.add("si");})();</script>`;
+      const say = `<div class="f5-say"><p class="pw-offer">Strategy, identity, websites, film and content for indie brands. Made in Bucharest since 2014.</p>
+</div>`; // r457 (Daniel: "nici butonul de Drive ... poate chiar îl scoatem"): no way on in the fold at all; the drive stays in the menu and further down
+      wall.lead = F5_PICK.slice(0, 3).map((x) => x.page);
+      const sets = `<div class="pw-rows"><div class="pw-row pw-still">${F5_PICK.map((x, k) => card(x, false, k < 8 ? Math.min(k, 4) : 99)).join("")}</div></div>`.replace(/ decoding="async"/g, ' decoding="async" data-f5'); // data-f5: build/images.mjs gives these the heart's own sizes
+      // r451: before the first paint, whether the tubes will be drawn (WebGL2, motion allowed): then the sets wait switched off and the rig switches them on; site.js takes the class back if it cannot
+      const pre = `<script>try{if(window.WebGL2RenderingContext&&window.IntersectionObserver&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("crt-w")}catch(e){}</script>`;
+      return `<section class="pwall pw-first f5 f5c" aria-labelledby="pw-h">${pre}
+    <div class="f5-h">${h1}</div>
+    ${say}
+    <div class="f5-wall">${sets}</div>
   </section>`;
     };
     // r381: the wall's first two covers (row 1 from its start: what the first paint shows, before site.js slides the
@@ -413,20 +450,31 @@ ${header(true)}
   ${/* r349 (Daniel, new order): the wall of work is the first fold, under one line; then the four chapters; then the
      drive (half a screen) where the "place, facade, brand" fold was; then the streets */ ""}${wallFirst}
 
-  <section id="what" class="sec">
+  ${/* r449 (Daniel, 10 Nov: "sa facem cardurile de servicii si zona asta cat mai UX si clara"): one services section, the five
+     service pages in the order of the road (from a dream to a crowd). Each card: what you get, for when, one link. The
+     text is there from the first paint (no reveal). It replaces the four chapters here and "What we carry" further down. */ ""}<section id="services" class="sec sv5">
     <div class="wrap">
-      <p class="eyebrow mono">What we bring to the table</p>
-      <h2 class="ptitle">${pill("From a dream", "#28C840", -1.5)} ${pill("to a crowd", "#F65342", 1)}</h2>
-      <div class="chapters">
-        ${/* TASK-139 (Daniel): the card's title is what was its subtitle; "The Dream", "The Crowd"... are gone. The four
-           sit on one road (site.js fills it with the scroll, --rp) and each lights up as it is pointed at or focused */ ""}<span class="chap-road" aria-hidden="true"><i></i></span>
-        ${CHAPTERS.map((c, i) => `<article class="chap" style="--cc:${c.c};--i:${i}">
-          <span class="chap-k mono" aria-hidden="true">${c.k}</span>
-          <h3>${esc(c.sub)}</h3>
-          <p>${esc(c.p)}</p>
-          <ul class="tags">${c.items.map((x, j) => `<li style="--j:${j}">${esc(x)}</li>`).join("")}</ul>
-        </article>`).join("")}
-      </div>
+      <p class="eyebrow mono">Services</p>
+      <h2 class="sv5-h">How we help you along the <em>way</em>.</h2>
+      <p class="sv5-lead">Five things we do, in the order most brands need them. Start wherever you are.</p>
+      ${/* r450s: the five as stops on one road. A stop's head (name + "for when") is always in view and is the control; its
+         panel (the drawing, "you get", the two ways on) opens beside it on a wide screen and under it on a phone, one at
+         a time. All ten phrases are in the document from the start; with no script every panel is simply open. */ ""}<ol class="sv5-list">
+        ${SVC5.map((x, i) => `<li class="sv5-card${i ? "" : " on"}" style="--sc:${x.c};--i:${i + 1}">
+          <div class="sv5-head">
+            <h3><button type="button" id="sv5-b${i}" aria-expanded="${i ? "false" : "true"}" aria-controls="sv5-p${i}">${esc(x.name)}</button></h3>
+            <p class="sv5-p sv5-when"><span class="mono">For when</span> ${esc(x.when)}</p>
+          </div>
+          <div class="sv5-panel" id="sv5-p${i}" role="region" aria-labelledby="sv5-b${i}">
+            <div class="sv5-art" aria-hidden="true">${SV5_ART[x.slug] || ""}</div>
+            <div class="sv5-body">
+              <p class="sv5-p"><span class="mono">You get</span> ${esc(x.get)}</p>
+              <div class="sv5-act"><a class="sv5-go" href="/services/${x.slug}/" aria-describedby="sv5-b${i}">See how we do it <i>→</i></a><a class="sv5-start" href="#contact" data-dream="${esc(SV5_DREAM[x.slug] || "")}">Start a project</a></div>
+            </div>
+          </div>
+        </li>`).join("")}
+      </ol>
+      <p class="sv5-end">Not sure where you start? <a href="#contact">Tell us the dream</a> and we will find the place together.</p>
     </div>
   </section>
 
@@ -477,22 +525,6 @@ ${header(true)}
     </div>
    </div>
   </section>
-  <section id="services" class="sec">
-    <div class="wrap">
-      <p class="eyebrow mono">Full tank of services</p>
-      <h2 class="ptitle">${pill("What we carry", "#119BFE", -1)}</h2>
-      <div class="svcs">
-        ${SERVICES.map((s) => `<article class="svc" style="--sc:${s.c}">
-          <h3>${esc(s.t)}</h3>
-          <p class="mono">${s.items.length} skills on board</p>
-          <ul>${s.items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-          ${(SVC_LINKS[s.t] || []).filter((k) => SERVICE_PAGES.some((x) => x.slug === k)).map((k) => `<a class="svc-more" href="/services/${k}/">${esc(SERVICE_PAGES.find((x) => x.slug === k).name)} <i>→</i></a>`).join("")}
-        </article>`).join("")}
-      </div>
-      ${SERVICE_PAGES.length ? `<p class="svc-pages"><span class="mono">In depth</span> ${SERVICE_PAGES.map((x) => `<a href="/services/${x.slug}/">${esc(x.name)} →</a>`).join("")}</p>` : ""}
-    </div>
-  </section>
-
   <section id="studio" class="sec sec-alt">
     <div class="wrap studio">
       <div class="studio-txt">

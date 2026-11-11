@@ -24080,7 +24080,7 @@ void main() {
         },
         manifesto: {
           eyebrow: "CH.00 / WHAT WE BRING TO THE TABLE",
-          body: `<p class="big">Killer <mark>strategy</mark>. Outstanding <mark>design</mark>. Striking <mark>visuals</mark>. Powerful <mark>storytelling</mark>. Genuine passion and real empathy for your customer. And a coffee. There is always a coffee.</p>`
+          body: `<p class="big">Killer <mark>strategy</mark>. Outstanding <mark>design</mark>. Striking <mark>visuals</mark>. Powerful <mark>storytelling</mark>. Genuine passion and real empathy for your customer.</p>`
         },
         dream: {
           eyebrow: "CH.01 / SLOW POUR, STRONG IDEAS",
@@ -42966,7 +42966,7 @@ void main(){
       // r107: Olari 9 opens up. The roof lifts off and hovers, a beam of light rises, and the four
       // services fly out of the house one after another and settle in a fan. Then the address card.
       var olari = { t: -1, cards: null, beam: null };
-      var OLARI_PHOTOS = [["Lolz.jpg", "Olari 9, the studio"], ["Get-words-shit-best-done-boss.jpg", "Get shit done"], ["infinite-coffee.jpg", "There is always a coffee"], ["poze.jpg", "On set"], ["Doggo.jpg", "Head of morale"]];
+      var OLARI_PHOTOS = [["Lolz.jpg", "Olari 9, the studio"], ["Get-words-shit-best-done-boss.jpg", "Get shit done"], ["infinite-coffee.jpg", ""], ["poze.jpg", "On set"], ["Doggo.jpg", "Head of morale"]];
       // r396 (Daniel: no spinning cups but the favicon's): the intro's turning cups around the Olari house (r136c, TASK-014) are gone
       function olariOpen() {
         const house = worldRefs.endHouse;
@@ -42985,7 +42985,7 @@ void main(){
         const wrap = el("div", "olari-fan");
         // inside the house: the studio, as on cromaticstudios.com
         OLARI_PHOTOS.forEach(([src, cap], i) => {
-          const c = el("figure", `olari-card olari-photo op${i}`, `<img src="https://cromaticstudios.com/wp-content/uploads/2025/10/${src}" alt="${cap}" loading="eager"><figcaption class="mono">${cap}</figcaption>`);
+          const c = el("figure", `olari-card olari-photo op${i}`, `<img src="https://cromaticstudios.com/wp-content/uploads/2025/10/${src}" alt="${cap}" loading="eager">${cap ? `<figcaption class="mono">${cap}</figcaption>` : ""}`);
           c.style.setProperty("--i", i); c.style.setProperty("--sc", ["#FED012", "#28C840", "#119BFE", "#F65342", "#B098C8"][i % 5]);
           wrap.appendChild(c);
         });

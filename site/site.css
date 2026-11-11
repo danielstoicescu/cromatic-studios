@@ -1720,10 +1720,14 @@ a.zd:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-
 /* r408: the letters' glitches (the code and why: site.js, r408). The real letter hides by a highlight (paint only); the copies
    are generated content, absolute over it, in solid fills: white, the brand's red and blue guns. */
 ::highlight(h1g) { color: transparent; }
+html:not(.m-sky) .f5c .si-k::highlight(h1g) { color: transparent; text-shadow: none; } /* r458: a hidden key letter takes its weight and plate with it */
 .h1g-o { position: absolute; inset: 0; z-index: 2; pointer-events: none; user-select: none; }
 .h1g-p, .h1g-c { position: absolute; display: block; text-align: left; white-space: pre; text-shadow: none; }
 .h1g-p::before { content: attr(data-c); }
 .h1g-c { clip-path: inset(7% -30% 3%); }
+.h1g-k { color: #FED012; letter-spacing: -.028em; }
+.h1g-e { color: var(--paper); text-shadow: .02em 0 0 var(--paper), -.02em 0 0 var(--paper), 0 .02em 0 var(--paper), 0 -.02em 0 var(--paper), .02em .02em 0 var(--paper), -.02em .02em 0 var(--paper), .02em -.02em 0 var(--paper), -.02em -.02em 0 var(--paper), .045em .045em 0 var(--paper), .045em .02em 0 var(--paper), .02em .045em 0 var(--paper); } /* r458: under a glitching key letter, it covers the real one's weight and plate */
+.h1g-k:not(.h1g-r, .h1g-b, .h1g-n, .h1g-g, .h1g-e) { text-shadow: .011em 0 0 #FED012, -.011em 0 0 #FED012, 0 .011em 0 #FED012, 0 -.011em 0 #FED012, .011em .011em 0 #FED012, -.011em .011em 0 #FED012, .011em -.011em 0 #FED012, -.011em -.011em 0 #FED012; } /* r456: a copy of a key word (its ink plate stays on the real letter underneath) */
 .h1g-r { color: #F65342; opacity: 0; }
 .h1g-b { color: #119BFE; opacity: 0; }
 .h1g-g { opacity: 0; text-shadow: 0 0 .1em rgba(255,255,255,.75), 0 0 .28em rgba(255,255,255,.4); }
@@ -1761,3 +1765,340 @@ html.hdr-off .streets-nav { top: 12px; }
 .cb-txt { transition: top .2s var(--eoq); }
 html.hdr-off .cb-txt { top: 28px; }
 @media (prefers-reduced-motion: reduce) { .hdr, .streets-nav, .cb-txt { transition: none; } }
+
+/* r450 (Daniel, 10 Nov, on r449: "nu arata bine cu tv-urile de dimnesiuni diferite si nici textul pe negru mult. vreau alta
+   solutie, mult mai creativa si vizuala"). The first fold is a still composition now (.f5): the title in ink on the paper,
+   no plate; sets of ONE size, standing still. r452: no service keys in the fold any more (the services live in .sv5).
+   Every size comes from the screen, the block's height is known from the first paint (CLS 0). */
+.pwall.pw-first.f5 { --g: 10px; display: grid; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); align-content: center; gap: 0; min-height: calc(100svh - 72px); padding: clamp(14px, 2.6svh, 30px) clamp(16px, 3.4vw, 48px); overflow: hidden; overflow: clip; }
+.pwall.pw-first.f5::before, .f5 .pw-h::before { content: none; }
+.f5 .pw-h { max-width: none; margin: 0; color: var(--ink); text-align: left; text-shadow: none; }
+.f5 .pw-heart { display: inline-block; width: .82em; height: .75em; margin: 0; vertical-align: -.06em; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath fill='%23FED012' stroke='%230d0c09' stroke-width='1.6' stroke-linejoin='round' d='M12 20.4 2.6 11.3a5.4 5.4 0 0 1 0-7.7 5.6 5.6 0 0 1 7.8 0L12 5.2l1.6-1.6a5.6 5.6 0 0 1 7.8 0 5.4 5.4 0 0 1 0 7.7z'/%3E%3C/svg%3E") center / contain no-repeat; }
+.f5 .pw-offer { margin: 0; max-width: 27em; font-size: clamp(16px, 1.3vw, 19px); font-weight: 500; line-height: 1.38; text-wrap: pretty; }
+.f5 .pw-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 20px; margin: clamp(12px, 2svh, 20px) 0 0; }
+.f5 .pw-cta .btn { min-height: 48px; }
+.f5 .pw-city { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--ink); font-size: 16px; font-weight: 700; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+.f5 .pw-city:hover { text-decoration-thickness: 3px; }
+.f5 a:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+/* the sets: one size, a still grid; the CRT (site.js) draws each one where its box is */
+.f5 .pw-rows { display: block; position: relative; z-index: 1; }
+.pwall.f5 .pw-row.pw-still { display: grid; width: auto; gap: var(--g); padding: 0; overflow: visible; transform: none; will-change: auto; }
+.pwall.f5 .pw-case { width: auto; min-width: 0; }
+.pwall.pw-first.f5 .pw-case img { transition: opacity .18s linear; }
+@media (max-width: 900px) {
+  .pwall.pw-first.f5 { --g: 8px; min-height: calc(100svh - 64px); padding: 12px 16px 16px; align-content: start; }
+  .f5 .pw-h { font-size: min(9.6vw, 5.3svh); }
+  .f5 .pw-offer { font-size: 16px; }
+  .f5 .pw-cta { margin-top: 10px; }
+  .f5 .pw-city { min-height: 40px; font-size: 15px; }
+}
+/* C, the heart. The title ends in a heart; here the heart is the wall: sixteen sets of one size, set as a pixel heart. It
+   beats (two short pulses, the CRT only). */
+.f5c .f5-h { grid-area: h; } .f5c .f5-say { grid-area: s; } .f5c .f5-wall { grid-area: w; }
+.f5c .pw-h .pw-heart { display: none; }
+.f5c .pw-row.pw-still { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.f5c .pw-case:nth-child(1) { grid-area: 1 / 2; } .f5c .pw-case:nth-child(2) { grid-area: 1 / 4; }
+.f5c .pw-case:nth-child(3) { grid-area: 2 / 1; } .f5c .pw-case:nth-child(4) { grid-area: 2 / 2; } .f5c .pw-case:nth-child(5) { grid-area: 2 / 3; } .f5c .pw-case:nth-child(6) { grid-area: 2 / 4; } .f5c .pw-case:nth-child(7) { grid-area: 2 / 5; }
+.f5c .pw-case:nth-child(8) { grid-area: 3 / 1; } .f5c .pw-case:nth-child(9) { grid-area: 3 / 2; } .f5c .pw-case:nth-child(10) { grid-area: 3 / 3; } .f5c .pw-case:nth-child(11) { grid-area: 3 / 4; } .f5c .pw-case:nth-child(12) { grid-area: 3 / 5; }
+.f5c .pw-case:nth-child(13) { grid-area: 4 / 2; } .f5c .pw-case:nth-child(14) { grid-area: 4 / 3; } .f5c .pw-case:nth-child(15) { grid-area: 4 / 4; } .f5c .pw-case:nth-child(16) { grid-area: 5 / 3; }
+@media (min-width: 901px) {
+  /* r452: the title and the offer as one block, centred on the heart's height (the empty rows above and below share the rest) */
+  .pwall.pw-first.f5c { grid-template-columns: minmax(280px, min(440px, 34vw)) minmax(0, 1fr); grid-template-areas: ". w" "h w" "s w" ". w"; grid-template-rows: 1fr auto auto 1fr; column-gap: clamp(28px, 4vw, 64px); }
+  .f5c .pw-h { font-size: clamp(38px, min(4.6vw, 7.8svh), 72px); }
+  .f5c .f5-say { margin-top: clamp(12px, 2.2svh, 22px); }
+  .f5c .f5-wall { align-self: center; justify-self: end; width: min(100%, calc((100svh - 72px - 2 * clamp(14px, 2.6svh, 30px) - 24px) * 1.47)); }
+}
+/* r451 (Daniel, 10 Nov: "imi place cel cu inima. hai sa il dezvoltam, sa facem mai mutla animatie si solutie pe mobile si
+   finisat cat se paote de mult"). The heart's life (site.js, r451) and its still picture.
+   The set is a set without the rig too: the same dark body and bezel the tube shader draws, the picture inside it. So the
+   still fold (reduced motion, no WebGL2, no JS) is the same composition, and the swap to the live tube moves nothing. */
+.f5c .f5-wall { position: relative; }
+.f5c .f5-wall .pw-gl { inset: -28px; width: calc(100% + 56px); height: calc(100% + 56px); }
+.pwall.f5c .pw-case { padding: 8px; border-radius: 12px; background: #161513; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
+.pwall.f5c .pw-case.crt-ready { background: transparent; border-color: transparent; transition: box-shadow .2s; }
+.pwall.f5c.away .pw-case.crt-ready { box-shadow: none; }
+.pwall.f5c .pw-case img { border-radius: 13% / 19%; }
+.pwall.f5c .pw-case::after { display: none; }
+.pwall.f5c .pw-case:is(:hover, :focus-visible, .show) { translate: none; box-shadow: 0 2px 0 #0d0c09, 0 10px 22px rgba(13,12,9,.16); }
+.pwall.f5c .pw-case:is(:hover, :focus-visible, .show) img { scale: none; }
+/* switching on. With the rig coming (html.crt-w, set before the first paint) the sets wait dark and the rig switches them on;
+   without it they switch themselves on, from the middle outwards (--d: the ring). Paint only: opacity, clip-path, filter. */
+.f5c .pw-case { --d: 2; }
+.f5c .pw-case:is(:nth-child(5), :nth-child(10)) { --d: 0; }
+.f5c .pw-case:is(:nth-child(4), :nth-child(6), :nth-child(9), :nth-child(11), :nth-child(14)) { --d: 1; }
+.f5c .pw-case:nth-child(16) { --d: 3; }
+html.js:not(.crt-w) .f5c .pw-case img { animation: f5-on .44s cubic-bezier(.2, .7, .2, 1) calc(var(--d) * 90ms + 40ms) backwards; }
+html.js:not(.crt-w) .f5c .pw-rows { animation: f5-beat 3.2s linear 1.6s infinite; }
+html.crt-w .f5c .pw-case img { opacity: 0; animation: f5-safe .3s linear 6s forwards; } /* the last resort: site.js never came */
+html.crt-w .f5c .pw-case.crt-ready img { animation: none; }
+@keyframes f5-on { 0% { opacity: 0; clip-path: inset(49% 42%); filter: brightness(3); } 1% { opacity: 1; clip-path: inset(49% 42%); filter: brightness(3); } 38% { clip-path: inset(47% 0); filter: brightness(2.2); } 100% { opacity: 1; clip-path: inset(0); filter: brightness(1); } }
+@keyframes f5-safe { to { opacity: 1; } }
+@keyframes f5-beat { 0%, 22%, 100% { transform: none; } 5% { transform: scale(1.018); } 10% { transform: scale(1); } 15% { transform: scale(1.011); } }
+@media (prefers-reduced-motion: reduce) { html .f5c .pw-case img, html .f5c .pw-rows { animation: none !important; } html.crt-w .f5c .pw-case img { opacity: 1; } }
+.f5c .pw-name { left: 18px; bottom: 16px; max-width: calc(100% - 36px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* r454: one line, always */
+/* stacked (a phone, a narrow tablet). r452 (Daniel, 10 Nov: "Pe telefon poate scrie sus pe mijloc titlul"): one centred
+   column, title, heart, the offer and the two ways on, sized so the whole fold fits one screen (the heart takes its width
+   from the screen's height). Nothing is pinned any more: with no keys under it the heart scrolls with the page. */
+@media (max-width: 900px) {
+  .pwall.pw-first.f5c { --g: 8px; grid-template-areas: "h" "w" "s"; min-height: 0; padding-bottom: 28px; justify-items: center; text-align: center; }
+  .pwall.f5c .pw-h { text-align: center; text-wrap: balance; }
+  .f5c .f5-wall { width: 100%; margin-top: clamp(10px, 2svh, 18px); }
+  .pwall.f5c .pw-row.pw-still { width: min(100%, 62svh); margin-inline: auto; }
+  .f5c .f5-say { margin-top: clamp(14px, 2.4svh, 22px); }
+  .f5c .pw-offer { margin-inline: auto; max-width: 24em; }
+  .f5c .pw-cta { justify-content: center; }
+  .pwall.f5c .pw-case { border-radius: 10px; }
+  /* r454: on the small sets the one-line caption sits in the middle and may run 8 px past either side, so "Investimental" stays whole */
+  .f5c .pw-name { left: -8px; right: -8px; bottom: 10px; max-width: none; margin-inline: auto; font-size: 9.5px; letter-spacing: .04em; }
+}
+/* a phone: eight bigger sets, laid like bricks into the same heart (two, three, two, one); the other eight are not fetched */
+@media (max-width: 700px) {
+  .pwall.f5c .pw-row.pw-still { grid-template-columns: repeat(6, minmax(0, 1fr)); width: min(100%, 46svh); }
+  .f5c .pw-case:nth-child(n + 9) { display: none; }
+  .pwall.f5c .pw-case { padding: 3px; border-radius: 7px; --d: 2; }
+  .f5c .pw-case:nth-child(1) { grid-area: 1 / 1 / auto / span 2; } .f5c .pw-case:nth-child(2) { grid-area: 1 / 5 / auto / span 2; }
+  .f5c .pw-case:nth-child(3) { grid-area: 2 / 1 / auto / span 2; } .f5c .pw-case:nth-child(4) { grid-area: 2 / 3 / auto / span 2; --d: 0; } .f5c .pw-case:nth-child(5) { grid-area: 2 / 5 / auto / span 2; }
+  .f5c .pw-case:nth-child(6) { grid-area: 3 / 2 / auto / span 2; } .f5c .pw-case:nth-child(7) { grid-area: 3 / 4 / auto / span 2; }
+  .f5c .pw-case:nth-child(8) { grid-area: 4 / 3 / auto / span 2; }
+  .f5c .pw-case:is(:nth-child(3), :nth-child(5), :nth-child(6), :nth-child(7)) { --d: 1; }
+  html[lang="ro"] .f5c .pw-h { font-size: min(9.2vw, 5.3svh); } /* "experiențele de brand" stays on one line at 390 */
+  /* r453: more air down the phone column (Daniel: "cam înghesuit pe verticală"); by screen height, so a short phone stays tight */
+  .pwall.pw-first.f5c { --g: 10px; padding-top: clamp(14px, 4svh, 36px); padding-bottom: clamp(30px, 7svh, 64px); }
+  .f5c .f5-wall { margin-top: clamp(12px, 4.2svh, 38px); }
+  .f5c .f5-say { margin-top: clamp(16px, 4.6svh, 40px); }
+  .f5c .pw-offer { line-height: 1.5; }
+  .f5c .pw-cta { margin-top: clamp(12px, 3svh, 26px); gap: 10px 20px; }
+}
+
+/* r456 + r457 (Daniel, on beta 4.41: "closer than ever"; then on r456: "textul pe benzi negre nu arată bine, și diferența de
+   mărime față de rest e prea mare ... nici butonul de Drive ... poate chiar îl scoatem ... nici textul 'You made it beat'").
+   The fold is the title and the heart, nothing else: no button, no link. One headline in two voices: the lead-in in ink and
+   "brand experiences" a size up and heavier (r458: 1.2x, RO 1.14x), in yellow straight on the paper. Yellow alone on the paper does not
+   read (1.5:1), so the key words carry their own ink plate, set a hair off register under them (a hard, unblurred shadow on
+   one side: a print layer, not an outline). They arrive in ink like the rest, then light up and lift off their plate.
+   The heart sits lower than the type and forms as its middle reaches the middle of the screen (site.js r456); then it
+   beats hard once and the key words flare. Scoped off the mod (html.m-sky keeps its own hero). */
+html:not(.m-sky) .f5c .pw-lead { display: block; margin-bottom: .06em; }
+/* r458 (Daniel: heavier letters, a smaller shadow). The family has one cut loaded (Google Sans, a static 600 file that
+   serves 700 to 900), and Chrome will not synthesise a bold from it, so the key words gain their weight from their own
+   colour: eight hairline copies of the letter in the same yellow, .011em around it, which widen every stem evenly (a
+   heavier letter, no edge of another colour, nothing that reads as an outline). The ink plate under them is now a hair:
+   max(1.5px, .026em) down and right of the heavier letter (it is thickened the same way, so it stays a crisp sliver of
+   depth), and the counters of e, a, p stay open. --kw: the weight, --kp: the plate (both reused by the light-up and the flare). */
+html:not(.m-sky) .f5c .pw-k { --d: .011em; --o: max(1.5px, .026em); --y: #FED012; --ink: #0d0c09;
+  --kw: var(--d) 0 0 var(--y), calc(-1 * var(--d)) 0 0 var(--y), 0 var(--d) 0 var(--y), 0 calc(-1 * var(--d)) 0 var(--y), var(--d) var(--d) 0 var(--y), calc(-1 * var(--d)) var(--d) 0 var(--y), var(--d) calc(-1 * var(--d)) 0 var(--y), calc(-1 * var(--d)) calc(-1 * var(--d)) 0 var(--y);
+  --kp: calc(var(--o) + var(--d)) calc(var(--o) + var(--d)) 0 var(--ink), calc(var(--o) + var(--d)) var(--o) 0 var(--ink), var(--o) calc(var(--o) + var(--d)) 0 var(--ink);
+  display: inline; font-size: 1.2em; line-height: 1.08; letter-spacing: -.028em; color: var(--y); text-shadow: var(--kw), var(--kp); }
+html[lang="ro"]:not(.m-sky) .f5c .pw-k { font-size: 1.14em; line-height: 1.16; } /* room for the comma under ț above the second line */
+/* lighting up: the key words come in ink with the lead-in, turn yellow, then gain their weight and plate (r458: no white
+   flash any more, a white letter inside its yellow weight would read as a rim). Paint only (colour, text-shadow). On a wide screen the red and blue guns lock on them word after word, after that. */
+html:not(.m-sky) .pw-h.si .pw-k { animation: k-on .52s cubic-bezier(.2, .7, .2, 1) calc(260ms + var(--k0) * 30ms) backwards; }
+html:not(.m-sky) .pw-h.si .si-k::before, html:not(.m-sky) .pw-h.si .si-k::after { animation-delay: calc(380ms + var(--k0) * 30ms + (var(--i) - var(--k0)) * 70ms); }
+@keyframes k-on { 0% { color: #0d0c09; text-shadow: none; } 40% { color: #FED012; text-shadow: none; } 100% { color: #FED012; text-shadow: var(--kw), var(--kp); } }
+/* the moment: the heart is whole; the key words flare (a yellow glow) with it, in time with the first big beat (weight and plate stay) */
+html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2, .7, .2, 1) 60ms; }
+@keyframes k-hit { 0%, 100% { text-shadow: var(--kw), var(--kp), 0 0 0 rgba(254,208,18,0); } 16% { text-shadow: var(--kw), var(--kp), 0 0 .3em rgba(254,208,18,.95); } }
+@media (min-width: 901px) {
+  /* the type takes the left; the heart, a little bigger, stands low in the right, so it rises into the middle as you scroll and locks there */
+  /* r461 (Daniel, beta 4.42: "inima ... se formează mult prea jos. Ar trebui să fie la mijloc, în dreptul textului"): the heart
+     and the text share one middle (the heart spans the rows and is centred, the text block is centred between equal rows),
+     and the fold is 128 px taller than the screen, so that shared middle starts 100 px under the screen's middle: the
+     heart is loose at load, and 100 px of scroll lay it in, centred on the screen, level with the title. */
+  html:not(.m-sky) .pwall.pw-first.f5c { grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); grid-template-rows: 1fr auto auto 1fr; column-gap: clamp(28px, 3.4vw, 56px); padding-block: clamp(20px, 3svh, 36px); min-height: calc(100svh - 72px + 128px); }
+  html:not(.m-sky) .f5c .pw-h { font-size: clamp(34px, min(4.5vw, 7.6svh), 80px); line-height: 1; }
+  html:not(.m-sky) .f5c .f5-say { margin-top: clamp(20px, 3.6svh, 36px); }
+  html:not(.m-sky) .f5c .pw-offer { font-size: clamp(16px, 1.3vw, 20px); }
+  html:not(.m-sky) .f5c .f5-wall { align-self: center; width: min(100%, calc((100svh - 72px) * .64 * 1.47)); }
+}
+/* stacked. r461 (Daniel: the heart formed "mult prea jos"; it formed once the title had left the screen): the heart sits
+   right under the title and the offer under the heart. The top padding is sized so the heart's middle starts about 100 px
+   under the screen's middle (50svh less the title, the gap and half the heart); a short scroll lays it in, centred on the
+   screen with the title still above it (site.js also never lets it finish later than the title's top reaching the top). */
+@media (max-width: 900px) {
+  html:not(.m-sky) .pwall.pw-first.f5c { grid-template-areas: "h" "w" "s"; padding-top: clamp(28px, 6.4svh, 68px); padding-bottom: clamp(44px, 7svh, 72px); }
+  html:not(.m-sky) .f5c .pw-h { font-size: min(10.2vw, 6svh); line-height: 1; }
+  html:not(.m-sky) .f5c .f5-wall { margin-top: clamp(18px, 3svh, 28px); }
+  html:not(.m-sky) .f5c .f5-say { margin-top: clamp(22px, 4svh, 36px); }
+}
+@media (max-width: 700px) {
+  html:not(.m-sky) .pwall.pw-first.f5c { padding-top: max(20px, calc(50svh - 138px - min(173px, 22.3svh))); }
+}
+@media (max-width: 700px) {
+  html[lang="ro"]:not(.m-sky) .f5c .pw-h { font-size: min(10.2vw, 6svh); }
+}
+@media (prefers-reduced-motion: reduce) { html .pw-h .pw-k, html .pwall.f5c.formed .pw-k { animation: none !important; } }
+
+/* r449 (Daniel, 10 Nov: "sa facem cardurile de servicii si zona asta cat mai UX si clara") + r450s (Daniel, 10 Nov: "mult mai
+   mult ux, poate ui mai cool, cu niste illustrations si ceva mai multe interactiuni si microinteractiuni"). One services
+   section, right under the fold: five stops on one road, in the order most brands need them. A stop's head (name + "for
+   when") is always readable; its panel (the drawing, "you get", the two ways on) opens one at a time beside the list on a
+   wide screen (a stage, nothing moves when it changes); under 1000 px every panel is open (r454). With no script every panel is open. Nothing here waits on an animation. */
+.sv5 { padding-top: clamp(52px, 7vw, 96px); }
+.sv5-h { margin: 0 0 14px; max-width: 12em; font-size: clamp(34px, 5.2vw, 72px); font-weight: 900; line-height: 1; letter-spacing: -.035em; }
+.sv5-h em { font-style: italic; }
+.sv5-lead { margin: 0 0 clamp(26px, 4vw, 46px); max-width: 32em; font-size: clamp(18px, 1.5vw, 21px); }
+.sv5-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.sv5-card { border: var(--line); border-radius: 22px; background: #fff; }
+.sv5-head { position: relative; padding: 20px 20px 18px 50px; border-radius: 22px; }
+.sv5-card h3 { margin: 0 0 8px; font-size: clamp(24px, 2.1vw, 31px); font-weight: 800; line-height: 1.08; letter-spacing: -.025em; }
+.sv5-card h3::before { content: ""; position: absolute; z-index: 1; left: 20px; top: 28px; width: 16px; height: 16px; box-sizing: border-box; border: var(--line); border-radius: 50%; background: var(--sc); transition: scale .15s var(--bounce); }
+.sv5-card.on h3::before { scale: 1.3; }
+.sv5-card button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sv5-card button::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.sv5-card button:focus-visible { outline: none; }
+.sv5-head:has(button:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sv5-p { margin: 0; font-size: 17px; line-height: 1.38; }
+.sv5-p .mono { display: block; margin-bottom: 4px; color: var(--muted); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
+/* Daniel, 10 Nov: "for when cu font mai mic, you are launching sa se vada mai bine" - the label whispers, the sentence is the second voice after the name */
+.sv5-when { font-size: clamp(19px, 1.55vw, 22px); font-weight: 600; line-height: 1.28; letter-spacing: -.01em; }
+.sv5-card h3 { margin-bottom: 12px; }
+.sv5-panel { padding: 0 16px 18px; }
+.sv5-art { border: var(--line); border-radius: 16px; background: var(--sc); overflow: hidden; }
+.sv5-art svg { display: block; width: 100%; height: auto; aspect-ratio: 320 / 220; overflow: visible; }
+.sv5-body { padding: 18px 4px 0; }
+.sv5-act { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.sv5-go, .sv5-start { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border: var(--line); border-radius: 999px; font-size: 16px; font-weight: 700; white-space: nowrap; text-decoration: none; transition: background .15s linear, color .15s linear, scale .1s linear; }
+.sv5-go { background: var(--ink); color: var(--paper); }
+.sv5-start { background: #fff; color: var(--ink); }
+.sv5-go i { font-style: normal; transition: translate .15s var(--eoq); }
+.sv5-go:active, .sv5-start:active { scale: .97; }
+.sv5-go:focus-visible, .sv5-start:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+@media (hover: hover) {
+  .sv5-card:not(.on) .sv5-head:hover h3::before { scale: 1.3; }
+  .sv5-go:hover { background: var(--sc); color: var(--ink); }
+  .sv5-go:hover i { translate: 4px 0; }
+  .sv5-start:hover { background: var(--y); }
+}
+.sv5-end { margin: clamp(22px, 3vw, 34px) 0 0; font-size: clamp(17px, 1.5vw, 20px); }
+.sv5-end a { color: inherit; font-weight: 700; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.sv5-end a:hover { text-decoration-thickness: 3px; }
+@media (min-width: 700px) and (max-width: 999.98px) {
+  .sv5-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 0 24px; padding: 0 20px 20px; }
+  .sv5-body { padding: 0; }
+}
+/* r454 (Daniel, 10 Nov: "cardurile de jos ar putea să fie direct deschise ... dar să aibă o intrare interesantă"): under 1000 px
+   all five stops are open (no plus, no toggle) and each one comes in as it reaches the screen (.rv -> .in, site.js): the card
+   rises, its dot lands, its colour field wipes up, then its own drawing plays. A card already on screen at load is never
+   hidden; no JS or reduced motion: there from the start. Transform, opacity and clip only, each step 200 ms at most. */
+@media (max-width: 999.98px) {
+  .sv5-card button { cursor: default; }
+  .sv5-card.rv { opacity: 0; translate: 0 32px; }
+  .sv5-card.rv h3::before { scale: 0; }
+  .sv5-card.rv .sv5-art { clip-path: inset(100% 0 0 0 round 16px); }
+  .sv5-card.rv.in { opacity: 1; translate: none; transition: opacity .2s linear, translate .2s var(--eoq); }
+  .sv5-card.rv.in h3::before { scale: 1.3; transition: scale .18s var(--bounce) .12s; }
+  .sv5-card.rv.in .sv5-art { clip-path: inset(0 0 0 0 round 16px); transition: clip-path .2s var(--eoq) .1s; }
+}
+/* r454: a phone with all five open stays short: the drawing as a tile beside "you get", the two ways on in one row under them */
+@media (max-width: 699.98px) {
+  .sv5-head { padding: 18px 18px 14px 46px; }
+  .sv5-card h3::before { left: 18px; top: 26px; }
+  .sv5-panel { display: grid; grid-template-columns: minmax(0, 38%) minmax(0, 1fr); align-items: start; gap: 0 14px; padding: 0 16px 16px; }
+  .sv5-art { border-radius: 12px; }
+  .sv5-card.rv .sv5-art { clip-path: inset(100% 0 0 0 round 12px); }
+  .sv5-card.rv.in .sv5-art { clip-path: inset(0 0 0 0 round 12px); }
+  .sv5-body { display: contents; }
+  .sv5-body .sv5-p { grid-column: 2; font-size: 15px; line-height: 1.4; }
+  .sv5-act { grid-column: 1 / -1; gap: 8px; margin-top: 14px; }
+  .sv5-go, .sv5-start { height: 44px; padding: 0 14px; gap: 6px; font-size: 15px; }
+}
+@media (min-width: 1000px) {
+  /* the wide stage: the heads are the left column (the road runs through their dots), every panel sits in the same
+     cell on the right, so the stage is as tall as the list and changing stop moves nothing */
+  .js .sv5-list { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 8px clamp(28px, 4vw, 56px); }
+  .js .sv5-card { display: contents; }
+  .js .sv5-head { grid-column: 1; grid-row: var(--i); padding: 22px 24px 22px 64px; border: 1px solid transparent; transition: background .15s linear, border-color .15s linear; }
+  .js .sv5-card.on .sv5-head { border-color: var(--ink); background: var(--sc); }
+  .js .sv5-card.on .sv5-when .mono { color: var(--ink); }
+  .js .sv5-card.on h3::before { background: #fff; }
+  .js .sv5-head::before { content: ""; position: absolute; left: 31.5px; top: -5px; bottom: -5px; width: 1px; background: var(--ink); }
+  .js .sv5-card:first-child .sv5-head::before { top: 38px; }
+  .js .sv5-card:last-child .sv5-head::before { bottom: auto; height: 39px; }
+  .js .sv5-card h3::before { left: 24px; top: 30px; }
+  .js .sv5-panel { grid-column: 2; grid-row: 1 / span 5; display: flex; flex-direction: column; padding: 0; border: var(--line); border-radius: 28px; background: #fff; overflow: hidden; visibility: hidden; opacity: 0; }
+  .js .sv5-card.on .sv5-panel { visibility: visible; opacity: 1; transition: opacity .16s linear; }
+  .js .sv5-card:not(.on) .sv5-panel { display: flex; }
+  .js .sv5-art { flex: 1 1 auto; display: grid; place-items: center; min-height: 280px; border: 0; border-bottom: var(--line); border-radius: 0; }
+  .js .sv5-art svg { width: auto; height: min(100%, 400px); max-width: 100%; }
+  .js .sv5-body { padding: 26px 30px 30px; }
+  .js .sv5-body .sv5-p { max-width: 30em; font-size: 19px; }
+}
+/* the drawings play once when their stop opens, when the section first comes into view, and again when pointed at or
+   tapped (site.js sets .play). Each rule says where a piece comes FROM; the drawing itself is the end state, so with
+   reduced motion (the site's blanket rule) it is simply there. Transform and opacity only. */
+.s5-in, .s5-w, .s5-spin, .s5-fan, .s5-pop, .s5-beat, .s5-bar { transform-box: fill-box; transform-origin: 50% 50%; }
+.s5-clap { transform-origin: 76px 88px; transform: rotate(-16deg); }
+.play .s5-in { animation: s5in .3s var(--bounce) calc(var(--d) * 32ms) both; }
+.play .s5-w { animation: s5w .45s var(--bounce) both; }
+.play .s5-spin { animation: s5spin .5s var(--eoq) both; }
+.play .s5-fan { animation: s5fan .42s var(--bounce) both; }
+.play .s5-pop { animation: s5pop .42s var(--bounce) both; }
+.play .s5-cur { animation: s5cur .45s var(--eoq) .28s both; }
+.play .s5-bar { animation: s5bar .36s var(--bounce) calc(.17s + var(--d) * 36ms) both; }
+.play .s5-clap { animation: s5clap .45s var(--eoq) both; }
+.play .s5-beat { animation: s5beat .4s var(--eoq) .3s both; }
+@keyframes s5in { from { opacity: 0; transform: scale(.6); } }
+@keyframes s5w { from { transform: translate(var(--x), var(--y)) rotate(var(--r)); } }
+@keyframes s5spin { from { transform: rotate(-90deg) scale(.6); } }
+@keyframes s5fan { from { transform: translate(var(--x)) rotate(var(--r)); } }
+@keyframes s5pop { from { transform: scale(.86); } }
+@keyframes s5cur { from { transform: translate(-64px, 58px); } }
+@keyframes s5bar { from { transform: scaleY(.2); } }
+@keyframes s5clap { 38%, 58% { transform: rotate(0deg); } }
+@keyframes s5beat { 40% { transform: scale(1.25); } }
+
+/* r462 (Daniel, 11 Nov: "mi se par putin inalte cardurile cu coffee street ... putem face ceva care sa incapa in maxim
+   jumatate de pagina?"): a street's opening (its band with the clip and the name, and the card that lands on it) fits in
+   half a screen, on a phone and on a laptop. The band is shorter and the name a size smaller; the card is one tight
+   block: on a desktop the way in sits beside the words, not under them; on a phone the industry no longer keeps an empty
+   second line for the pause button and the words sit closer. Only the normal site: the constellation mod lays the
+   street out its own way (mods.css) */
+html:not(.m-sky) .street-band { height: clamp(220px, 32vh, 360px); }
+html:not(.m-sky) .street-band + .street-head { margin-top: -80px; }
+html:not(.m-sky) .sb-copy { bottom: 104px; }
+html:not(.m-sky) .sb-name { font-size: clamp(56px, 7.4vw, 128px); }
+@media (min-width: 701px) {
+  html:not(.m-sky) .sb-name.is-long { font-size: clamp(48px, 6vw, 104px); }
+  html:not(.m-sky) .street-band + .street-head { padding: clamp(26px, 2.4vw, 34px) clamp(30px, 3.6vw, 52px); }
+  html:not(.m-sky) .street-band + .street-head .sh-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: clamp(28px, 4vw, 64px); align-items: end; }
+  html:not(.m-sky) .street-band + .street-head .sh-title { grid-column: 1; }
+  html:not(.m-sky) .street-band + .street-head .sh-lead { grid-column: 1; margin-top: 10px; font-size: clamp(16px, 1.25vw, 18px); }
+  html:not(.m-sky) .street-band + .street-head .sh-more { grid-column: 2; grid-row: 1 / span 2; align-self: end; margin-top: 0; white-space: nowrap; }
+  html:not(.m-sky) .street-band + .street-head .sh-sub { margin-top: 0; font-size: clamp(22px, 2vw, 30px); }
+}
+@media (max-width: 700px) {
+  html:not(.m-sky) .street-band { height: min(64vw, 34svh); }
+  html:not(.m-sky) .street-band + .street-head { margin-top: -56px; padding: 22px 18px 20px; }
+  html:not(.m-sky) .sb-copy { bottom: 74px; }
+  html:not(.m-sky) .sb-name { font-size: clamp(40px, 11.6vw, 60px); }
+  html:not(.m-sky) .street-band + .street-head .sh-sub { min-height: 0; margin-top: 0; padding-right: 48px; font-size: 20px; }
+  html:not(.m-sky) .street-band + .street-head .sh-lead { margin-top: 8px; font-size: 15.5px; line-height: 1.45; }
+  html:not(.m-sky) .street-band + .street-head .sh-more { margin-top: 14px; }
+}
+/* r462: the narrowest phones (360) need the band a little shorter to stay under half the screen */
+@media (max-width: 380px) { html:not(.m-sky) .street-band { height: min(58vw, 30svh); } }
+
+/* r463 (Daniel, 11 Nov: "poate doar textul cu numele strazii, de pe video sa fie mai bine centrat pe verticala, avand si
+   cardul de dedesubt care il acopera"): the name sits in the middle of the part of the band you can see, between its top
+   and the card that lands on it (80px on a desktop, 56px on a phone), one line or two; the parallax still moves it a
+   little around that middle */
+html:not(.m-sky) .sb-copy { top: calc((100% - 80px) / 2); bottom: auto; translate: 0 -50%; } /* its box stays the name's own (site.js fades it by its top) */
+@media (max-width: 700px) { html:not(.m-sky) .sb-copy { top: calc((100% - 56px) / 2); bottom: auto; } }
+
+/* r463 (Daniel, 11 Nov: "la tv-uri. parca ramane prea mult spatiu dupa primul fold, pana la servicii, sa inceapa mai direct,
+   dupa primul scroll"): the services come up into the empty lower part of the fold. The fold itself keeps its size and its
+   middle (r461: the heart still lays in after 100px of scroll); on a wide screen the section simply starts 136px higher
+   (less on a short screen, so it never reaches the sets), on a phone the fold's bottom padding is shorter */
+@media (min-width: 901px) {
+  html:not(.m-sky) .pw-first + #services { position: relative; z-index: 1; margin-top: calc(-1 * min(136px, 18svh + 11px)); }
+}
+@media (max-width: 900px) {
+  html:not(.m-sky) .pwall.pw-first.f5c { padding-bottom: clamp(24px, 3.5svh, 36px); }
+}
+/* r463 (Daniel: "poate si tv-urile la scroll, cand raman sus sa aiba un efect interesant prin care dispar"): with the CRT rig
+   each set switches off as it reaches the top (site.js). Without the rig (no WebGL2, or reduced motion) a plain fade as
+   they leave, on the scroll itself */
+@supports (animation-timeline: view()) {
+  html.js:not(.crt-w):not(.m-sky) .f5c .pw-case { animation: f5-leave linear both; animation-timeline: view(); animation-range: exit 30% exit 90%; }
+  @keyframes f5-leave { to { opacity: 0; } }
+}

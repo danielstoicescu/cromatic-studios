@@ -430,6 +430,9 @@ export async function socialCards(pub, root, SITE, pick, skip, log = console.log
 // srcset and sizes. The CRT wall (site.js) uploads whichever file the browser chose, scaled to its texture.
 const COVER_W = [320, 480];
 export const COVER_SIZES = "(max-width: 700px) 62vw, (max-width: 916px) 220px, (max-width: 1416px) 24vw, 340px";
+// r451: the heart's sets are small (a third of a phone's width, a seventh of a desktop's): they ask for the file they need.
+// The phone's figure is below the real box on purpose: the tube is drawn at 1.5x at most, so the 320 file is enough at any density.
+const F5_SIZES = "(max-width: 700px) 104px, (max-width: 900px) 17vw, 12vw";
 export async function wallCovers(pub, root, log = console.log) {
   let sharp = null;
   try { sharp = (await import("sharp")).default; } catch {}
@@ -463,9 +466,11 @@ export async function wallCovers(pub, root, log = console.log) {
     const slugs = [...new Set([...t.matchAll(/\/onboarding\/media\/covers\/([\w-]+)\.webp/g)].map((m) => m[1]))];
     for (const s of slugs) await setFor(s);
     let n = 0;
-    const o = t
+    const f5 = t.includes('class="pwall pw-first f5 ');
+    let o = t
       .replace(/<img src="\/onboarding\/media\/covers\/([\w-]+)\.webp"/g, (m, s) => { const c = sets.get(s); if (!c) return m; n++; return `<img src="${c.src}" srcset="${c.srcset}" sizes="${COVER_SIZES}"`; })
       .replace(/<link rel="preload" as="image" href="\/onboarding\/media\/covers\/([\w-]+)\.webp"/g, (m, s) => { const c = sets.get(s); if (!c) return m; n++; return `<link rel="preload" as="image" href="${c.src}" imagesrcset="${c.srcset}" imagesizes="${COVER_SIZES}"`; });
+    if (f5) o = o.replace(/<img [^>]*? data-f5/g, (x) => x.replace(`sizes="${COVER_SIZES}"`, `sizes="${F5_SIZES}"`)).replace(/<link rel="preload" as="image" href="\/assets\/w\/[^>]*>/g, (x) => x.replace(`imagesizes="${COVER_SIZES}"`, `imagesizes="${F5_SIZES}"`));
     if (n) { writeFileSync(f, o); pages++; tags += n; }
   }
   log(`[covers] wall covers from /assets/w on ${pages} page(s), ${tags} tags, ${[...sets.values()].filter(Boolean).length} covers`);

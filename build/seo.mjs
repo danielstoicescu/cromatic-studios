@@ -176,7 +176,7 @@ export function llmsTxt(SITE, D, pages = {}) {
   const noPage = PROJECTS.filter((p) => !p.page).map((p) => p.name);
   return `# Cromatic Studios
 
-> ${STUDIO.description} Founded in ${STUDIO.founded}; today at ${STUDIO.street}, Bucharest. Strategy first, then identity, websites and apps, film and content, for indie founders, startups and established companies. "There is always a coffee."
+> ${STUDIO.description} Founded in ${STUDIO.founded}; today at ${STUDIO.street}, Bucharest. Strategy first, then identity, websites and apps, film and content, for indie founders, startups and established companies.
 
 This site (${SITE}/) tells the studio's story twice: as a plain website (${SITE}/, the home page) and as the Cromatic City, an interactive 3D drive through Bucharest (${SITE}/city/), with ${seen.size + studioPages.length} case studies at ${SITE}/work/<project>/ (listed below). The plain website is also in Romanian at ${SITE}/ro/ (case studies at ${SITE}/ro/proiecte/<project>/). The full text of every page is at ${SITE}/llms-full.txt.
 

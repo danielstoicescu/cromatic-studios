@@ -16,6 +16,17 @@ export const CHAPTERS = [
   { k: "04", t: "The Crowd", sub: "Video Production & Growth", c: "#F65342", p: "A beautiful world with nobody in it is a museum. We bring the crowd. First with films people actually watch, from brand films to reels. Then with social and content strategy and performance campaigns that keep them coming back.", items: ["Brand films", "Reels", "Social & content strategy", "Performance campaigns", "Instagram growth"] }
 ];
 
+// r449 (Daniel, 10 Nov: "sa facem cardurile de servicii si zona asta cat mai UX si clara"): the home's service cards and the
+// first fold's channel bar, keyed by the five service pages (hubs.mjs, SERVICE_PAGES: the one split the site uses). Per
+// service: its colour, what you get, and the situation it is for. One sentence each, nothing promised.
+export const SERVICE_CARDS = {
+  "brand-strategy": { c: "#28C840", get: "Positioning, personas and your value proposition in one sentence, worked out with you around one table.", when: "You have the dream, but not the words for it yet." },
+  "brand-identity": { c: "#FED012", get: "A mark, type and colour, a tone of voice and a brand book. Packaging and signage too.", when: "You are launching, or you have outgrown the way you look." },
+  "websites-apps": { c: "#119BFE", get: "Research, UX, interface design and development for websites, webshops and apps.", when: "Your customers meet you on a screen first." },
+  "video-production": { c: "#F65342", get: "TV ads, brand films, campaign shoots and product photography, with post and sound in house.", when: "The brand has to move, speak and be seen." },
+  "social-media-content": { c: "#B098C8", get: "A content plan, reels, social design and ad campaigns, made month after month.", when: "The brand is ready and it needs its crowd." }
+};
+
 export const SERVICES = [
   { t: "Branding & Design", c: "#28C840", items: ["Brand strategy", "Identity design", "Brand book", "Persona journeys", "Content design", "Generative AI for visuals"] },
   { t: "Video Production", c: "#FED012", items: ["Video production", "Photography", "Post production", "Sound design", "Generative AI for video"] },
@@ -127,7 +138,7 @@ export const CREW_PHOTOS = [
   { src: "m:vibe/from-the-stairs", cap: "The studio, from the stairs", big: true },
   { src: "m:vibe/balcony", cap: "Lunch on the balcony" },
   { src: "m:vibe/get-words-shit-best-done-boss", cap: "Get shit done" },
-  { src: "m:vibe/infinite-coffee", cap: "There is always a coffee" },
+  { src: "m:vibe/infinite-coffee", cap: "" },
   { src: "m:vibe/window-seat", cap: "The window seat" },
   { src: "m:vibe/lolz", cap: "Olari 9, the studio" },
   { src: "m:vibe/poze", cap: "On set" },
