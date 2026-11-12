@@ -1879,7 +1879,13 @@ html.crt-w .f5c .pw-case.crt-ready img { animation: none; }
    one side: a print layer, not an outline). They arrive in ink like the rest, then light up and lift off their plate.
    The heart sits lower than the type and forms as its middle reaches the middle of the screen (site.js r456); then it
    beats hard once and the key words flare. Scoped off the mod (html.m-sky keeps its own hero). */
-html:not(.m-sky) .f5c .pw-lead { display: block; margin-bottom: .06em; }
+/* r472 (Daniel, 12 Nov: "textul mai mare, cu 25% ... si impartit asa: We're here / for the brand / experiences"). Three
+   lines at every width, the mod's too: the lead-in is the h1's own text, "for the brand" and the key word are blocks (RO:
+   "Suntem aici pentru" / "experiențele" / "de brand", the key word alone on its line there too). The key word is its own
+   fit-content box so it can breathe from its own middle (site.js r472: transform only, nothing is laid out again). */
+.f5c .pw-h .pw-l, .f5c .pw-h .pw-x { display: block; }
+.f5c .pw-h .pw-x { width: fit-content; }
+html.m-sky .f5c .pw-h .pw-x { scale: none !important; translate: none !important; animation: none; } /* the mod draws its own: never a leftover breath under the points */
 /* r458 (Daniel: heavier letters, a smaller shadow). The family has one cut loaded (Google Sans, a static 600 file that
    serves 700 to 900), and Chrome will not synthesise a bold from it, so the key words gain their weight from their own
    colour: eight hairline copies of the letter in the same yellow, .011em around it, which widen every stem evenly (a
@@ -1889,8 +1895,17 @@ html:not(.m-sky) .f5c .pw-lead { display: block; margin-bottom: .06em; }
 html:not(.m-sky) .f5c .pw-k { --d: .011em; --o: max(1.5px, .026em); --y: #FED012; --ink: #0d0c09;
   --kw: var(--d) 0 0 var(--y), calc(-1 * var(--d)) 0 0 var(--y), 0 var(--d) 0 var(--y), 0 calc(-1 * var(--d)) 0 var(--y), var(--d) var(--d) 0 var(--y), calc(-1 * var(--d)) var(--d) 0 var(--y), var(--d) calc(-1 * var(--d)) 0 var(--y), calc(-1 * var(--d)) calc(-1 * var(--d)) 0 var(--y);
   --kp: calc(var(--o) + var(--d)) calc(var(--o) + var(--d)) 0 var(--ink), calc(var(--o) + var(--d)) var(--o) 0 var(--ink), var(--o) calc(var(--o) + var(--d)) 0 var(--ink);
-  display: inline; font-size: 1.2em; line-height: 1.08; letter-spacing: -.028em; color: var(--y); text-shadow: var(--kw), var(--kp); }
-html[lang="ro"]:not(.m-sky) .f5c .pw-k { font-size: 1.14em; line-height: 1.16; } /* room for the comma under ț above the second line */
+  display: inline; letter-spacing: -.028em; color: var(--y); text-shadow: var(--kw), var(--kp); }
+/* r472: "brand" keeps its line's size; the key word alone on its line is the size up (1.2x) */
+html:not(.m-sky) .f5c .pw-h .pw-x { display: block; font-size: 1.2em; line-height: 1.04; margin-top: .02em; transform-origin: 50% 58%; }
+/* RO: the lead-in "Suntem aici pentru" is 8 em wide (EN "We're here" 4.6), so the RO title takes its size from the room that
+   line needs (one line, never wrapped) and the key word gets the extra size (1.3x) so it reads as big as the EN one */
+html[lang="ro"]:not(.m-sky) .f5c .pw-h .pw-x { font-size: 1.3em; line-height: 1.1; } /* room for the comma under ț */
+@media (min-width: 901px) { html:not(.m-sky) .f5c .pw-h .pw-x { transform-origin: 0 58%; } } /* set left, it breathes from its left edge: it never grows into the heart's column more than a hair */
+@media (max-width: 900px) { html:not(.m-sky) .f5c .pw-h .pw-x { margin-inline: auto; } }
+/* without the rig (no WebGL2) the heart beats on CSS (f5-beat, 3.2 s from 1.6 s): the key word beats on the same clock */
+html.js:not(.crt-w):not(.m-sky) .pw-h.si .pw-x { animation: k-on .52s cubic-bezier(.2, .7, .2, 1) calc(260ms + var(--k0) * 30ms) backwards, x-beat 3.2s linear 1.6s infinite; }
+@keyframes x-beat { 0%, 22%, 100% { scale: 1; } 5% { scale: 1.03; } 10% { scale: 1; } 15% { scale: 1.018; } }
 /* lighting up: the key words come in ink with the lead-in, turn yellow, then gain their weight and plate (r458: no white
    flash any more, a white letter inside its yellow weight would read as a rim). Paint only (colour, text-shadow). On a wide screen the red and blue guns lock on them word after word, after that. */
 html:not(.m-sky) .pw-h.si .pw-k { animation: k-on .52s cubic-bezier(.2, .7, .2, 1) calc(260ms + var(--k0) * 30ms) backwards; }
@@ -1906,7 +1921,8 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
      and the fold is 128 px taller than the screen, so that shared middle starts 100 px under the screen's middle: the
      heart is loose at load, and 100 px of scroll lay it in, centred on the screen, level with the title. */
   html:not(.m-sky) .pwall.pw-first.f5c { grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); grid-template-rows: 1fr auto auto 1fr; column-gap: clamp(28px, 3.4vw, 56px); padding-block: clamp(20px, 3svh, 36px); min-height: calc(100svh - 72px + 128px); }
-  html:not(.m-sky) .f5c .pw-h { font-size: clamp(34px, min(4.5vw, 7.6svh), 80px); line-height: 1; }
+  html:not(.m-sky) .f5c .pw-h { font-size: clamp(42px, min(5.6vw, 9.5svh), 100px); line-height: 1; } /* r472: 1.25x */
+  html[lang="ro"]:not(.m-sky) .f5c .pw-h { font-size: clamp(42px, min(4.5vw, 9.5svh), 100px); }
   html:not(.m-sky) .f5c .f5-say { margin-top: clamp(20px, 3.6svh, 36px); }
   html:not(.m-sky) .f5c .pw-offer { font-size: clamp(16px, 1.3vw, 20px); }
   html:not(.m-sky) .f5c .f5-wall { align-self: center; width: min(100%, calc((100svh - 72px) * .64 * 1.47)); }
@@ -1917,7 +1933,7 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
    screen with the title still above it (site.js also never lets it finish later than the title's top reaching the top). */
 @media (max-width: 900px) {
   html:not(.m-sky) .pwall.pw-first.f5c { grid-template-areas: "h" "w" "s"; padding-top: clamp(28px, 6.4svh, 68px); padding-bottom: clamp(44px, 7svh, 72px); }
-  html:not(.m-sky) .f5c .pw-h { font-size: min(10.2vw, 6svh); line-height: 1; }
+  html:not(.m-sky) .f5c .pw-h { font-size: min(12.75vw, 7.5svh); line-height: 1; } /* r472: 1.25x */
   html:not(.m-sky) .f5c .f5-wall { margin-top: clamp(18px, 3svh, 28px); }
   html:not(.m-sky) .f5c .f5-say { margin-top: clamp(22px, 4svh, 36px); }
 }
@@ -1925,7 +1941,7 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
   html:not(.m-sky) .pwall.pw-first.f5c { padding-top: max(20px, calc(50svh - 138px - min(173px, 22.3svh))); }
 }
 @media (max-width: 700px) {
-  html[lang="ro"]:not(.m-sky) .f5c .pw-h { font-size: min(10.2vw, 6svh); }
+  html[lang="ro"]:not(.m-sky) .f5c .pw-h { font-size: min(calc((100vw - 32px) / 8.3), 12.75vw, 7.5svh); }
 }
 @media (prefers-reduced-motion: reduce) { html .pw-h .pw-k, html .pwall.f5c.formed .pw-k { animation: none !important; } }
 

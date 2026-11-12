@@ -893,8 +893,14 @@
   var phone = matchMedia("(max-width: 700px)"), stacked = matchMedia("(max-width: 900px)"), host = wall.querySelector(".f5-wall");
   var sets = [].slice.call(wall.querySelectorAll(".pw-case")), slid = false;
   var hdr = document.querySelector(".hdr");
+  // r472 (Daniel, 12 Nov: "cand se creaza inima si sare si incepe sa respire, sa faca la fel si experiences"): the key word
+  // (.pw-x) lives on the heart's own clock, read off the same numbers as the heart's middle set (d = 0): the big beat when
+  // it forms (a jump: a lift and a size up) and the two-pulse breath every 3.2 s, in phase. No clock of its own, so it cannot
+  // drift. Transform only (scale, translate on its own fit-content box): no layout, CLS 0. Written only when it changes.
+  var kx = wall.querySelector(".pw-h .pw-x"), ks = "";
+  var kset = function (sc, ty) { var v = sc.toFixed(4) + "|" + ty.toFixed(4); if (!kx || v === ks) return; ks = v; kx.style.scale = sc === 1 ? "" : sc.toFixed(4); kx.style.translate = ty ? "0 " + ty.toFixed(4) + "em" : ""; };
   W.hooks.push(function (t, dt) {
-    var C = rig(); if (!C) { if (slid) { slid = false; sets.forEach(function (el) { el.style.translate = ""; }); } return; } // the rig went: the still heart is whole
+    var C = rig(); if (!C) { kset(1, 0); if (slid) { slid = false; sets.forEach(function (el) { el.style.translate = ""; }); } return; } // the rig went: the still heart is whole
     slid = true;
     if (G !== C.gen) { // where the heart's middle is and how far each set is from it (0 the middle, 1 the tip): on a new measure only
       G = C.gen; var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, far = 1;
@@ -952,6 +958,10 @@
       c.gn = (1 + 0.15 * b + 0.3 * on + 0.55 * hb) * (1 - 0.45 * e);
       c.ox = c.dx * 0.12 * e + fx; c.oy = c.dy * (c.dy < 0 ? 0.12 : 0.03) * e; // upwards and sideways; the tip stays inside the heart's own box
     }
+    // r472: the key word, on the middle set's numbers (the same formulas at d = 0)
+    var kb = 0, kh = hp < 1200 ? pulse(hp / 420) : 0, kp = T0 ? t - T0 - 1500 : 0;
+    if (kp > 0) { kp %= 3200; kb = pulse(kp / 320) + 0.6 * pulse((kp - 370) / 300); }
+    kset(1 + 0.03 * kb + 0.065 * kh, -0.08 * kh);
   });
 })();
 // r456 (Daniel: "un sunet 8-bit scurt" when the heart forms; then: a success sound, subtle, "you feel it is there"). The
