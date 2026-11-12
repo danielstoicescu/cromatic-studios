@@ -1896,7 +1896,7 @@ html:not(.m-sky) .f5c .pw-k { --d: .011em; --o: max(1.5px, .026em); --y: #FED012
   --kw: var(--d) 0 0 var(--y), calc(-1 * var(--d)) 0 0 var(--y), 0 var(--d) 0 var(--y), 0 calc(-1 * var(--d)) 0 var(--y), var(--d) var(--d) 0 var(--y), calc(-1 * var(--d)) var(--d) 0 var(--y), var(--d) calc(-1 * var(--d)) 0 var(--y), calc(-1 * var(--d)) calc(-1 * var(--d)) 0 var(--y);
   --kp: calc(var(--o) + var(--d)) calc(var(--o) + var(--d)) 0 var(--ink), calc(var(--o) + var(--d)) var(--o) 0 var(--ink), var(--o) calc(var(--o) + var(--d)) 0 var(--ink);
   display: inline; letter-spacing: -.028em; color: var(--y); text-shadow: var(--kw), var(--kp); }
-/* r472: "brand" keeps its line's size; the key word alone on its line is the size up (1.2x) */
+/* r472: the key word alone on its line is the size up (1.2x). r472b (Daniel: "brand sa ramana cu negru, ca textul de dinainte de el"): "brand" / "de brand" are ink, the key word is the only yellow */
 html:not(.m-sky) .f5c .pw-h .pw-x { display: block; font-size: 1.2em; line-height: 1.04; margin-top: .02em; transform-origin: 50% 58%; }
 /* RO: the lead-in "Suntem aici pentru" is 8 em wide (EN "We're here" 4.6), so the RO title takes its size from the room that
    line needs (one line, never wrapped) and the key word gets the extra size (1.3x) so it reads as big as the EN one */
