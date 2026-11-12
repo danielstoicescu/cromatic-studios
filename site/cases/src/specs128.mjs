@@ -468,11 +468,8 @@ export const PAGES128 = [
     og: m("casa-berero/beers-011"),
     hero: { img: m("casa-berero/beers-011"), alt: "A COMM and a UNITY can lit in yellow and green" },
     problem: {
-      h: "Two cans, one word",
-      p: [
-        "Berero brews two beers, <strong>COMM</strong> and <strong>UNITY</strong>, and pours them at its own house, Casa Berero.",
-        "Put the two cans side by side and they spell community."
-      ],
+      // r473d (Daniel): no words in the opening, "it speaks for itself"
+      p: [],
       quote: { text: "Nu vinzi doar bere. Creezi un loc în care lumea vrea să revină.", cite: "From the Berero B2B deck" }
     },
     solution: {
@@ -501,9 +498,9 @@ export const PAGES128 = [
       // the Mixed Feelings display ad and the phone banner repeat the posts and are left out
       {
         pillar: "marketing",
-        pills: ["Six-pack", "campaigns"],
-        text: "Berero also sells mixed packs of craft beer. Each pack got its own sticker, a post and a display ad: Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and The 6 Pack.",
-        deliverables: ["Campaign stickers", "Social posts", "Display ads", "Art direction"],
+        pills: ["Berero Has", "6 Packs"], // r473d (Daniel): the title only, the same in RO
+        text: "",
+        deliverables: [],
         media: [
           { img: m("casa-berero/camp-stickers"), alt: "Six campaign stickers on black: The 6 Pack, Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and Life is Beachy", cap: "One sticker for every pack" },
           { rail: ["The", "packs"], items: [

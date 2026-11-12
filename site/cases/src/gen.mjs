@@ -249,6 +249,7 @@ html:not(.embed) .page{padding-top:64px}
 @keyframes shot-scroll{0%,6%{object-position:50% 0}94%,100%{object-position:50% 100%}}
 .screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .result .btn{margin-top:clamp(28px,3vw,44px)}
+.problem .inner>.quote:first-child{margin-top:0;padding-top:2%} /* r473d: an opening with no words starts on its quote */
 .result .result-media{margin-top:clamp(36px,5vw,72px)}
 .result figcaption{color:#b9b9b9}
 /* a film that opens the page */
@@ -356,12 +357,12 @@ ${P.info.map((l) => `            <li>${l}</li>`).join("\n")}
   const pr = P.problem;
   h.push(`  <section class="card problem" id="problem">
     <div class="inner">
-      <div class="sec-head">
-        <h2>${pr.h}</h2>
+${pr.h || (pr.p && pr.p.length) ? `      <div class="sec-head">${pr.h ? `
+        <h2>${pr.h}</h2>` : ""}${pr.p && pr.p.length ? `
         <div class="prose">
 ${pr.p.map((p) => `          <p>${p}</p>`).join("\n")}
-        </div>
-      </div>${pr.media ? `
+        </div>` : ""}
+      </div>` : ""}${pr.media ? `
       <div class="problem-media stack">
 ${pr.media.map(block).join("\n")}
       </div>` : ""}${pr.quote ? `
@@ -378,8 +379,7 @@ ${pr.media.map(block).join("\n")}
         </div>
         <a class="to-result" href="${firstId}">
           <b${P.solution.stat.length > 14 ? ' class="is-text"' : ""}>${P.solution.stat}</b>
-          <span>${P.solution.statText}</span>
-          <span class="to-result-go">Drop for more <span class="go-icon" aria-hidden="true">↓</span></span>
+${P.solution.statText ? `          <span>${P.solution.statText}</span>\n` : ""}          <span class="to-result-go">Drop for more <span class="go-icon" aria-hidden="true">↓</span></span>
         </a>
       </div>
     </div>
@@ -395,10 +395,9 @@ ${pr.media.map(block).join("\n")}
     <div class="chapter-side">
       <div>
         <span class="pill-title"><span class="pill pill--${pl.cls}">${words[0]}</span> <span class="pill pill--accent">${words[1]}</span></span>
-        <p class="chapter-text">${c.text}</p>
-        <ul class="deliverables">
+${c.text ? `        <p class="chapter-text">${c.text}</p>\n` : ""}${c.deliverables && c.deliverables.length ? `        <ul class="deliverables">
 ${c.deliverables.map((d) => `          <li>${d}</li>`).join("\n")}
-        </ul>
+        </ul>` : ""}
       </div>
     </div>
     <div class="chapter-media">
