@@ -2103,20 +2103,21 @@ html:not(.m-sky) .sb-copy { top: calc((100% - 80px) / 2); bottom: auto; translat
   html.js:not(.crt-w):not(.m-sky) .f5c .pw-case { animation: f5-leave linear both; animation-timeline: view(); animation-range: exit 30% exit 90%; }
   @keyframes f5-leave { to { opacity: 0; } }
 }
-/* r471 (Daniel, 12 Nov: "Strategy, identity, websites, film and content for indie brands. / Made in Bucharest since 2014. -
-   al doilea rand. si mai frumos formatate aceste doua fraze"). Two lines, always: the offer, then its signature. The offer
-   in the sans, balanced (no word left alone on its last line); the signature on its own line in the studio's label voice
-   (JetBrains Mono caps, muted), so the two read as what we make and who signs it. One block height before and after the
-   mono file arrives (one line, fixed line height): no shift. */
+/* r471b (Daniel, 12 Nov, on r471: "parca e prea ai approach cu fontul acela. incercam alta solutie?"; r471: "Made in Bucharest
+   since 2014. - al doilea rand. si mai frumos formatate aceste doua fraze"). Two lines, always: the offer, balanced (no word
+   left alone on its last line), then its signature, in the same family, a step smaller and in the muted tone, natural case,
+   with the studio's one emphasised word: the city, bold, in ink (sized down to sit on the lighter cut's x-height).
+   Variants shown to Daniel: v2a the same line with no emphasis; v2c the city in bold italic (a synthetic oblique). */
 .f5 .pw-o1 { display: block; text-wrap: balance; }
-.f5 .pw-o2 { display: block; margin-top: 14px; font-family: var(--mono); font-size: 12px; font-weight: 700; line-height: 1.5; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); text-wrap: balance; }
+.f5 .pw-o2 { display: block; margin-top: 10px; font-size: clamp(16px, 1.2vw, 18px); font-weight: 500; line-height: 1.4; color: var(--muted); text-wrap: balance; }
+.f5 .pw-o2 em { font-style: normal; font-size: .88em; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
 @media (min-width: 901px) {
   html:not(.m-sky) .f5c .pw-offer { max-width: 20em; font-size: clamp(17px, 1.42vw, 22px); line-height: 1.32; } /* the offer in two even lines in both languages */
-  .f5c .pw-o2 { margin-top: clamp(14px, 1.8svh, 20px); }
+  .f5c .pw-o2 { margin-top: clamp(8px, 1.2svh, 12px); }
 }
 @media (max-width: 900px) {
   .f5c .pw-offer { max-width: 22em; }
-  .f5c .pw-o2 { margin-top: 12px; font-size: 11px; letter-spacing: .1em; } /* the signature no wider than the offer above it */
+  .f5c .pw-o2 { margin-top: 8px; font-size: 15px; }
 }
 @media (max-width: 700px) {
   .f5c .pw-offer { line-height: 1.42; }
