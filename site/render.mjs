@@ -1,7 +1,7 @@
 // Renders the lo-fi website: /site/ (home) and /work/<slug>/ (case pages). Plain HTML, a small
 // stylesheet and a few lines of script; no WebGL. `A(name)` resolves an asset variable from
 // src/app.js to { src, w, h } (src is root-relative, e.g. /assets/abc.png).
-import { NAV, SERVICE_CARDS, PROJECTS, ZDROVIT_BRANDS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
+import { NAV, SERVICE_CARDS, PROJECTS, ZDROVIT_BRANDS, STREETS, CLIENT_BADGES, FRIENDS, CREW, CREW_INFO, CREW_COLORS, CREW_PHOTOS, TEAM_LIFE, CREW_FACE_VARS, FORM, CASES, CANVASES, OFFICES } from "./data.mjs";
 import { STUDIO, FAQ, studioNode } from "../build/seo.mjs";
 import { SAME_AS, clip } from "../build/seo-pages.mjs";
 import { existsSync } from "node:fs";
@@ -832,6 +832,9 @@ ${header(false)}
     <ul class="crew team-crew">${CREW.map((n, i) => { const f = A(CREW_FACE_VARS[n]); const ci = CREW_INFO[n] || {}; return `<li id="${n.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")}" style="--cc:${CREW_COLORS[i % CREW_COLORS.length]}"><span class="cr-face">${f ? `<img src="${f.src}" width="${f.w}" height="${f.h}" alt="${esc(FULL[n] || n)}" loading="lazy" decoding="async">` : ""}</span><span class="cr-name">${esc(FULL[n] || n)}</span>${ci.role ? `<span class="cr-role mono">${esc(ci.role)}</span>` : ""}${ci.bio ? `<span class="cr-bio">${esc(ci.bio)}</span>` : ""}${ci.instagram ? `<a class="cr-link" href="${ci.instagram}" target="_blank" rel="noopener">Instagram ↗</a>` : ""}</li>`; }).join("")}</ul>
   </div></section>
   <section class="sec sec-alt"><div class="wrap"><div class="photos">${CREW_PHOTOS.map((p) => `<figure${p.big ? ' class="ph-big"' : ""}>${img(p.src, p.cap)}<figcaption class="mono">${esc(p.cap)}</figcaption></figure>`).join("")}</div></div></section>
+  <section class="sec sec-alt" id="studio-life"><div class="wrap">
+    <div class="photos">${(TEAM_LIFE || []).map((p) => { const v = p.video && A(p.video), po = p.poster && A(p.poster); return `<figure>${v ? `<video class="lv" data-src="${v.src}"${po ? ` poster="${po.src}"` : ""} width="${v.w || 480}" height="${v.h || 854}" muted loop playsinline preload="none" aria-label="${esc(p.alt)}"></video>` : img(p.src, p.alt)}<figcaption class="mono">${esc(p.cap)}</figcaption></figure>`; }).join("")}</div>
+  </div></section>
   ${hubEnd}
 </main>
 ${footer}`;

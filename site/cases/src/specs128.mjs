@@ -458,21 +458,21 @@ export const PAGES128 = [
   {
     slug: "casa-berero",
     name: "Berero", // r138e (Daniel): not "Casa Berero"
-    tagline: "Craft beer with your people: COMM and UNITY, cans, merch and a house to drink them in.",
-    desc: "Berero: brand identity, can labels for COMM lager and UNITY IPA, merch, event posters and B2B presentations for a craft beer brand and its house, Casa Berero. By Cromatic Studios.",
+    // r473b (Daniel): the page opens on COMM + UNITY; the beer party, the tap beer photo and the merch and takeover posters left the page
+    tagline: "Craft beer with your people: COMM and UNITY, two cans that spell one word, and a house to drink them in.",
+    desc: "Berero: brand identity and can labels for COMM lager and UNITY IPA, six-pack campaigns, product photography and B2B presentations for a craft beer brand and its house, Casa Berero. By Cromatic Studios.",
     title: "Craft beer with your people.",
     accent: { bg: "#111111", fg: "#ffffff", ink: "#111111" },
-    info: ["Craft beer, hospitality", "2024", "Brand identity, can labels, merch, posters, presentations"],
+    info: ["Craft beer, hospitality", "2024", "Brand identity, can labels, campaigns, photography, presentations"],
     cover: { img: m("casa-berero/beers-017") },
     og: m("casa-berero/beers-011"),
     hero: { img: m("casa-berero/beers-011"), alt: "A COMM and a UNITY can lit in yellow and green" },
     problem: {
-      h: "Not just beer",
+      h: "Two cans, one word",
       p: [
         "Berero brews two beers, <strong>COMM</strong> and <strong>UNITY</strong>, and pours them at its own house, Casa Berero.",
-        "Together they spell community. The brand had to sell that to bars as much as to drinkers: <strong>you don't just sell beer, you create a place people want to come back to</strong>."
+        "Put the two cans side by side and they spell <strong>community</strong>. That is the whole brand: beer you drink with your people, in a place you want to come back to."
       ],
-      media: [{ row: [{ img: m("casa-berero/logo"), alt: "The BERERO logo" }, { img: m("casa-berero/party"), alt: "Make your own beer party" }] }],
       quote: { text: "Nu vinzi doar bere. Creezi un loc în care lumea vrea să revină.", cite: "From the Berero B2B deck" }
     },
     solution: {
@@ -489,38 +489,12 @@ export const PAGES128 = [
         media: [
           { img: m("casa-berero/label-unity"), alt: "The Berero UNITY can label: black and green shapes, IPA", cap: "UNITY, the IPA" },
           { row: [{ img: m("casa-berero/comm-can"), alt: "A COMM can on yellow" }, { img: m("casa-berero/unity-can"), alt: "A UNITY can on green" }] },
-          { img: m("casa-berero/tap"), alt: "Tap beer, available in your location or at Casa Berero, kegs against a yellow wall" }
-        ]
-      },
-      {
-        pillar: "video",
-        text: "Product photography for both cans, and for the craft beers Berero brings in from the best breweries: on grass, on a rusted car, in a red crate, in the sun.",
-        deliverables: ["Product photography", "Art direction", "Social content"],
-        media: [
           { rail: ["COMM", "+ UNITY"], items: [
             { img: m("casa-berero/beers-012"), alt: "COMM and UNITY under yellow and green light" },
             { img: m("casa-berero/beers-013"), alt: "A diagonal of COMM and UNITY cans" },
             { img: m("casa-berero/beers-017"), alt: "Cans scattered on green" },
             { img: m("casa-berero/beers-018"), alt: "A tower of COMM and UNITY cans" }
-          ], cap: "The two cans, shot in their own colours" },
-          { rail: ["The", "core range"], items: [
-            { img: m("casa-berero/beers-078"), alt: "Hands lining up cans on the grass" },
-            { img: m("casa-berero/beers-044"), alt: "Craft cans on the roof of a rusted car" },
-            { img: m("casa-berero/beers-138"), alt: "Cans in a red wooden crate" },
-            { img: m("casa-berero/beers-143"), alt: "Carrying the red crate" },
-            { img: m("casa-berero/beers-096"), alt: "A can held up against the sky" },
-            { img: m("casa-berero/beers-024"), alt: "A pyramid of cans on the grass" }
-          ], cap: "Craft beers from other breweries, in Berero's crate" },
-          { row: [{ img: m("casa-berero/seb-003"), alt: "A stack of colourful craft cans" }, { img: m("casa-berero/seb-042"), alt: "A can opened against a blue sky" }, { img: m("casa-berero/seb-054"), alt: "Drinking a can in the sun" }] },
-          { row: [{ img: m("casa-berero/seb-018"), alt: "Two cans on coloured plinths" }, { img: m("casa-berero/seb-028"), alt: "Walking with the red crate across the street" }], cap: "A city shoot in blue and red" }
-        ]
-      },
-      {
-        pillar: "marketing",
-        text: "COMM UNITY on black tees, in yellow and green, and posters for the takeovers at Casa Berero.",
-        deliverables: ["Merch", "Event posters"],
-        media: [
-          { row: [{ img: m("casa-berero/merch-tees"), alt: "COMM UNITY t-shirt artwork, yellow and green" }, { img: m("casa-berero/poster-backyard"), alt: "Backyard Takeover poster at Casa Berero" }, { img: m("casa-berero/poster-garden"), alt: "Garden Takeover poster" }] }
+          ], cap: "The two cans, shot in their own colours" }
         ]
       },
       // cases-473 (Anne's new work, Nov 2026): the campaigns for Berero's mixed packs. The sheet lays six of the campaign
@@ -541,6 +515,23 @@ export const PAGES128 = [
             { img: m("casa-berero/camp-bereta"), alt: "The 6 Pack: six orange Bereta Juicebag cans" }
           ], cap: "A post for every pack" },
           { row: [{ img: m("casa-berero/camp-stash"), alt: "Fridge around and find out: a man looks into a fridge full of cans, next to the Ioan's Secret Stash sticker" }, { img: m("casa-berero/camp-summer"), alt: "Summer packs: a beach bag full of cans by the pool, Adaugă în frigider" }], cap: "Display ads: Ioan's Secret Stash and the summer packs" }
+        ]
+      },
+      {
+        pillar: "video",
+        text: "Product photography for the craft beers Berero brings in from the best breweries: on grass, on a rusted car, in a red crate, in the sun.",
+        deliverables: ["Product photography", "Art direction", "Social content"],
+        media: [
+          { rail: ["The", "core range"], items: [
+            { img: m("casa-berero/beers-078"), alt: "Hands lining up cans on the grass" },
+            { img: m("casa-berero/beers-044"), alt: "Craft cans on the roof of a rusted car" },
+            { img: m("casa-berero/beers-138"), alt: "Cans in a red wooden crate" },
+            { img: m("casa-berero/beers-143"), alt: "Carrying the red crate" },
+            { img: m("casa-berero/beers-096"), alt: "A can held up against the sky" },
+            { img: m("casa-berero/beers-024"), alt: "A pyramid of cans on the grass" }
+          ], cap: "Craft beers from other breweries, in Berero's crate" },
+          { row: [{ img: m("casa-berero/seb-003"), alt: "A stack of colourful craft cans" }, { img: m("casa-berero/seb-042"), alt: "A can opened against a blue sky" }, { img: m("casa-berero/seb-054"), alt: "Drinking a can in the sun" }] },
+          { row: [{ img: m("casa-berero/seb-018"), alt: "Two cans on coloured plinths" }, { img: m("casa-berero/seb-028"), alt: "Walking with the red crate across the street" }], cap: "A city shoot in blue and red" }
         ]
       }
     ],

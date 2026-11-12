@@ -17,7 +17,7 @@ export const MAXIMAG = {
   desc: "Maximag Bisglicinat: Smart TV ads for LG home screens and a 15-second animated banner for a magnesium supplement in the Zdrovit portfolio. By Cromatic Studios, 2026.",
   title: "A busy aisle, switched off.",
   accent: { bg: "#091D61", fg: "#ffffff", ink: "#D71E3E" },
-  info: ["Magnesium supplement, Maximag Bisglicinat", "Romania · 2026", "Smart TV ads, motion"],
+  info: ["Magnesium supplement, Maximag Bisglicinat", "Romania · 2026", "Smart TV ads, TikTok ads, motion"], // r473b (Daniel): TikTok in the info line
   cover: { img: m("maximag/launcher") },
   og: m("maximag/banner"),
   hero: { video: m("maximag/film"), poster: m("maximag/film-poster"), r: R_LG, fixed: false, alt: "The animated Maximag Bisglicinat banner: the logo and Agitație: OFF, Relaxare: ON on the left, a man in a supermarket in the middle, the claims and the box on the right" },
