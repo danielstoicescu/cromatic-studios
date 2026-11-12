@@ -1943,6 +1943,15 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
 @media (max-width: 700px) {
   html[lang="ro"]:not(.m-sky) .f5c .pw-h { font-size: min(calc((100vw - 32px) / 8.3), 12.75vw, 7.5svh); }
 }
+/* r472d (Daniel, 12 Nov: "daca facem textul mai mic in proportie cu inima, cum reusim? mai ales pe desktop?"): the title
+   in proportion to the heart. The fold's script (render.mjs r472d) writes the heart's height (--hh) and the title column's
+   width (--tw) before the first paint; the three-line block is --hr of the heart's height (EN block = 3.27 em, RO 3.46 em),
+   and never wider than its column (EN "experiences" 6.7 em, RO "Suntem aici pentru" 8.2 em). Until the script runs, the
+   r472 clamp above. */
+.f5c { --hr: .4; } /* p40: the block is 40% of the heart on a wide screen */
+@media (max-width: 900px) { .f5c { --hr: .44; } } /* stacked, the heart is small: a little more for the type (44%) */
+html:not(.m-sky) .f5c.hfit .pw-h { font-size: min(calc(var(--hh) * var(--hr) / 3.27), calc(var(--tw) / 6.7)); }
+html[lang="ro"]:not(.m-sky) .f5c.hfit .pw-h { font-size: min(calc(var(--hh) * var(--hr) / 3.46), calc(var(--tw) / 8.2)); }
 @media (prefers-reduced-motion: reduce) { html .pw-h .pw-k, html .pwall.f5c.formed .pw-k { animation: none !important; } }
 
 /* r449 (Daniel, 10 Nov: "sa facem cardurile de servicii si zona asta cat mai UX si clara") + r450s (Daniel, 10 Nov: "mult mai

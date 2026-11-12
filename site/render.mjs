@@ -438,6 +438,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     <div class="f5-h">${h1}</div>
     ${say}
     <div class="f5-wall">${sets}</div>
+    <script>${/* r472d (Daniel, 12 Nov: "daca facem textul mai mic in proportie cu inima, cum reusim? mai ales pe desktop?"): the title takes its size from the heart, not from the screen. Before the first paint (the heart's box is known from its pictures' width and height, no font needed) and on every resize: the heart's height (--hh) and the title's column (--tw) go on the fold; site.css r472d sets the title from them. Never a transform; without this script the r472 clamp stays. */ ""}(function(){var s=document.currentScript.parentNode,r=s.querySelector(".pw-still");if(!r)return;var f=function(){var h=r.offsetHeight,w=parseFloat(getComputedStyle(s).gridTemplateColumns)||0;if(!h||!w)return;s.style.setProperty("--hh",h+"px");s.style.setProperty("--tw",w+"px");s.classList.add("hfit")};f();var q=0;addEventListener("resize",function(){cancelAnimationFrame(q);q=requestAnimationFrame(f)})})()</script>
   </section>`;
     };
     // r381: the wall's first two covers (row 1 from its start: what the first paint shows, before site.js slides the
