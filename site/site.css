@@ -1920,12 +1920,17 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
      and the text share one middle (the heart spans the rows and is centred, the text block is centred between equal rows),
      and the fold is 128 px taller than the screen, so that shared middle starts 100 px under the screen's middle: the
      heart is loose at load, and 100 px of scroll lay it in, centred on the screen, level with the title. */
-  html:not(.m-sky) .pwall.pw-first.f5c { grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); grid-template-rows: 1fr auto auto 1fr; column-gap: clamp(28px, 3.4vw, 56px); padding-block: clamp(20px, 3svh, 36px); min-height: calc(100svh - 72px + 128px); }
+  /* r472e (Daniel, 12 Nov: "vream sa fie inima mai mare, default. textul. 35."): the heart is the size it can be, the type
+     takes what is left. The heart's height is 80% of the screen under the header, or less where the width runs out (it
+     then takes 65.5% of the row: what leaves the title column room for its 35% size, EN "experiences" 6.7 em wide). The
+     fold is 12.8% taller than the screen instead of a fixed 128 px, so the heart starts about 10% of the screen under the
+     middle and is whole on the screen at load at any height (a 128 px offset cut its tip on a 720 px screen). */
+  html:not(.m-sky) .pwall.pw-first.f5c { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 1fr auto auto 1fr; column-gap: clamp(28px, 3.4vw, 56px); padding-block: clamp(20px, 3svh, 36px); min-height: calc((100svh - 72px) * 1.128); }
   html:not(.m-sky) .f5c .pw-h { font-size: clamp(42px, min(5.6vw, 9.5svh), 100px); line-height: 1; } /* r472: 1.25x */
   html[lang="ro"]:not(.m-sky) .f5c .pw-h { font-size: clamp(42px, min(4.5vw, 9.5svh), 100px); }
   html:not(.m-sky) .f5c .f5-say { margin-top: clamp(20px, 3.6svh, 36px); }
   html:not(.m-sky) .f5c .pw-offer { font-size: clamp(16px, 1.3vw, 20px); }
-  html:not(.m-sky) .f5c .f5-wall { align-self: center; width: min(100%, calc((100svh - 72px) * .64 * 1.47)); }
+  html:not(.m-sky) .f5c .f5-wall { align-self: center; width: min(calc((100vw - 2 * clamp(16px, 3.4vw, 48px) - clamp(28px, 3.4vw, 56px)) * .655), calc((100svh - 72px) * .8 * 1.363)); }
 }
 /* stacked. r461 (Daniel: the heart formed "mult prea jos"; it formed once the title had left the screen): the heart sits
    right under the title and the offer under the heart. The top padding is sized so the heart's middle starts about 100 px
@@ -1939,6 +1944,9 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
 }
 @media (max-width: 700px) {
   html:not(.m-sky) .pwall.pw-first.f5c { padding-top: max(20px, calc(50svh - 138px - min(173px, 22.3svh))); }
+  /* r472e: with the title tied to the heart (its block is --hr of the heart's height), the same aim from the real sizes:
+     the heart's middle starts about 100 px under the screen's middle (header 64 + gap ~28 + 8 of the old sum) */
+  html:not(.m-sky) .pwall.pw-first.f5c.hfit { padding-top: max(20px, calc(50svh - var(--hh) * (var(--hr) + .5))); }
 }
 @media (max-width: 700px) {
   html[lang="ro"]:not(.m-sky) .f5c .pw-h { font-size: min(calc((100vw - 32px) / 8.3), 12.75vw, 7.5svh); }
@@ -1948,7 +1956,7 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
    width (--tw) before the first paint; the three-line block is --hr of the heart's height (EN block = 3.27 em, RO 3.46 em),
    and never wider than its column (EN "experiences" 6.7 em, RO "Suntem aici pentru" 8.2 em). Until the script runs, the
    r472 clamp above. */
-.f5c { --hr: .4; } /* p40: the block is 40% of the heart on a wide screen */
+.f5c { --hr: .35; } /* r472e (Daniel: "textul. 35."): the block is 35% of the heart on a wide screen */
 @media (max-width: 900px) { .f5c { --hr: .44; } } /* stacked, the heart is small: a little more for the type (44%) */
 html:not(.m-sky) .f5c.hfit .pw-h { font-size: min(calc(var(--hh) * var(--hr) / 3.27), calc(var(--tw) / 6.7)); }
 html[lang="ro"]:not(.m-sky) .f5c.hfit .pw-h { font-size: min(calc(var(--hh) * var(--hr) / 3.46), calc(var(--tw) / 8.2)); }
