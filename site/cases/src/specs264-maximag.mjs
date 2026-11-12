@@ -67,6 +67,20 @@ export const MAXIMAG = {
           cap: "Five moments from the middle of the banner"
         }
       ]
+    },
+    // cases-473 (Anne's new work, Nov 2026): the TikTok pair, the video and the static. The video's last frame was also
+    // delivered as a still: it repeats the video and is left out
+    {
+      pillar: "video",
+      pills: ["TikTok", "ads"],
+      text: "Two vertical ads for TikTok. On a navy sofa, the day's noise fades word by word: endless meetings, multitasking, deadlines, snoozed alarms, unread messages, overtime. A circle lands on the box. The static puts the same words round a woman at her desk.",
+      deliverables: ["TikTok video", "Static ad", "9:16"],
+      media: [
+        { row: [
+          { video: m("maximag/tiktok-sofa"), poster: m("maximag/tiktok-sofa-poster"), r: 0.5625, alt: "Hands resting on a navy sofa next to the Maximag Bisglicinat box, while Ședințe fără sfârșit, Multitasking, Deadlines, Alarme amânate, Mesaje necitite and Ore suplimentare fade out and a white circle lands on the box" },
+          { img: m("maximag/tiktok-office"), alt: "A woman at her desk in a wood-panelled office, the box on the desk, with Deadlines, Multitasking, Ore suplimentare and Alarme amânate around her" }
+        ], cap: "The video and the static, 9:16" }
+      ]
     }
   ],
   result: {

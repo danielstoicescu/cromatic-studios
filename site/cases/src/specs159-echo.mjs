@@ -303,13 +303,17 @@ export const ECHO = {
     {
       pillar: "marketing",
       pills: ["Comic", "Con"],
-      text: "Echo School at East European Comic Con: a carousel of what was waiting at the stand, and wide visuals from the same fantasy world.",
-      deliverables: ["Event campaign", "Carousels", "Key visuals"],
+      text: "Echo School at East European Comic Con: a carousel of what was waiting at the stand, wide visuals from the same fantasy world, and the stand's back wall, printed big.",
+      deliverables: ["Event campaign", "Carousels", "Key visuals", "Stand graphics"],
       media: [feed(
         COMICCON,
         post("banner-imagination", "Fantasy heroes around a castle, under the line A career that starts from your imagination", "A career that starts from your imagination.", "Mar 2026"),
         post("banner-witch", "A witch, a knight and armoured heroes in colour, stepping out of pencil sketches", "Heroes stepping out of the sketch, from pencil to full colour.", "Mar 2026")
-      )]
+      ),
+      // cases-473 (Anne's new work, Nov 2026): the stand at Comic Con 2026, its back wall as printed and a few seconds of
+      // the crowd in front of it (the photo and the vertical clip of the same stand are left out)
+      { img: m("comiccon-wall"), alt: "The stand's back wall: Start your college journey in worlds that you create, over heroes crossing a valley below a glowing castle" },
+      { video: m("comiccon-crowd"), poster: m("comiccon-crowd-poster"), r: 16 / 9, alt: "A crowd in front of the Echo School stand at Comic Con, under the castle wall" , cap: "The wall at East European Comic Con, April 2026, and the people in front of it" }]
     },
     {
       pillar: "marketing",

@@ -413,7 +413,9 @@ export const PAGES128 = [
           { row: [{ img: m("pain-plaisir/mark"), alt: "The anemone combination mark" }, { img: m("pain-plaisir/logo"), alt: "Buchet de anemone logo" }] },
           { row: [{ img: m("pain-plaisir/pattern"), alt: "The quatrefoil pattern" }, { img: m("pain-plaisir/box"), alt: "Gift box with flavour stickers" }], cap: "Pattern, box and stickers" },
           { field: "#F6C944", fg: "#111111", items: [{ img: m("pain-plaisir/sticker-1"), alt: "Sticker: Buchet de anemone, pentru sărbători delicioase" }, { img: m("pain-plaisir/sticker-2"), alt: "Sticker: the flavours of the holidays" }, { img: m("pain-plaisir/sticker-3"), alt: "Sticker: Je ne sais quoi? Anemone și cafea" }], cap: "Holiday stickers: cinnamon, ginger, cardamom" },
-          { img: m("pain-plaisir/photo-treatment"), alt: "Quatrefoil photo treatment for social media" }
+          { img: m("pain-plaisir/photo-treatment"), alt: "Quatrefoil photo treatment for social media" },
+          // cases-473 (Anne's new work, Nov 2026): the gift box at Christmas, and the four-to-one animation of the mark
+          { row: [{ img: m("pain-plaisir/xmas-box"), alt: "The white Buchet de anemone box on a Christmas table, with anemones, a candle and pine branches" }, { video: m("pain-plaisir/anemone-mark"), poster: m("pain-plaisir/anemone-mark-poster"), r: 0.5625, alt: "Four anemones on white turn into one, under the Buchet de anemone mark" }], cap: "The Buchet de anemone box, dressed for Christmas. Four anemones, one bouquet." }
         ]
       },
       {
@@ -439,7 +441,10 @@ export const PAGES128 = [
             { img: m("pain-plaisir/photo-39"), alt: "The flaky inside" },
             { img: m("pain-plaisir/photo-40"), alt: "Layers of croissant dough" }
           ], cap: "The Anemone photo shoot" },
-          { row: [{ img: m("pain-plaisir/photo-44"), alt: "Pastries and cookies at the Christmas table" }, { img: m("pain-plaisir/photo-52"), alt: "Sourdough loaf and cheese at the Christmas table" }], cap: "The Christmas table" }
+          { row: [{ img: m("pain-plaisir/photo-44"), alt: "Pastries and cookies at the Christmas table" }, { img: m("pain-plaisir/photo-52"), alt: "Sourdough loaf and cheese at the Christmas table" }], cap: "The Christmas table" },
+          // cases-473: Christmas 2025 on white, a post from the carousel, two loops from the set
+          { row: [{ img: m("pain-plaisir/xmas-boxes"), alt: "Two Pain Plaisir gift boxes stacked on white, with anemones beside them" }, { img: m("pain-plaisir/pyramid"), alt: "A pyramid of anemones on white" }, { img: m("pain-plaisir/ribbon-post"), full: true, alt: "An anemone on a ceramic plate, tied with a hand-drawn white ribbon: Combină-le după plac și gust" }], cap: "Christmas 2025: boxes, a pyramid of anemones and a post that ties one with a ribbon" },
+          { row: [{ video: m("pain-plaisir/cremeschnitte"), poster: m("pain-plaisir/cremeschnitte-poster"), r: 0.5625, alt: "A spoon breaks into a cremeschnitte on white until only crumbs are left" }, { video: m("pain-plaisir/making-of"), poster: m("pain-plaisir/making-of-poster"), r: 0.5625, alt: "Behind the scenes: the photographer, the lights and the model at the anemone table" }], cap: "From the same set: a cremeschnitte, and the shoot behind the pictures" }
         ]
       }
     ],
@@ -516,6 +521,26 @@ export const PAGES128 = [
         deliverables: ["Merch", "Event posters"],
         media: [
           { row: [{ img: m("casa-berero/merch-tees"), alt: "COMM UNITY t-shirt artwork, yellow and green" }, { img: m("casa-berero/poster-backyard"), alt: "Backyard Takeover poster at Casa Berero" }, { img: m("casa-berero/poster-garden"), alt: "Garden Takeover poster" }] }
+        ]
+      },
+      // cases-473 (Anne's new work, Nov 2026): the campaigns for Berero's mixed packs. The sheet lays six of the campaign
+      // stickers on black (Wet Dreams, the seventh, left out); the 6 Pack template has three beers, two of them shown;
+      // the Mixed Feelings display ad and the phone banner repeat the posts and are left out
+      {
+        pillar: "marketing",
+        pills: ["Six-pack", "campaigns"],
+        text: "Berero also sells mixed packs of craft beer. Each pack got a sticker with a wink, a post and a display ad: Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and The 6 Pack, who flexes next to every line-up.",
+        deliverables: ["Campaign stickers", "Social posts", "Display ads", "Art direction"],
+        media: [
+          { img: m("casa-berero/camp-stickers"), alt: "Six campaign stickers on black: The 6 Pack, Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and Life is Beachy", cap: "One sticker for every pack" },
+          { rail: ["The", "packs"], items: [
+            { img: m("casa-berero/camp-lager"), alt: "Lager than Life: a tower of lager cans with a tiny man on top and an orange bottle sticker" },
+            { img: m("casa-berero/camp-mixed"), alt: "We have some Mixed Feelings: gloved hands hold craft cans against a starry sky" },
+            { img: m("casa-berero/camp-hops"), alt: "Hops Around: colourful cans flying over a field of grass at sunrise" },
+            { img: m("casa-berero/camp-maktoob"), alt: "The 6 Pack: six green Maktoob cans, At the edge of one's hood" },
+            { img: m("casa-berero/camp-bereta"), alt: "The 6 Pack: six orange Bereta Juicebag cans" }
+          ], cap: "A post for every pack" },
+          { row: [{ img: m("casa-berero/camp-stash"), alt: "Fridge around and find out: a man looks into a fridge full of cans, next to the Ioan's Secret Stash sticker" }, { img: m("casa-berero/camp-summer"), alt: "Summer packs: a beach bag full of cans by the pool, Adaugă în frigider" }], cap: "Display ads: Ioan's Secret Stash and the summer packs" }
         ]
       }
     ],

@@ -2,6 +2,7 @@
 // the clients' own websites and the existing case data in site/data.mjs; nothing beyond them.
 const cs = (p) => "cs:" + p;
 const v = (p, r, extra = {}) => ({ video: cs(p), r, ...extra });
+const m = (p) => "m:" + p; // cases-473: the studio's own copies in site/media (Anne's new work, Nov 2026)
 
 export const PAGES = [
   // ------------------------------------------------------------------ Artisan Coffee Gear
@@ -208,6 +209,23 @@ export const PAGES = [
       statText: "drawn in by the content, the events and the campaigns"
     },
     chapters: [
+      // cases-473: the illustrated menu (the mockup without the binder rings: the ringed one is the same spread)
+      {
+        pillar: "brand",
+        pills: ["The", "menu"],
+        text: "A new menu, drawn dish by dish: edamame and gyoza, ramen and miso, skewers off the konro grill, a sushi set and the cocktails. Small characters keep the food company on every page.",
+        deliverables: ["Menu design", "Illustration", "Print"],
+        media: [
+          { img: m("yoshi-izakaya/menu-mockup"), alt: "The Yoshi Izakaya menu open on a grey table: the konro grill, the sushi set and the cocktails" },
+          { rail: ["Page", "by page"], items: [
+            { img: m("yoshi-izakaya/menu-starters"), alt: "Menu page, Starters to share: a bowl of edamame and a plate of gyoza, with a small horned character" },
+            { img: m("yoshi-izakaya/menu-salads"), alt: "Menu page, Salads and Soups: seaweed salad, a bowl of ramen and a miso soup with a smiling face" },
+            { img: m("yoshi-izakaya/menu-grill"), alt: "Menu page, Konro grill and kushiyaki: skewers on a black plate and a red koi on a bonsai island" },
+            { img: m("yoshi-izakaya/menu-sushi"), alt: "Menu page, Sushi set: a full sushi platter with a small green character beside it" },
+            { img: m("yoshi-izakaya/menu-cocktails"), alt: "Menu page, Signature cocktails: a purple cocktail with a rabbit character sitting in the glass" }
+          ], cap: "Starters, soups, the grill, sushi and cocktails" }
+        ]
+      },
       {
         pillar: "marketing",
         text: "A content strategy with a steady rhythm, events designed to bring new guests in, ad campaigns that put the food in front of the right people, and photography that shows the restaurant the way regulars know it.",
@@ -218,7 +236,9 @@ export const PAGES = [
             { row: [{ img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-1.jpg"), alt: "Sushi rolls on a stone plate by the counter" }, { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-3.jpg"), alt: "A guest eating ramen with chopsticks" }] },
             { row: [{ img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-6.jpg"), alt: "Asparagus wrapped in meat on the grill" }, { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-7.jpg"), alt: "Lifting ramen noodles from the bowl" }] },
             { row: [{ img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-8.jpg"), alt: "A green cocktail being finished at the bar" }, { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-9.jpg"), alt: "A chef in a Yoshi apron holding a bowl" }] }
-          ], head: ["Photography"], cap: "From the grill to the bar: the visuals behind the new feed" }
+          ], head: ["Photography"], cap: "From the grill to the bar: the visuals behind the new feed" },
+          // cases-473: two of the three reels (the ramen one repeats the egg reel's idea)
+          { row: [{ video: m("yoshi-izakaya/reel-cherry"), poster: m("yoshi-izakaya/reel-cherry-poster"), r: 0.5625, alt: "A layered red and yellow cocktail, a hand-drawn cherry character above it and Japanese type down the side" }, { video: m("yoshi-izakaya/reel-egg"), poster: m("yoshi-izakaya/reel-egg-poster"), r: 0.5625, alt: "Chopsticks lift a fried egg off a rice bowl, a hand-drawn character beside it and itadakimasu in Japanese above" }], cap: "Reels: hand-drawn characters and Japanese type over the food" }
         ]
       }
     ],
@@ -337,6 +357,8 @@ export const PAGES = [
         media: [
           { video: cs("2025/06/GAME-SONG-MONTAGE.webm"), r: 1.778, manual: true, poster: cs("2025/06/ROUTINE_GAME-SONG-022.jpg"), alt: "The Routine Paris campaign film", cap: "The campaign film" },
           { row: [{ img: cs("2025/06/ROUTINE_GAME-SONG-3.jpg"), alt: "A Routine bottle in an open black box" }, { img: cs("2025/06/ROUTINE_SHY-EXTREME-4.jpg"), alt: "A Routine bottle with gold frames" }], cap: "Campaign stills" },
+          // cases-473: eight seconds from each of the fragrance films, muted
+          { row: [{ video: m("routine-paris/film-garden"), poster: m("routine-paris/film-garden-poster"), r: 0.5625, alt: "White Blossom: orange blossom in the sun and a woman in a pink tulle dress in a park" }, { video: m("routine-paris/film-blossom"), poster: m("routine-paris/film-blossom-poster"), r: 0.5625, hideSm: true, alt: "White Blossom: the petals of a white flower in close-up, then orange peel and a face in striped light" }, { video: m("routine-paris/film-whiskey"), poster: m("routine-paris/film-whiskey-poster"), r: 0.5625, alt: "Fabulous Whiskey: amber whiskey swirling, cinnamon sticks and vanilla" }], cap: "Short films for two fragrances: White Blossom and Fabulous Whiskey" },
           { rail: ["Instagram", "launch"], items: [1, 2, 3, 4, 5, 6].map((i) => ({ img: cs(`2025/06/Routine-Paris-instagram-${i}.jpg`), alt: `Routine Paris Instagram post ${i}` })), cap: "Each fragrance introduced with its top, heart and base notes" }
         ]
       },
@@ -443,7 +465,19 @@ export const PAGES = [
         deliverables: ["Brand strategy", "Content strategy", "Social media", "Influencer marketing", "TV commercial", "Video production", "Ad campaigns", "Photo production"],
         media: [
           { rail: ["Instagram", "reels"], items: [2, 3, 4, 5, 6, 7].map((i) => ({ img: cs(`2025/06/Cromatic-Studios-Help4brain-${i}.jpg`), alt: `Help4Brain Instagram reel ${i - 1}` })), cap: "Reels on memory, power naps and dopamine, with experts and creators" },
-          { row: [{ img: cs("2025/06/Cromatic-Studios-Help4brain-11.jpg"), alt: "A woman lying on a yoga mat next to a Help4Brain box" }, { img: cs("2025/06/Cromatic-Studios-Help4brain-1.jpg"), alt: "Blue tablets arranged in a grid" }], cap: "Lifestyle and product stills" }
+          { row: [{ img: cs("2025/06/Cromatic-Studios-Help4brain-11.jpg"), alt: "A woman lying on a yoga mat next to a Help4Brain box" }, { img: cs("2025/06/Cromatic-Studios-Help4brain-1.jpg"), alt: "Blue tablets arranged in a grid" }], cap: "Lifestyle and product stills" },
+          // cases-473 (Anne's new work, Nov 2026); left out: the three boxes on plinths and the tablet grid (already above),
+          // a second fruit still, and the quote reel
+          { rail: ["Product", "photography"], items: [
+            { img: m("help-4-brain/ph-notes"), alt: "A woman in a white shirt writes in a notebook, a Help4Brain box on the desk" },
+            { img: m("help-4-brain/ph-desk"), alt: "The same woman at her desk with a laptop, smiling, the box by her phone" },
+            { img: m("help-4-brain/ph-box-hand"), alt: "A hand stands a Help4Brain box on its corner on a wooden table" },
+            { img: m("help-4-brain/ph-tablet"), alt: "A hand places a blue tablet next to the box on a pale blue book" },
+            { img: m("help-4-brain/ph-citrus"), alt: "The box on a cutting board with oranges, limes and lemons" },
+            { img: m("help-4-brain/ph-flatlay"), alt: "From above: a laptop, earbuds, glasses and the box on a blue desk" }
+          ], cap: "At the desk, in the hand and on the kitchen table" },
+          { row: [1, 2, 3, 4].map((i) => ({ img: m(`help-4-brain/relax-${i}`), alt: ["Carousel cover: Cum să te relaxezi?, in rings of white dots on blue", "Carousel slide: Practică exerciții de respirație, inhale for 4, hold for 4, exhale for 6", "Carousel slide: Deconectează-te, notifications off and 30 minutes of reading", "Carousel slide: Menține-te activ, a walk, a few easy exercises, yoga"][i - 1] })), cap: "A carousel on how to relax: breathe, unplug, keep moving" },
+          { row: [{ img: m("help-4-brain/pill-ingredients"), alt: "A wireframe tablet in a ring of its ingredients: Bacopa monnieri, vitamins B5, B6, B9 and B12, citicoline" }, { video: m("help-4-brain/reel-bacopa"), poster: m("help-4-brain/reel-bacopa-poster"), r: 0.5625, alt: "A reel on Bacopa monnieri: an eye, clouds, water and a woman reading, with what it helps in a ring of dots" }], cap: "What is in each tablet, and a reel on Bacopa monnieri" }
         ]
       },
       {

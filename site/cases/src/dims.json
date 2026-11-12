@@ -5413,5 +5413,290 @@
     1400,
     1400,
     109089
+  ],
+  "m:casa-berero/camp-bereta": [
+    1080,
+    1350,
+    143512
+  ],
+  "m:casa-berero/camp-hops": [
+    1280,
+    1600,
+    262517
+  ],
+  "m:casa-berero/camp-lager": [
+    1280,
+    1600,
+    191251
+  ],
+  "m:casa-berero/camp-maktoob": [
+    1080,
+    1350,
+    152380
+  ],
+  "m:casa-berero/camp-mixed": [
+    1280,
+    1600,
+    313295
+  ],
+  "m:casa-berero/camp-stash": [
+    1600,
+    837,
+    171706
+  ],
+  "m:casa-berero/camp-stickers": [
+    1600,
+    1040,
+    135816
+  ],
+  "m:casa-berero/camp-summer": [
+    1600,
+    837,
+    147489
+  ],
+  "m:echo-school/comiccon-crowd-poster": [
+    960,
+    540,
+    105340
+  ],
+  "m:echo-school/comiccon-wall": [
+    1600,
+    727,
+    181568
+  ],
+  "m:help-4-brain/ph-box-hand": [
+    1067,
+    1600,
+    73558
+  ],
+  "m:help-4-brain/ph-citrus": [
+    1600,
+    1067,
+    279675
+  ],
+  "m:help-4-brain/ph-desk": [
+    1600,
+    1067,
+    120866
+  ],
+  "m:help-4-brain/ph-flatlay": [
+    1600,
+    1067,
+    103207
+  ],
+  "m:help-4-brain/ph-notes": [
+    1067,
+    1600,
+    92452
+  ],
+  "m:help-4-brain/ph-tablet": [
+    1067,
+    1600,
+    67909
+  ],
+  "m:help-4-brain/pill-ingredients": [
+    1200,
+    1200,
+    146363
+  ],
+  "m:help-4-brain/reel-bacopa-poster": [
+    480,
+    854,
+    30913
+  ],
+  "m:help-4-brain/relax-1": [
+    1080,
+    1080,
+    34542
+  ],
+  "m:help-4-brain/relax-2": [
+    1080,
+    1080,
+    51485
+  ],
+  "m:help-4-brain/relax-3": [
+    1080,
+    1080,
+    45552
+  ],
+  "m:help-4-brain/relax-4": [
+    1080,
+    1080,
+    32673
+  ],
+  "m:maximag/tiktok-office": [
+    900,
+    1600,
+    126424
+  ],
+  "m:maximag/tiktok-sofa-poster": [
+    540,
+    960,
+    68624
+  ],
+  "m:pain-plaisir/anemone-mark-poster": [
+    540,
+    960,
+    8132
+  ],
+  "m:pain-plaisir/cremeschnitte-poster": [
+    540,
+    960,
+    20441
+  ],
+  "m:pain-plaisir/making-of-poster": [
+    480,
+    854,
+    47684
+  ],
+  "m:pain-plaisir/pyramid": [
+    1201,
+    1600,
+    68419
+  ],
+  "m:pain-plaisir/ribbon-post": [
+    1280,
+    1600,
+    134872
+  ],
+  "m:pain-plaisir/xmas-box": [
+    1201,
+    1600,
+    109123
+  ],
+  "m:pain-plaisir/xmas-boxes": [
+    1280,
+    1600,
+    73102
+  ],
+  "m:routine-paris/film-blossom-poster": [
+    480,
+    854,
+    18889
+  ],
+  "m:routine-paris/film-garden-poster": [
+    480,
+    854,
+    21009
+  ],
+  "m:routine-paris/film-whiskey-poster": [
+    480,
+    854,
+    14438
+  ],
+  "m:scf/st25-card": [
+    788,
+    1400,
+    63199
+  ],
+  "m:scf/st25-stand": [
+    788,
+    1400,
+    127800
+  ],
+  "m:scf/st25-tee": [
+    788,
+    1400,
+    88011
+  ],
+  "m:scf/st25-v-talk-poster": [
+    480,
+    854,
+    67743
+  ],
+  "m:scf/st25-v-tee-poster": [
+    480,
+    854,
+    53499
+  ],
+  "m:scf/st25-v-wave-poster": [
+    480,
+    854,
+    85924
+  ],
+  "m:steam/ill-apron": [
+    1280,
+    1600,
+    224221
+  ],
+  "m:steam/ill-brownie": [
+    1280,
+    1600,
+    151457
+  ],
+  "m:steam/ill-cups": [
+    1280,
+    1600,
+    128378
+  ],
+  "m:steam/ill-grinder": [
+    1280,
+    1600,
+    240001
+  ],
+  "m:steam/ill-island": [
+    1280,
+    1600,
+    131006
+  ],
+  "m:steam/ill-latte": [
+    1600,
+    838,
+    67239
+  ],
+  "m:steam/ill-pour": [
+    1280,
+    1600,
+    95162
+  ],
+  "m:steam/ill-saucers": [
+    1280,
+    1600,
+    89779
+  ],
+  "m:steam/ill-terrace": [
+    1280,
+    1600,
+    130017
+  ],
+  "m:yoshi-izakaya/menu-cocktails": [
+    754,
+    1600,
+    98740
+  ],
+  "m:yoshi-izakaya/menu-grill": [
+    1509,
+    1600,
+    239997
+  ],
+  "m:yoshi-izakaya/menu-mockup": [
+    1600,
+    1067,
+    122081
+  ],
+  "m:yoshi-izakaya/menu-salads": [
+    1509,
+    1600,
+    215773
+  ],
+  "m:yoshi-izakaya/menu-starters": [
+    1509,
+    1600,
+    196843
+  ],
+  "m:yoshi-izakaya/menu-sushi": [
+    1509,
+    1600,
+    222891
+  ],
+  "m:yoshi-izakaya/reel-cherry-poster": [
+    480,
+    854,
+    49155
+  ],
+  "m:yoshi-izakaya/reel-egg-poster": [
+    480,
+    854,
+    50291
   ]
 }
