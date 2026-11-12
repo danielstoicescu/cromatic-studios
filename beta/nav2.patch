@@ -21,10 +21,10 @@ index 8143197..4fdcbd3 100644
  const CONSENT = consentSnippet(GA_ID, GTM_ID, OAI_PIXEL);
  const GS = {};
 diff --git a/site/i18n/ro.json b/site/i18n/ro.json
-index 437ed88..33456cf 100644
+index c9b42fb..9a8187c 100644
 --- a/site/i18n/ro.json
 +++ b/site/i18n/ro.json
-@@ -4697,5 +4697,6 @@
+@@ -4698,5 +4698,6 @@
   "<span class=\"mono\">For when</span> The brand is ready and it needs its crowd.": "<span class=\"mono\">Pentru când</span> Brandul e gata și își așteaptă mulțimea.",
   "Not sure where you start? <a href=\"#contact\">Tell us the dream</a> and we will find the place together.": "Nu știi de unde să începi? <a href=\"#contact\">Spune-ne visul</a> și găsim locul împreună.",
   "We’re here for the": "Suntem aici pentru",
@@ -2020,7 +2020,7 @@ index 0000000..1a98921
 +  if (H.classList.contains(CLS)) { set(true); back(); } else { H.classList.remove("mk-pre"); ss(RET, null); }
 +})();
 diff --git a/site/render.mjs b/site/render.mjs
-index a1f4f9a..e3271e8 100644
+index 87f5c8a..c230e83 100644
 --- a/site/render.mjs
 +++ b/site/render.mjs
 @@ -66,7 +66,7 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = nul
