@@ -186,34 +186,34 @@ export const PAGES = [
   {
     slug: "yoshi-izakaya",
     name: "Yoshi Izakaya",
-    tagline: "An urban izakaya in the centre of Bucharest, and the content that puts its regulars on screen.", // r473b (Daniel): no "best sushi in town"; an izakaya in the centre of Bucharest (Ion Brezoianu once, in the intro)
-    desc: "Yoshi Izakaya, an urban Japanese izakaya in the centre of Bucharest: menu, content strategy, photo, video, social media and events by Cromatic Studios.",
-    title: "An izakaya in the centre of Bucharest.",
+    tagline: "A Japanese izakaya in central Bucharest. Menu, content and photography.", // r473b (Daniel): no "best sushi in town"; an izakaya in the centre of Bucharest (Ion Brezoianu once, in the intro)
+    desc: "Yoshi Izakaya, a Japanese izakaya in central Bucharest: menu design, content strategy, photo, video, social media and events by Cromatic Studios.",
+    title: "A Japanese izakaya in central Bucharest.", // r473c (Daniel: "too salesy. More direct and subtle.")
     accent: { bg: "#E9C27D", ink: "#8a4f12" },
     info: ["Food &amp; Beverages, restaurant", "Content strategy, video, photo, social media, ad campaigns, packaging"],
     cover: { img: cs("2025/06/Yoshy-Izacaya-cover-2.jpg") },
     og: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-10.jpg"),
     hero: { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-10.jpg"), alt: "Guests eating at Yoshi Izakaya" },
     problem: {
-      h: "A local in the middle of town",
+      h: "A grill, a bar, a counter",
       p: [
-        "Yoshi Izakaya is an urban Japanese izakaya in <strong>the centre of Bucharest</strong>, on Ion Brezoianu: a grill, a bar, a sushi counter and the people who work and live around it.",
+        "Yoshi Izakaya is a Japanese izakaya on Ion Brezoianu, in the centre of Bucharest. A grill, a bar, a sushi counter and people from the streets around it.",
         "The kitchen, the bar, the team and the regulars who make the place feel like a community were all there, just <strong>not on screen</strong>."
       ],
       media: [{ row: [{ img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-2.jpg"), alt: "A full room at Yoshi Izakaya", full: true }, { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-5.jpg"), alt: "Two guests at a table by the sushi counter" }], cap: "A full room, and a table by the counter." }]
     },
     solution: {
-      h: "A special community, on camera",
-      p: "We lifted Yoshi's social media presence with a clear strategy, targeted events and high-quality visuals: the dishes, the bar and the guests, shot in the restaurant.",
-      stat: "New guests",
-      statText: "drawn in by the content, the events and the campaigns"
+      h: "The restaurant, on camera",
+      p: "We planned the content, covered the events and shot the dishes, the bar and the guests inside the restaurant.",
+      stat: "Menu and feed",
+      statText: "an illustrated menu and content shot in the restaurant"
     },
     chapters: [
       // cases-473: the illustrated menu (the mockup without the binder rings: the ringed one is the same spread)
       {
         pillar: "brand",
         pills: ["The", "menu"],
-        text: "A new menu, drawn dish by dish: edamame and gyoza, ramen and miso, skewers off the konro grill, a sushi set and the cocktails. Small characters keep the food company on every page.",
+        text: "A new menu with every dish drawn by hand: starters, soups, the konro grill, sushi and cocktails. Each page has a small character.",
         deliverables: ["Menu design", "Illustration", "Print"],
         media: [
           { img: m("yoshi-izakaya/menu-mockup"), alt: "The Yoshi Izakaya menu open on a grey table: the konro grill, the sushi set and the cocktails" },
@@ -228,7 +228,7 @@ export const PAGES = [
       },
       {
         pillar: "marketing",
-        text: "A content strategy with a steady rhythm, events designed to bring new guests in, ad campaigns that put the food in front of the right people, and photography that shows the restaurant the way regulars know it.",
+        text: "A content plan with a steady rhythm, content from the events, ad campaigns and photography inside the restaurant.",
         deliverables: ["Content strategy", "Social media", "Photo production", "Video production", "Event content", "Ad campaigns", "Packaging"],
         media: [
           { stack: [
@@ -243,7 +243,7 @@ export const PAGES = [
       }
     ],
     result: {
-      text: "Yoshi's feed now tells the story of a special community, and the content, the events and the campaigns brought new customers through the door.",
+      text: "A menu drawn by hand and a feed shot inside the restaurant, with its cooks, its bar and its guests.",
       media: [{ img: cs("2025/06/Yoshy-Izacaya-cover-2.jpg"), alt: "A lit sign with Japanese characters reading dinner and fresh" }]
     },
     related: ["sip-coffee-wine", "kompus", "steam"]

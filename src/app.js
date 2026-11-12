@@ -23924,7 +23924,7 @@ void main() {
       PROJECTS_A1 = [
         { name: "Slow Coffee Festival", cat: "Brand \xB7 Product \xB7 Ongoing", poster: "Year after year", accent: "#28C840", desc: "The biggest coffee lovers community in the country. We upgrade its brand universe year after year, so every edition feels familiar and brand new at the same time.", x: 210, y: 4520 },
         { name: "Two Minutes", cat: "Brand \xB7 Coffee \xB7 Retail", poster: "Two minutes, forever", accent: "#119BFE", desc: "A specialty coffee shop brand made to be loved fast and remembered long. Two minutes to fall for it, a lifetime as a regular.", x: 210, y: 4800 },
-        { name: "Yoshi Izakaya", cat: "Communication \xB7 Content", poster: "The centre's izakaya", accent: "#F4876F", desc: "An urban izakaya in the centre of Bucharest, and the content that puts its regulars on screen.", x: 210, y: 5080 }
+        { name: "Yoshi Izakaya", cat: "Communication \xB7 Content", poster: "Izakaya, central Bucharest", accent: "#F4876F", desc: "A Japanese izakaya in central Bucharest. Menu, content and photography.", x: 210, y: 5080 }
       ];
       PROJECTS_A2 = [
         { name: "K\xF3mpus", cat: "Brand", poster: "Founder vision, bottled", accent: "#B098C8", desc: "Differentiating a coffee shop in the market by enabling the founder\u2019s vision.", x: 554, y: 4520 },

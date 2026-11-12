@@ -41,7 +41,7 @@ export const WORK = [
   ["OMA Coffee", "Brand", "A specialty coffee shop in Brașov, at the foot of the mountains."],
   ["Kómpus", "Brand", "Differentiating a coffee shop by enabling the founder's vision."],
   ["Sip Coffee & Wine", "Branding, communication", "A branding that fits one of the best designed coffee shops in town."],
-  ["Yoshi Izakaya", "Communication, content", "An urban Japanese izakaya in the centre of Bucharest."],
+  ["Yoshi Izakaya", "Communication, content", "A Japanese izakaya in central Bucharest."],
   ["7 Oale", "Brand", "A comfort soup brand with a mission against big fast food."],
   ["Berero", "Brand", "Brand identity."],
   ["The Aesthetic Court", "Website, UX, UI", "A medical congress staged as a courtroom at the Palace of the Parliament in Bucharest, and its website built as the trial itself."],

@@ -415,7 +415,7 @@ export const PAGES128 = [
           { field: "#F6C944", fg: "#111111", items: [{ img: m("pain-plaisir/sticker-1"), alt: "Sticker: Buchet de anemone, pentru sărbători delicioase" }, { img: m("pain-plaisir/sticker-2"), alt: "Sticker: the flavours of the holidays" }, { img: m("pain-plaisir/sticker-3"), alt: "Sticker: Je ne sais quoi? Anemone și cafea" }], cap: "Holiday stickers: cinnamon, ginger, cardamom" },
           { img: m("pain-plaisir/photo-treatment"), alt: "Quatrefoil photo treatment for social media" },
           // cases-473 (Anne's new work, Nov 2026): the gift box at Christmas, and the four-to-one animation of the mark
-          { row: [{ img: m("pain-plaisir/xmas-box"), alt: "The white Buchet de anemone box on a Christmas table, with anemones, a candle and pine branches" }, { video: m("pain-plaisir/anemone-mark"), poster: m("pain-plaisir/anemone-mark-poster"), r: 0.5625, alt: "Four anemones on white turn into one, under the Buchet de anemone mark" }], cap: "The Buchet de anemone box, dressed for Christmas. Four anemones, one bouquet." }
+          { row: [{ img: m("pain-plaisir/xmas-box"), alt: "The white Buchet de anemone box on a Christmas table, with anemones, a candle and pine branches" }, { video: m("pain-plaisir/anemone-mark"), poster: m("pain-plaisir/anemone-mark-poster"), r: 0.5625, alt: "Four anemones on white turn into one, under the Buchet de anemone mark" }], cap: "The Buchet de anemone box at Christmas, and four anemones turning into one." }
         ]
       },
       {
@@ -459,7 +459,7 @@ export const PAGES128 = [
     slug: "casa-berero",
     name: "Berero", // r138e (Daniel): not "Casa Berero"
     // r473b (Daniel): the page opens on COMM + UNITY; the beer party, the tap beer photo and the merch and takeover posters left the page
-    tagline: "Craft beer with your people: COMM and UNITY, two cans that spell one word, and a house to drink them in.",
+    tagline: "COMM and UNITY, two cans that spell one word, and Casa Berero, where they are poured.",
     desc: "Berero: brand identity and can labels for COMM lager and UNITY IPA, six-pack campaigns, product photography and B2B presentations for a craft beer brand and its house, Casa Berero. By Cromatic Studios.",
     title: "Craft beer with your people.",
     accent: { bg: "#111111", fg: "#ffffff", ink: "#111111" },
@@ -471,7 +471,7 @@ export const PAGES128 = [
       h: "Two cans, one word",
       p: [
         "Berero brews two beers, <strong>COMM</strong> and <strong>UNITY</strong>, and pours them at its own house, Casa Berero.",
-        "Put the two cans side by side and they spell <strong>community</strong>. That is the whole brand: beer you drink with your people, in a place you want to come back to."
+        "Put the two cans side by side and they spell community."
       ],
       quote: { text: "Nu vinzi doar bere. Creezi un loc în care lumea vrea să revină.", cite: "From the Berero B2B deck" }
     },
@@ -492,9 +492,8 @@ export const PAGES128 = [
           { rail: ["COMM", "+ UNITY"], items: [
             { img: m("casa-berero/beers-012"), alt: "COMM and UNITY under yellow and green light" },
             { img: m("casa-berero/beers-013"), alt: "A diagonal of COMM and UNITY cans" },
-            { img: m("casa-berero/beers-017"), alt: "Cans scattered on green" },
-            { img: m("casa-berero/beers-018"), alt: "A tower of COMM and UNITY cans" }
-          ], cap: "The two cans, shot in their own colours" }
+            { img: m("casa-berero/beers-017"), alt: "Cans scattered on green" }
+          ], cap: "The two cans, shot in their own colours" } // r473c (Daniel): the three seen at 1440, the tower (beers-018) out
         ]
       },
       // cases-473 (Anne's new work, Nov 2026): the campaigns for Berero's mixed packs. The sheet lays six of the campaign
@@ -503,7 +502,7 @@ export const PAGES128 = [
       {
         pillar: "marketing",
         pills: ["Six-pack", "campaigns"],
-        text: "Berero also sells mixed packs of craft beer. Each pack got a sticker with a wink, a post and a display ad: Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and The 6 Pack, who flexes next to every line-up.",
+        text: "Berero also sells mixed packs of craft beer. Each pack got its own sticker, a post and a display ad: Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and The 6 Pack.",
         deliverables: ["Campaign stickers", "Social posts", "Display ads", "Art direction"],
         media: [
           { img: m("casa-berero/camp-stickers"), alt: "Six campaign stickers on black: The 6 Pack, Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and Life is Beachy", cap: "One sticker for every pack" },

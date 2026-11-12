@@ -44,10 +44,10 @@ export const PROJECTS = [
   { name: "OMA Coffee", cat: "Brand · Coffee · Brașov", c: "#437743", t: "#fcfad4", poster: "We're brewing something", img: "m:places/oma", page: "oma-coffee", desc: "A specialty coffee shop at the foot of the mountains. Passionate baristas who love the craft of coffee as much as the peaks around them, and a brand as warm as the cup.", street: "A" },
   { name: "Sip Coffee & Wine", cat: "Branding · Communication", c: "#C9A227", t: "#14120c", poster: "Design in a cup", img: "m:cs/Sip_portfolio-Cromaticstudios", desc: "Complementing one of the best designed coffee shops in town with a branding that fits.", street: "A", page: "sip-coffee-wine" },
   { name: "Pain Plaisir", cat: "Video · Photo · Product design", c: "#ffffff", t: "#111111", poster: "Le bon pain", street: "A", page: "pain-plaisir", desc: "A French-style bakery with a real oven at its heart. We made their video production, the photo shootings and the product design." },
-  { name: "Yoshi Izakaya", cat: "Communication · Content", c: "#F4876F", t: "#2a0f0b", poster: "The centre's izakaya", img: "m:cs/Yoshy-Izacaya-cover-2", badge: "bYoshi", desc: "An urban izakaya in the centre of Bucharest, and the content that puts its regulars on screen.", street: "A", page: "yoshi-izakaya" },
+  { name: "Yoshi Izakaya", cat: "Communication · Content", c: "#F4876F", t: "#2a0f0b", poster: "Izakaya, central Bucharest", img: "m:cs/Yoshy-Izacaya-cover-2", badge: "bYoshi", desc: "A Japanese izakaya in central Bucharest. Menu, content and photography.", street: "A", page: "yoshi-izakaya" },
   { name: "Artisan Coffee Gear", cat: "Brand universe · Web", c: "#797c69", t: "#fff", poster: "Get to the core of your craft", img: "art09", page: "artisan-coffee-gear", desc: "Coffee gear for passionate customers, in a tailor made environment with a personal voice. A whole brand world, from the letterform pattern to the webshop.", street: "A" },
   { name: "Slow Coffee Festival", cat: "Brand · Product · Since 2021", c: "#5B4B9E", t: "#fff", poster: "Year after year", img: "m:places/scf-poster", badge: "bScf", page: "slow-coffee-festival", desc: "The biggest coffee lovers community in the country. We upgrade its brand universe year after year, so every edition feels familiar and brand new at the same time.", street: "A" },
-  { name: "Berero", cat: "Brand · Labels · Campaigns", c: "#f4f4f0", t: "#111111", poster: "BERERO", badge: "bBerero", page: "casa-berero", desc: "Craft beer with your people. COMM and UNITY, two cans that spell one word, and the campaigns for Berero's six-packs.", street: "A" }, // r138e: "Berero", not "Casa Berero" (Daniel)
+  { name: "Berero", cat: "Brand · Labels · Campaigns", c: "#f4f4f0", t: "#111111", poster: "BERERO", badge: "bBerero", page: "casa-berero", desc: "COMM and UNITY, two cans that spell one word, and the campaigns for Berero's six-packs.", street: "A" }, // r138e: "Berero", not "Casa Berero" (Daniel)
   { name: "Steam Coffee Shop", cat: "Branding · Growth · Product", c: "#2f9e4f", t: "#fff", poster: "Pioneers stay fresh", img: "steamCoverImg", vid: "steamCoverVid", badge: "bSteam", page: "steam", desc: "A pioneer brand refreshed for its community. New energy for the people who were there from the start, and a clear invitation for the ones just arriving.", street: "A" },
   { name: "Craft Coffee", cat: "Branding · Website", c: "#119BFE", t: "#0d0c09", poster: "The coffee equipment", img: "craftBox", page: "craft-coffee", desc: "The official distributor of La Marzocco, Mazzer, PuQPress and Fellow in Romania. A brand and a shop built to equip the passion for coffee.", street: "A" },
   { name: "Lapterra", cat: "Patisserie · Work in progress", c: "#6e1633", t: "#d9b45a", poster: "In the making", street: "A", wip: true, desc: "A cosy patisserie, in the making. Work in progress: more soon." },
@@ -143,13 +143,6 @@ export const CREW_PHOTOS = [
   { src: "m:vibe/lolz", cap: "Olari 9, the studio" },
   { src: "m:vibe/poze", cap: "On set" },
   { src: "m:vibe/doggo", cap: "Head of morale" }
-];
-
-// r473b (Daniel: yes to the cromatic folder): studio life, on /team/ only (CREW_PHOTOS also feeds the home page)
-export const TEAM_LIFE = [
-  { src: "m:vibe/parusan-trailer", cap: "Parusan, out on the street", alt: "A mobile billboard for Parusan on a trailer, parked in the sun in front of a tall Bucharest building" },
-  { src: "m:vibe/pool-night", cap: "Pool after hours", alt: "A pool table seen from the corner pocket, two players and the balls in play under the lamps" },
-  { video: "m:vibe/karting", poster: "m:vibe/karting-poster", cap: "Karting, helmets on", alt: "One of us in a yellow helmet at the wheel of go-kart 15, in the pit lane" }
 ];
 
 export const OFFICES = [
