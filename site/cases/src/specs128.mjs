@@ -411,12 +411,14 @@ export const PAGES128 = [
         text: "The anemone combination mark, a “Buchet de anemone” gift version, a quatrefoil pattern, flavour stickers in yellow, red and green, and a quatrefoil crop for photos and social media.",
         deliverables: ["Product branding", "Combination mark", "Typography", "Pattern", "Box design", "Flavour stickers", "Photo treatment"],
         media: [
-          { row: [{ img: m("pain-plaisir/mark"), alt: "The anemone combination mark" }, { img: m("pain-plaisir/logo"), alt: "Buchet de anemone logo" }] },
-          { row: [{ img: m("pain-plaisir/pattern"), alt: "The quatrefoil pattern" }, { img: m("pain-plaisir/box"), alt: "Gift box with flavour stickers" }], cap: "Pattern, box and stickers" },
-          { field: "#F6C944", fg: "#111111", items: [{ img: m("pain-plaisir/sticker-1"), alt: "Sticker: Buchet de anemone, pentru sărbători delicioase" }, { img: m("pain-plaisir/sticker-2"), alt: "Sticker: the flavours of the holidays" }, { img: m("pain-plaisir/sticker-3"), alt: "Sticker: Je ne sais quoi? Anemone și cafea" }], cap: "Holiday stickers: cinnamon, ginger, cardamom" },
-          { img: m("pain-plaisir/photo-treatment"), alt: "Quatrefoil photo treatment for social media" },
+          // r477 (Daniel): the chapter keeps only the Christmas box and the four-anemones loop, then new pieces, all from
+          // his Drive folder (~/Clienti/Cromatic/site-projects-2026-11/pain-plaisir): the brand book's first page and its
+          // photo-treatment page, its red and green Christmas stickers laid on one yellow sheet, and an edited Anemone shot
           // cases-473 (Anne's new work, Nov 2026): the gift box at Christmas, and the four-to-one animation of the mark
-          { row: [{ img: m("pain-plaisir/xmas-box"), alt: "The white Buchet de anemone box on a Christmas table, with anemones, a candle and pine branches" }, { video: m("pain-plaisir/anemone-mark"), poster: m("pain-plaisir/anemone-mark-poster"), r: 0.5625, alt: "Four anemones on white turn into one, under the Buchet de anemone mark" }], cap: "The Buchet de anemone box at Christmas, and four anemones turning into one." }
+          { row: [{ img: m("pain-plaisir/xmas-box"), alt: "The white Buchet de anemone box on a Christmas table, with anemones, a candle and pine branches" }, { video: m("pain-plaisir/anemone-mark"), poster: m("pain-plaisir/anemone-mark-poster"), r: 0.5625, alt: "Four anemones on white turn into one, under the Buchet de anemone mark" }], cap: "The Buchet de anemone box at Christmas, and four anemones turning into one." },
+          { row: [{ img: m("pain-plaisir/bb-cover"), alt: "Brand book page: an Anemone with the quatrefoil mark drawn over it, next to Pain Plaisir and Anemonă" }, { img: m("pain-plaisir/anemone-light"), alt: "An Anemone on a pale ceramic bowl, in dappled light" }], cap: "The mark, drawn from the pastry's four folds" },
+          { img: m("pain-plaisir/bb-xmas-stickers"), alt: "Six quatrefoil Christmas stickers in green and red on yellow: Buchet de anemone, Aroma sărbătorilor and Je ne sais quoi? anemone și cafea" , cap: "Christmas stickers, in green and red" },
+          { img: m("pain-plaisir/bb-bites"), alt: "Four photos with the mark: a bite, an Anemone held in the palm, one torn open, a stack of Anemones" , cap: "The mark on the photos" }
         ]
       },
       {
