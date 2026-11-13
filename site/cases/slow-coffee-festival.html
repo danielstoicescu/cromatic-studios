@@ -124,6 +124,55 @@ html.embed .nav{display:none}
 .s-tap{width:119px;bottom:26px;right:-9%;z-index:6}
 .s-pot{width:90px;top:9%;right:10%;z-index:6}
 .t-23 .ti img,.t-crowd .ti img{object-position:50% 0}
+/* r474: the fast-forward tab to SCF25 and its run */
+.ffw{position:fixed;right:0;top:0;translate:0 var(--fy,268px);--fy0:268px;--fyst:72px;z-index:40;display:block;color:var(--ink);text-decoration:none;-webkit-tap-highlight-color:transparent;
+  filter:drop-shadow(0 2px 2px rgba(13,12,9,.22)) drop-shadow(0 10px 18px rgba(13,12,9,.16));
+  transform:translateX(110%);visibility:hidden;transition:transform .2s cubic-bezier(.34,1.45,.64,1),visibility 0s .2s}
+.ffw.on{transform:translateX(var(--tuck,58px));visibility:visible;transition:transform .2s cubic-bezier(.34,1.45,.64,1),visibility 0s}
+.ffw.on:hover,.ffw.on:focus-visible{transform:translateX(-4px) scale(1.04) rotate(-2deg)}
+.ffw:focus-visible{outline:none}.ffw:focus-visible .ffw-tk{box-shadow:inset 0 0 0 3px var(--blue)}
+/* a festival ticket: a stub with the stand in a round window, a perforation with two notches, the line, and the way down */
+.ffw-tk{--nx:102px;--nr:10.5px;display:flex;align-items:center;gap:16px;height:115px;padding-right:22px;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%),var(--sage);border-radius:21px 0 0 21px;
+  -webkit-mask:radial-gradient(circle var(--nr,15px) at var(--nx) 0,#0000 96%,#000) top/100% 51% no-repeat,radial-gradient(circle var(--nr,15px) at var(--nx) 100%,#0000 96%,#000) bottom/100% 51% no-repeat;
+  mask:radial-gradient(circle var(--nr,15px) at var(--nx) 0,#0000 96%,#000) top/100% 51% no-repeat,radial-gradient(circle var(--nr,15px) at var(--nx) 100%,#0000 96%,#000) bottom/100% 51% no-repeat}
+.ffw-stub{flex:0 0 var(--nx);align-self:stretch;display:grid;place-items:center;border-right:3px dashed rgba(13,12,9,.38)}
+.ffw-win{position:relative;width:75px;height:75px;border-radius:50%;overflow:hidden;border:3px solid var(--ink);background:#d8d8d8}
+.ffw-win img,.ffw-win video{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover}
+.ffw-win video{opacity:0;transition:opacity .2s}.ffw-win video.on{opacity:1}
+.ffw-ff{display:flex}.ffw-ff svg{display:block;width:53px;height:53px;fill:var(--ink)}
+.ffw-t{display:grid;line-height:1.02}
+.ffw-k{font:600 13px/1.3 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.ffw-t b{font-size:27px;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+.ffw-go{display:grid;place-items:center;width:50px;height:50px;margin-left:8px;border-radius:50%;background:var(--ink);color:var(--sage);font-size:23px}
+@keyframes ffw-zip{0%,100%{transform:translateX(-3px)}50%{transform:translateX(6px)}}
+@keyframes ffw-nudge{0%,100%{transform:translateX(var(--tuck,58px))}35%{transform:translateX(calc(var(--tuck,58px) - 18px)) rotate(-3deg)}65%{transform:translateX(calc(var(--tuck,58px) - 5px)) rotate(1deg)}}
+@keyframes ffw-pop{0%{transform:scale(1)}45%{transform:scale(.93)}100%{transform:scale(1.03)}}
+.ffw.on:hover .ffw-ff svg,.ffw.on:focus-visible .ffw-ff svg{animation:ffw-zip .32s ease-in-out infinite}
+.ffw.on.nudge{animation:ffw-nudge .5s cubic-bezier(.3,.7,.4,1)}
+.ffw.pop .ffw-tk{animation:ffw-pop .18s ease-out}
+.ffw.gone{transform:translateX(110%)!important;visibility:hidden;transition:transform .2s cubic-bezier(.4,0,1,1),visibility 0s .2s}
+@media (min-width:768px) and (max-width:1199px){
+  .ffw{--fy0:240px}
+  .ffw-tk{--nx:83px;--nr:9px;height:94px;gap:13px;padding-right:18px}
+  .ffw-win{width:61px;height:61px}.ffw-ff svg{width:42px;height:42px}
+  .ffw-k{font-size:11px}.ffw-t b{font-size:21.5px}.ffw-go{width:40px;height:40px;font-size:18px}
+}
+@media (max-width:767px){
+  .ffw{--fy0:296px;--fyst:66px}
+  .ffw-tk{--nx:74px;--nr:9px;height:86px;gap:11px;padding-right:14px;border-radius:18px 0 0 18px}
+  .ffw-win{width:53px;height:53px}.ffw-ff svg{width:35px;height:35px}
+  .ffw-k{font-size:10.5px}.ffw-t b{font-size:18.5px}.ffw-go{width:37px;height:37px;font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){.ffw,.ffw.on,.ffw.gone{transition:none}.ffw.on:hover,.ffw.on:focus-visible{transform:none}.ffw *{animation:none!important}.ffw.on.nudge{animation:none}}
+.ffw-fx{position:fixed;inset:0;z-index:39;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,rgba(13,12,9,.10) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.ffw-fx::before{content:"";position:absolute;left:0;right:0;height:14%;top:0;transform:translateY(-120%);background:linear-gradient(180deg,transparent,rgba(255,255,255,.35),transparent);animation:ffw-roll .45s linear infinite}
+.ffw-fx.run{opacity:1;animation:ffw-jit .12s steps(2) infinite}
+.ffw-tag{position:absolute;top:18px;right:18px;display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ink);color:#fff;border-radius:6px;font:700 15px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em}
+.ffw-tag svg{width:16px;height:16px;fill:currentColor}
+@keyframes ffw-roll{to{transform:translateY(820%)}}
+@keyframes ffw-jit{0%{transform:translate(0,0)}50%{transform:translate(1.5px,-1px)}100%{transform:translate(-1px,1px)}}
+html.ffw-running main.sc{filter:blur(.6px) saturate(1.15)}
+@media (prefers-reduced-motion:reduce){.ffw,.ffw.on,.ffw.gone{transition:none}.ffw-fx{display:none}}
 /* cases-473: our 2025 stand, six portrait tiles, two a row on phones */
 @media (max-width:767px){.ys-25s{padding-top:10px}.ys-25s .t{width:calc(50% - 5px)}}
 
@@ -317,6 +366,9 @@ html.embed .nav{display:none}
     <li class="lng" hidden></li>
   </ul>
 </nav>
+<!-- r474 (Daniel): a fast-forward tab to our stand at SCF25; tucked at the right edge, out on hover or focus -->
+<a class="ffw" href="#scf25" aria-label="Fast-forward to Cromatic Studios at SCF25"><span class="ffw-tk"><span class="ffw-stub"><span class="ffw-win"><img src="m:scf/st25-stand" alt="" width="788" height="1400" loading="lazy" decoding="async"><video data-src="m:scf/st25-v-wave" muted loop playsinline preload="none" aria-hidden="true"></video></span></span><span class="ffw-ff"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 5.2v13.6L12 12zM12 5.2v13.6L21.5 12z"/></svg></span><span class="ffw-t"><span class="ffw-k">FW to:</span> <b>Cromatic Studios</b> <b>@ SCF25</b></span><span class="ffw-go" aria-hidden="true">&#8595;</span></span></a>
+<div class="ffw-fx" aria-hidden="true"><span class="ffw-tag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 5.2v13.6L12 12zM12 5.2v13.6L21.5 12z"/></svg> &times;16</span></div>
 <main class="sc">
 
 <header class="hero">
@@ -584,9 +636,9 @@ html.embed .nav{display:none}
 </section>
 
 <!-- cases-473 (Anne's new work, Nov 2026): 2025, our own stand at the festival (phone photos and clips from 3-4 Oct 2025) -->
-<section class="st">
+<section class="st" id="scf25">
   <div class="st-box"><div class="st-in">
-    <h2 class="hp" data-fx="o8-26-10 b0-26-15">In 2025 we had a <b><i>stand</i></b> at the festival. On its wall, five years of Slow Coffee Festival.</h2>
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">Cromatic Studios @ SCF25</h2>
   </div></div>
 </section>
 
@@ -682,6 +734,64 @@ html.embed .nav{display:none}
   }
   function kick(){if(!raf)raf=requestAnimationFrame(run)}
   addEventListener("scroll",kick,{passive:true});addEventListener("resize",kick);run();
+})();
+</script>
+<script>
+// r474: the fast-forward tab. Tucked in at the right edge once the page has painted, out on hover or focus; a click races
+// down to #scf25 in about 2 s (eased, every other frame, scanlines and a x16 tag, a soft tape whir made with Web Audio,
+// silent if the browser says no). Reduced motion: a plain smooth scroll. It leaves once the section is reached.
+(function(){
+  var a=document.querySelector('.ffw'),fx=document.querySelector('.ffw-fx'),sec=document.getElementById('scf25');
+  if(!a||!sec)return;
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches,busy=false;
+  function tuck(){var go=a.querySelector('.ffw-go');a.style.setProperty('--tuck',(go?go.offsetWidth+parseFloat(getComputedStyle(a.querySelector('.ffw-tk')).paddingRight)+12:58)+'px')}
+  function show(){tuck();a.classList.add('on')}
+  if(document.readyState==='complete')setTimeout(show,500);else addEventListener('load',function(){setTimeout(show,500)});
+  // r474d: a nudge every 8 s while it waits tucked (until it has been hovered, focused or used); the stand's loop plays
+  // in the stub's window while it is out
+  var seen=false,win=a.querySelector('.ffw-win video');
+  function noticed(){seen=true}
+  a.addEventListener('pointerenter',noticed);a.addEventListener('focus',noticed);
+  if(!RM){setInterval(function(){if(seen||busy||document.hidden||!a.classList.contains('on')||a.classList.contains('gone'))return;a.classList.remove('nudge');void a.offsetWidth;a.classList.add('nudge')},8000);
+    a.addEventListener('animationend',function(e){if(e.animationName==='ffw-nudge')a.classList.remove('nudge')});
+    function loop(on){if(!win)return;if(on){if(!win.src)win.src=win.getAttribute('data-src');var p=win.play();if(p&&p.then)p.then(function(){win.classList.add('on')},function(){})}else{win.pause();win.classList.remove('on')}}
+    a.addEventListener('pointerenter',function(e){if(e.pointerType!=='touch')loop(true)});a.addEventListener('pointerleave',function(){loop(false)});
+    a.addEventListener('focus',function(){loop(true)});a.addEventListener('blur',function(){loop(false)});}
+  // r474f (Daniel): it starts by the hero, rides up with the page, then stays just under the header (a sticky top,
+  // emulated: the ticket is fixed and only its translate changes, so nothing reflows)
+  var fy0=0,fyst=0,fraf=0;
+  function metrics(){var cs=getComputedStyle(a);fy0=parseFloat(cs.getPropertyValue('--fy0'))||268;fyst=parseFloat(cs.getPropertyValue('--fyst'))||72}
+  function place(){fraf=0;a.style.setProperty('--fy',Math.max(fyst,fy0-scrollY).toFixed(1)+'px')}
+  metrics();place();
+  addEventListener('scroll',function(){if(!fraf)fraf=requestAnimationFrame(place)},{passive:true});
+  addEventListener('resize',function(){metrics();place()});
+  function past(){return sec.getBoundingClientRect().top<innerHeight*.7}
+  function check(){a.classList.toggle('gone',past())}
+  addEventListener('scroll',function(){if(!busy)check()},{passive:true});check();
+  function target(){return Math.max(0,sec.getBoundingClientRect().top+scrollY-80)}
+  function whir(dur){
+    try{var C=window.AudioContext||window.webkitAudioContext;if(!C)return;var ac=new C();if(ac.state==='suspended')ac.resume();
+      var n=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=Math.random()*2-1;
+      var s=ac.createBufferSource();s.buffer=b;var f=ac.createBiquadFilter();f.type='bandpass';f.Q.value=6;
+      var t=ac.currentTime;f.frequency.setValueAtTime(500,t);f.frequency.exponentialRampToValueAtTime(2600,t+dur*.45);f.frequency.exponentialRampToValueAtTime(900,t+dur);
+      var g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+.12);g.gain.setValueAtTime(.05,t+dur-.3);g.gain.linearRampToValueAtTime(0,t+dur);
+      var o=ac.createOscillator(),og=ac.createGain();o.frequency.value=24;og.gain.value=.018;o.connect(og);og.connect(g.gain);
+      s.connect(f);f.connect(g);g.connect(ac.destination);s.start(t);o.start(t);s.stop(t+dur);o.stop(t+dur);s.onended=function(){try{ac.close()}catch(e){}};
+    }catch(e){}
+  }
+  a.addEventListener('click',function(e){
+    e.preventDefault();if(busy)return;
+    var to=target();
+    if(RM){scrollTo({top:to,behavior:'smooth'});a.classList.add('gone');return}
+    busy=true;seen=true;a.classList.add('pop');setTimeout(function(){a.classList.remove('pop');a.classList.add('gone')},180);var from=scrollY,dur=2000,t0=performance.now(),fr=0;
+    document.documentElement.classList.add('ffw-running');fx.classList.add('run');whir(dur/1000);
+    var ease=function(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+    (function step(now){var p=Math.min(1,(now-t0)/dur);fr++;
+      if(p>=1||fr%2===0){scrollTo({top:from+(to-from)*ease(p),behavior:'instant'})}
+      if(p<1)requestAnimationFrame(step);
+      else{fx.classList.remove('run');document.documentElement.classList.remove('ffw-running');scrollTo({top:target(),behavior:'instant'});busy=false;check();try{sec.querySelector('h2').setAttribute('tabindex','-1');sec.querySelector('h2').focus({preventScroll:true})}catch(x){}}
+    })(t0);
+  });
 })();
 </script>
 </body>

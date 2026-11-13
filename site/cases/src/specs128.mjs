@@ -1,6 +1,7 @@
 // r128: case pages built from the studio's own decks and brandbooks (Drive, ~/Clienti) and esdrom.ro.
 // Facts come from those sources only.
 const m = (p) => "m:" + p;
+import { PILE_HTML, PILE_CSS, PILE_JS } from "./stickerpile.mjs"; // r474
 
 export const PAGES128 = [
   // ------------------------------------------------------------------ ESD
@@ -502,7 +503,7 @@ export const PAGES128 = [
         text: "",
         deliverables: [],
         media: [
-          { img: m("casa-berero/camp-stickers"), alt: "Six campaign stickers on black: The 6 Pack, Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and Life is Beachy", cap: "One sticker for every pack" },
+          { raw: PILE_HTML, cap: "One sticker for every pack" }, // r474: the stickers pile up as you scroll (was the sheet on black)
           { rail: ["The", "packs"], items: [
             { img: m("casa-berero/camp-lager"), alt: "Lager than Life: a tower of lager cans with a tiny man on top and an orange bottle sticker" },
             { img: m("casa-berero/camp-mixed"), alt: "We have some Mixed Feelings: gloved hands hold craft cans against a starry sky" },
@@ -534,6 +535,8 @@ export const PAGES128 = [
     result: {
       text: "A beer brand that sells a feeling before a flavour: two cans that make one word, and a house where the word comes true."
     },
+    css: PILE_CSS,
+    js: PILE_JS,
     related: ["sip-coffee-wine", "pain-plaisir", "yoshi-izakaya"]
   }
 ];

@@ -2,6 +2,7 @@
 // the clients' own websites and the existing case data in site/data.mjs; nothing beyond them.
 const cs = (p) => "cs:" + p;
 const v = (p, r, extra = {}) => ({ video: cs(p), r, ...extra });
+import { YOSHI_HERO, YOSHI_DECOR, YOSHI_CSS } from "./yoshi-decor.mjs"; // r474
 const m = (p) => "m:" + p; // cases-473: the studio's own copies in site/media (Anne's new work, Nov 2026)
 
 export const PAGES = [
@@ -193,7 +194,7 @@ export const PAGES = [
     info: ["Food &amp; Beverages, restaurant", "Content strategy, video, photo, social media, ad campaigns, packaging"],
     cover: { img: cs("2025/06/Yoshy-Izacaya-cover-2.jpg") },
     og: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-10.jpg"),
-    hero: { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-10.jpg"), alt: "Guests eating at Yoshi Izakaya" },
+    heroHtml: YOSHI_HERO, // r474 (Daniel): the page opens on the two illustrated reels (was the photo of guests eating)
     problem: {
       h: "A grill, a bar, a counter", // r473d (Daniel): the heading only
       p: [],
@@ -213,7 +214,6 @@ export const PAGES = [
         text: "",
         deliverables: ["Menu design", "Illustration", "Print"],
         media: [
-          { img: m("yoshi-izakaya/menu-mockup"), alt: "The Yoshi Izakaya menu open on a grey table: the konro grill, the sushi set and the cocktails" },
           { rail: ["Page", "by page"], items: [
             { img: m("yoshi-izakaya/menu-starters"), alt: "Menu page, Starters to share: a bowl of edamame and a plate of gyoza, with a small horned character" },
             { img: m("yoshi-izakaya/menu-salads"), alt: "Menu page, Salads and Soups: seaweed salad, a bowl of ramen and a miso soup with a smiling face" },
@@ -233,9 +233,7 @@ export const PAGES = [
             { row: [{ img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-1.jpg"), alt: "Sushi rolls on a stone plate by the counter" }, { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-3.jpg"), alt: "A guest eating ramen with chopsticks" }] },
             { row: [{ img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-6.jpg"), alt: "Asparagus wrapped in meat on the grill" }, { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-7.jpg"), alt: "Lifting ramen noodles from the bowl" }] },
             { row: [{ img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-8.jpg"), alt: "A green cocktail being finished at the bar" }, { img: cs("2025/07/Yoshy-Izakaya-Cromaticstudios-9.jpg"), alt: "A chef in a Yoshi apron holding a bowl" }] }
-          ], head: ["Photography"] },
-          // cases-473: two of the three reels (the ramen one repeats the egg reel's idea)
-          { row: [{ video: m("yoshi-izakaya/reel-cherry"), poster: m("yoshi-izakaya/reel-cherry-poster"), r: 0.5625, alt: "A layered red and yellow cocktail, a hand-drawn cherry character above it and Japanese type down the side" }, { video: m("yoshi-izakaya/reel-egg"), poster: m("yoshi-izakaya/reel-egg-poster"), r: 0.5625, alt: "Chopsticks lift a fried egg off a rice bowl, a hand-drawn character beside it and itadakimasu in Japanese above" }], cap: "Reels: hand-drawn characters and Japanese type over the food" }
+          ], head: ["Photography"] }
         ]
       }
     ],
@@ -243,6 +241,8 @@ export const PAGES = [
       text: "A menu drawn by hand and a feed shot inside the restaurant, with its cooks, its bar and its guests.",
       media: [{ img: cs("2025/06/Yoshy-Izacaya-cover-2.jpg"), alt: "A lit sign with Japanese characters reading dinner and fresh" }]
     },
+    decor: YOSHI_DECOR,
+    css: YOSHI_CSS,
     related: ["sip-coffee-wine", "kompus", "steam"]
   },
 

@@ -15,18 +15,23 @@
   }
 
   // videos load and play only while on screen
+  // r474: video covers too: nothing at all with reduced motion or Save-Data (the poster stays), and only a few playing
+  // at once (2 on a phone, 3 on a wider screen): the rest keep their poster until one leaves the screen
   const vids = [...d.querySelectorAll("video.lv")];
+  const lite = reduced || !!(navigator.connection && navigator.connection.saveData);
+  const cap = matchMedia("(max-width: 700px)").matches ? 2 : 3, playing = new Set(), waiting = new Set();
+  const start = (v) => { if (playing.size >= cap) { waiting.add(v); return; } waiting.delete(v); if (!v.src) v.src = v.dataset.src; playing.add(v); v.play().catch(() => playing.delete(v)); };
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver((es) => es.forEach(({ target: v, isIntersecting: on }) => {
-      if (on) { if (!v.src) v.src = v.dataset.src; if (!reduced) v.play().catch(() => {}); }
-      else if (v.src) v.pause();
-    }), { rootMargin: "200px 0px" });
-    vids.forEach((v) => io.observe(v));
+      if (on) start(v);
+      else { waiting.delete(v); if (playing.delete(v)) { v.pause(); const nx = waiting.values().next().value; if (nx) start(nx); } }
+    }), { rootMargin: "120px 0px" });
+    if (!lite) vids.forEach((v) => io.observe(v));
     // gentle reveal
     const rv = [...d.querySelectorAll(".chap, .pcard, .svc, .tl li, .qa details, .cblock, .photos figure")]; // (TASK-067: the bento's cards deal in on their own, below)
     const io2 = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io2.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
     rv.forEach((el, i) => { el.classList.add("rv"); el.style.transitionDelay = `${(i % 3) * 70}ms`; io2.observe(el); });
-  } else vids.forEach((v) => { v.src = v.dataset.src; });
+  } else if (!lite) vids.forEach((v) => { v.src = v.dataset.src; });
 
   // r143: the kinetic cups no longer play in the first fold of /site/ (it is the city and the opening's words now)
 

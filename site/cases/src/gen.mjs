@@ -329,7 +329,8 @@ figure.only-sm{display:none}
   const heroMedia = P.heroHtml ? P.heroHtml : P.hero ? (Array.isArray(P.hero)
     ? `<div class="hero-row">${P.hero.map((it) => fig(it, { eager: true })).join("")}</div>`
     : fig({ fixed: P.hero.fixed !== false, ...P.hero, r: P.hero.r || (P.hero.fixed === false ? undefined : 1.778) }, { eager: true })) : "";
-  h.push(`  <header class="card hero">
+  const DXh = (P.decor || {}).hero; // r474d: a decorative piece in the hero (Yoshi's gyoza)
+  h.push(`  <header class="card hero">${DXh ? `\n    ${DXh}` : ""}
     <div class="inner">
       <div class="hero-top">
         <div class="hero-title">
@@ -355,7 +356,8 @@ ${P.info.map((l) => `            <li>${l}</li>`).join("\n")}
 `);
   // problem + solution
   const pr = P.problem;
-  h.push(`  <section class="card problem" id="problem">
+  const DX = P.decor || {}; // r474: a page's decorative pieces at fixed spots (Yoshi's menu characters)
+  h.push(`  <section class="card problem" id="problem">${DX["problem-top"] ? `\n    ${DX["problem-top"]}` : ""}
     <div class="inner">
 ${pr.h || (pr.p && pr.p.length) ? `      <div class="sec-head">${pr.h ? `
         <h2>${pr.h}</h2>` : ""}${pr.p && pr.p.length ? `
@@ -373,7 +375,7 @@ ${pr.media.map(block).join("\n")}
         </blockquote>
       </div>` : ""}
       <div class="handoff">
-        <div class="solution-intro" id="solution">
+        <div class="solution-intro" id="solution">${DX.solution ? `\n          ${DX.solution}` : ""}
           <h2>${P.solution.h}</h2>
           <p>${P.solution.p}</p>
         </div>
@@ -386,7 +388,7 @@ ${P.solution.statText ? `          <span>${P.solution.statText}</span>\n` : ""} 
   </section>
 `);
   const seen = {};
-  for (const c of P.chapters || []) {
+  for (const [ci, c] of (P.chapters || []).entries()) {
     const pl = PILLARS[c.pillar];
     seen[c.pillar] = (seen[c.pillar] || 0) + 1;
     const cid = seen[c.pillar] > 1 ? `${pl.id}-${seen[c.pillar]}` : pl.id;
@@ -397,7 +399,7 @@ ${P.solution.statText ? `          <span>${P.solution.statText}</span>\n` : ""} 
         <span class="pill-title"><span class="pill pill--${pl.cls}">${words[0]}</span> <span class="pill pill--accent">${words[1]}</span></span>
 ${c.text ? `        <p class="chapter-text">${c.text}</p>\n` : ""}${c.deliverables && c.deliverables.length ? `        <ul class="deliverables">
 ${c.deliverables.map((d) => `          <li>${d}</li>`).join("\n")}
-        </ul>` : ""}
+        </ul>` : ""}${DX["side-" + ci] ? `\n        ${DX["side-" + ci]}` : ""}
       </div>
     </div>
     <div class="chapter-media">
@@ -410,7 +412,7 @@ ${c.media.map(block).join("\n")}
   const R = P.result;
   h.push(`  <section class="card result" id="result">
     <div class="inner">
-      <p class="result-text">${R.text}</p>${R.media ? `
+      ${DX.result || ""}<p class="result-text">${R.text}</p>${R.media ? `
       <div class="stack result-media">
 ${R.media.map(block).join("\n")}
       </div>` : ""}${P.link ? `
