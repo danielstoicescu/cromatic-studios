@@ -421,15 +421,7 @@ export const PAGES128 = [
           { img: m("pain-plaisir/bb-bites"), alt: "Four photos with the mark: a bite, an Anemone held in the palm, one torn open, a stack of Anemones" , cap: "The mark on the photos" }
         ]
       },
-      {
-        pillar: "brand",
-        text: "In the shops: window graphics, shelf talkers, posters and coffee cups.",
-        deliverables: ["Window graphics", "In-store", "Posters", "Cups"],
-        media: [
-          { row: [{ img: m("pain-plaisir/window"), alt: "Shop window with white anemone graphics" }, { img: m("pain-plaisir/storefront"), alt: "Storefront with stickers in the window" }, { img: m("pain-plaisir/cups"), alt: "Pain Plaisir coffee cups" }] },
-          { row: [{ img: m("pain-plaisir/shop"), alt: "Inside the bakery, the anemone poster above the counter" }, { img: m("pain-plaisir/shelf"), alt: "Shelf talker on the pastry shelf" }] }
-        ]
-      },
+      // r478 (Daniel): the second Branding & Design chapter ("In the shops": window, storefront, cups, shop, shelf) is gone
       {
         pillar: "video",
         text: "We filmed and shot the Anemone the way it should be eaten: torn, bitten, held up to the eyes. Then a Christmas table full of Pain Plaisir.",
