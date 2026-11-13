@@ -23945,7 +23945,7 @@ void main() {
         { name: "Cargus", cat: "Website \xB7 2023", poster: "Delivered", accent: "#FED012", desc: "A national courier, shipped a website that moves as fast as the parcels.", x: 2244, y: 4790 },
         { name: "Help4Brain", cat: "Product \xB7 Marketing", poster: "Challenger to leader", accent: "#B098C8", desc: "Enabling a pharma challenger to become a leader.", x: 2244, y: 5060 }
       ];
-      FRIEND_PILLS = ["Erste Bank", "Microsoft", "Global Records", "Cargus", "Digi", "AWS", "Echo School", "Kastel Group", "Ra\u021Biu & Ra\u021Biu", "Catapult", "Robofun", "Open Bar", "Chef Sosin", "Direct Booking", "Noal Dental Clinic", "Skin Aesthetics", "Brewzeus", "K\xF3mpus", "Berero", "Slow Coffee Festival", "Two Minutes", "Yoshi Izakaya", "Artisan Coffee Gear", "ARCA Resort", "Routine Paris", "Clinica Sante", "Clinica Dr. K", "Toskani MED", "Sofmedica", "Zdrovit", "Zoetis", "Elithia", "Altius", "Unchain Festival", "Investimental", "Infinity Capital", "Techventures Bank", "Longshield", "Flask", "ESD", "Witanalitica", "Assetto", "Bepco"];
+      FRIEND_PILLS = ["Erste Bank", "Microsoft", "Global Records", "Cargus", "Digi", "AWS", "Echo School", "Kastel Group", "Ra\u021Biu & Ra\u021Biu", "Catapult", "Robofun", "Open Bar", "Chef Sosin", "Direct Booking", "Noal Dental Clinic", "Skin Aesthetics", "Brewzeus", "K\xF3mpus", "Berero", "Slow Coffee Festival", "Two Minutes", "Yoshi Izakaya", "Artisan Coffee Gear", "ARCA Resort", "Routine Paris", "Clinica Sante", "Clinica Dr. K", "Toskani MED", "Sofmedica", "Zdrovit", "Elithia", "Altius", "Unchain Festival", "Investimental", "Infinity Capital", "Techventures Bank", "Longshield", "Flask", "ESD", "Witanalitica", "Assetto", "Bepco"];
       CREW = ["Cristian", "Daniel", "Ana", "Coz", "Alexandra", "Stefan", "Adina", "Anne", "Iulic\u0103", "Melissa"];
       CREW_PHOTOS = [
         { src: "https://cromaticstudios.com/wp-content/uploads/2025/06/Noal.jpg", cap: "Photo production \xB7 Noal" },
@@ -26786,9 +26786,11 @@ void main() {
         const band = new Mesh(new BoxGeometry(W + 1.5, 3.5, D + 1.5), accM); band.position.y = H + 1.75; g.add(band);
         if (kind === "clinic") { const stripe = new Mesh(new BoxGeometry(W + 0.6, 2, D + 0.6), accM); stripe.position.y = 15.5; g.add(stripe); }
       }
-      const sb = signBoard(o, Math.min(W * 0.66, 46), Math.min(W * 0.66, 46) * 0.3);
-      sb.position.set(0, 20 + (kind === "clinic" ? 3 : 0), D / 2 + 1.4);
-      g.add(sb);
+      if (!o.plain) { // r474e: a plain background building has no sign
+        const sb = signBoard(o, Math.min(W * 0.66, 46), Math.min(W * 0.66, 46) * 0.3);
+        sb.position.set(0, 20 + (kind === "clinic" ? 3 : 0), D / 2 + 1.4);
+        g.add(sb);
+      }
     } else if (kind === "house" || kind === "paris" || kind === "barcelona" || kind === "la") {
       const ft = canvasTexture(256, 256, (ctx) => {
         ctx.fillStyle = o.wall || "#f1ece2"; ctx.fillRect(0, 0, 256, 256);
@@ -28332,7 +28334,10 @@ void main() {
     // turquoise accent (Petronas style) with Zoetis beside it; Elithia is two salmon interwar villas
     { br: "C", name: "Clinica Sante", logo: "logoClinicaSante", x: 1428, z: 4575, face: "+x", kind: "clinic", w: 96, d: 52, h: 58, accent: "#2f9e4f", c: "#2f9e4f", t: "#ffffff", line: "CLINIC \xB7 BRAND \xB7 FILM" },
     { br: "C", name: "Altius", logo: "logoAltius", x: 1612, z: 5400, face: "-x", kind: "tower", w: 72, d: 62, h: 230, accent: "#22c7b8", glass: "#33515c", frame: "#c8d1d8", c: "#16a89b", t: "#ffffff", line: "MEDICAL" },
-    { br: "C", name: "Zoetis", x: 1610, z: 5545, face: "-x", kind: "clinic", w: 70, h: 40, accent: "#f2763b", c: "#f2763b", t: "#2a1205", line: "ANIMAL HEALTH" },
+    // r474e (Daniel): Zoetis is out of the portfolio for now; its building stays as a plain background block (same plot,
+    // size and colour, no sign, no tag, no card, no map place). To bring it back: drop "plain: true" and put back
+    // line: "ANIMAL HEALTH" (and the project in site/data.mjs, render.mjs's "Zoetis": "growth", FRIEND_PILLS, ro.json)
+    { br: "C", name: "Zoetis", plain: true, x: 1610, z: 5545, face: "-x", kind: "clinic", w: 70, h: 40, accent: "#f2763b", c: "#f2763b", t: "#2a1205" },
     { br: "C", name: "Elithia", x: 1412, z: 5470, face: "+x", kind: "house", w: 50, d: 40, h: 30, wall: "#f7b29c", accent: "#e47f66", c: "#f08a70", t: "#2a0f08", line: "MEDICAL", signBg: "#e47f66", signInk: "#ffffff" },
     // r130m: out of the Zdrovit yard, on their own: Clinica Dr. K and Toskani MED across the avenue, Sofmedica with
     // a small yard of its own and Medcity, the clinic, inside it (buildSofmedicaYard)
@@ -34828,7 +34833,7 @@ void main(){
     }
     if (stopId === "merge") {
       const pills = el("div", "friend-pills");
-      const onMap = new Set([...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS, ...COURT_BRANDS].map((b) => b.name.toLowerCase()).concat(["two minutes", "slow coffee festival", "steam", "craft coffee", "artisan coffee gear", "yoshi izakaya", "arca resort", "antila", "unde", "oma coffee", "sip", "zdrovit", "the aesthetic court", "berero", "casa berero", "k\xF3mpus", "bism", "echo school", "help 4 brain", "elithia"]));
+      const onMap = new Set([...STREET_BRANDS.filter((b) => !b.plain), ...COFFEE_ADDS, ...LANE_BRANDS, ...COURT_BRANDS].map((b) => b.name.toLowerCase()).concat(["two minutes", "slow coffee festival", "steam", "craft coffee", "artisan coffee gear", "yoshi izakaya", "arca resort", "antila", "unde", "oma coffee", "sip", "zdrovit", "the aesthetic court", "berero", "casa berero", "k\xF3mpus", "bism", "echo school", "help 4 brain", "elithia"]));
       FRIEND_PILLS.filter((f) => !onMap.has(f.toLowerCase()) && !onMap.has(f.toLowerCase().replace(/ bank$/, ""))).forEach((f) => pills.appendChild(el("span", "fp-grey", f)));
       box.appendChild(pills);
     }
@@ -36603,7 +36608,7 @@ void main(){
       openModal();
     };
     const COURT_TAG = { br: "C", name: "Zdrovit", x: COURT.x - 150, z: COURT.z, line: "BEAUTY & SUPPLEMENT PARK" /* TASK-074 */, c: "#e30613", t: "#ffffff" };
-    const workTags = [...STREET_BRANDS, COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
+    const workTags = [...STREET_BRANDS.filter((b) => !b.plain), COURT_TAG, TAC, ...COFFEE_ADDS, ...LANE_BRANDS].map((b) => {
       BRANDC[b.name] = BRANDC[b.name] || { c: b.c, t: b.t };
       // brands with a case page on the website open it full screen (offline copies fall back to the card)
       if (!b.page && window.__casePage(b.name)) b.page = window.__casePage(b.name);
@@ -42444,7 +42449,7 @@ void main(){
       (() => {
         const have = new Set(MAP_PLACES.map((p) => (p.work || p.name).toLowerCase()));
         const add = (o) => { if (have.has(o.name.toLowerCase())) return; have.add(o.name.toLowerCase()); MAP_PLACES.splice(MAP_PLACES.length - 2, 0, o); };
-        for (const b of [...STREET_BRANDS, ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.pinH || (b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60), name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
+        for (const b of [...STREET_BRANDS.filter((x) => !x.plain), ...COFFEE_ADDS, ...LANE_BRANDS]) add({ id: "w-" + b.name.replace(/\W+/g, "").toLowerCase(), br: b.br, street: b.lane ? "D" : b.br, x: b.x, z: b.z, px: b.px, pz: b.pz, h: b.pinH || (b.kind === "tower" ? Math.min(200, (b.h || 120) + 10) : 60), name: b.name, line: b.line, c: b.c, t: b.t, work: b.name, desc: b.desc, wip: b.wip });
         // TASK-074: the Zdrovit yard's kiosks (y-0 .. y-6) are gone: Zdrovit is one place, its card lists the brands
         add({ id: "berero", br: "A", x: 706, z: 5480, h: 60, name: "Berero", line: "BRAND \xB7 LABELS \xB7 MERCH", c: "#111111", t: "#ffffff", act: "bereroTag" });
         add({ id: "echo", x: 1035, z: 6110, px: 1035, pz: 6177, h: 110, tapW: 0.45 /* r168 (Daniel: "Echo School is hard to press, it matters more than Dacia 99"): it wins the building's taps, and shows as a card from afar (TIER1) */, name: "Echo School", line: "TECHNOLOGY \xB7 DIGITAL ARTS \xB7 VIDEOGAMES", c: "#7b4fd6", t: "#ffffff", desc: "Two years of Instagram for a School of Technology, Digital Arts & Videogames in Bucharest: posts, stories, carousels, reels and campaigns." }); // r159: the case page is live
