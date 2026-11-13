@@ -373,6 +373,19 @@ html:not(.embed) .page{padding-top:64px}
   .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
 }
 /* ---- this page's own blocks ---- */
+/* r474d (Daniel): the hero, editorial: the title and the gyoza on the left, the two reels on the right */
+.hero{position:relative}
+.hero .inner{position:relative;z-index:1}
+.ypeek-gyoza{left:-2.5%;bottom:-9%;width:clamp(240px,30vw,450px);z-index:0}
+.ypeek-gyoza img{aspect-ratio:900/739}
+@media (min-width:900px){
+  .hero .inner{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:clamp(28px,4vw,72px);align-items:start}
+  .hero .hero-top{grid-template-columns:minmax(0,1fr);gap:clamp(18px,2vw,28px);padding-bottom:clamp(190px,15.5vw,232px)}
+  .hero .hero-media{margin-top:0}
+  .hero .hero-reels{width:calc(2 * min(60svh,560px) * .5625 + var(--gutter));max-width:none;margin:0}
+  .hero .hero-reels .frame{max-height:min(60svh,560px)}
+}
+@media (max-width:899px){.hero .inner{padding-bottom:clamp(84px,18vw,150px)}.ypeek-gyoza{width:clamp(130px,30vw,230px);left:-14px;bottom:-22px}}
 /* r474: the reels open the page */
 .hero-reels{max-width:calc(2 * var(--max-h) * .5625 + var(--gutter));margin-inline:auto}
 .hero-reels .frame>video{position:absolute;inset:0}
@@ -406,6 +419,7 @@ html:not(.embed) .page{padding-top:64px}
 <a class="cs-back" href="/site/#work">← Cromatic Studios</a>
 <main class="page">
   <header class="card hero">
+    <span class="ypeek ypeek-gyoza" aria-hidden="true"><img src="m:yoshi-izakaya/chr-gyoza" alt="" width="900" height="739" loading="lazy" decoding="async" draggable="false"></span>
     <div class="inner">
       <div class="hero-top">
         <div class="hero-title">

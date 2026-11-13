@@ -374,18 +374,31 @@ html:not(.embed) .page{padding-top:64px}
   .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
 }
 /* ---- this page's own blocks ---- */
-/* r474: the sticker pile */
-.stk-stage{position:relative;width:min(100%,620px);aspect-ratio:1;margin:clamp(8px,3vw,40px) auto;contain:layout paint}
-.stk{position:absolute;left:50%;top:50%;width:var(--w);translate:-50% -50%;z-index:var(--i);filter:drop-shadow(0 1px 1px rgba(13,12,9,.30)) drop-shadow(0 7px 12px rgba(13,12,9,.13))}
-@supports (width:1cqw){.stk-stage{container-type:inline-size}.stk{translate:calc(-50% + var(--x) * 1cqw) calc(-50% + var(--y) * 1cqw)}}
-.stk-in{position:relative;rotate:var(--r);transform-origin:50% 60%}
+/* r474d: the sticker table */
+.stk-stage{position:relative;width:100%;aspect-ratio:16/10;margin:clamp(4px,1.5vw,20px) 0;perspective:1400px;perspective-origin:50% 0%}
+.stk-table{position:absolute;inset:0;border-radius:var(--radius-m);transform:rotateX(9deg);transform-origin:50% 100%;
+  background:radial-gradient(120% 90% at 50% 35%,#fbfaf6 0%,#f2efe7 62%,#e9e5da 100%);box-shadow:inset 0 0 0 1px rgba(18,18,18,.06)}
+.stk-table::before{content:"";position:absolute;inset:0;border-radius:inherit;opacity:.35;mix-blend-mode:multiply;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .48 0 0 0 0 .44 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.stk{position:absolute;left:var(--x);top:var(--y);width:var(--w);translate:-50% -50%;z-index:var(--i);
+  filter:drop-shadow(0 1.2px 0 #d6d1c4) drop-shadow(0 1px 1.5px rgba(13,12,9,.34)) drop-shadow(0 5px 7px rgba(13,12,9,.16)) drop-shadow(0 16px 22px rgba(13,12,9,.10))}
+.stk-in{position:relative;rotate:var(--r);transform-origin:50% 55%}
 .stk-in picture{display:block}
 .stk-in img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
-.stk-sheen{position:absolute;inset:0;pointer-events:none;background:linear-gradient(118deg,transparent 30%,rgba(255,255,255,.34) 46%,rgba(255,255,255,0) 58%),linear-gradient(0deg,rgba(13,12,9,.05),transparent 45%);mix-blend-mode:soft-light;opacity:0}
+.stk-sheen{position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:soft-light;
+  background:linear-gradient(112deg,transparent 30%,rgba(255,255,255,.55) 45%,rgba(255,255,255,0) 60%) calc(var(--sp,.5) * 100%) 0/300% 100% no-repeat,linear-gradient(0deg,rgba(13,12,9,.06),transparent 50%)}
 .stk.in .stk-sheen,.stk-stage.rm .stk-sheen{opacity:1;-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
+@media (max-width:640px){
+  .stk-stage{aspect-ratio:5/7}
+  .stk{left:var(--xm);top:var(--ym);width:var(--wm)}
+  .stk-in{rotate:var(--rm)}
+}
 .stk-stage.armed .stk{opacity:0}
-.stk-stage.armed .stk.in{opacity:1;animation:stk-land .2s cubic-bezier(.3,.7,.4,1) both}
-@keyframes stk-land{0%{opacity:0;transform:translateY(-7%) scale(1.07);filter:drop-shadow(0 1px 1px rgba(13,12,9,.08)) drop-shadow(0 18px 22px rgba(13,12,9,.10))}60%{opacity:1;transform:translateY(.4%) scale(.985)}100%{transform:none}}
+.stk-stage.armed .stk.in{opacity:1;animation:stk-drop .2s cubic-bezier(.3,.7,.4,1) both}
+@keyframes stk-drop{
+  0%{opacity:0;transform:translateY(-9%) scale(1.15);filter:drop-shadow(0 1.2px 0 #d6d1c4) drop-shadow(0 6px 10px rgba(13,12,9,.06)) drop-shadow(0 26px 30px rgba(13,12,9,.10)) drop-shadow(0 40px 46px rgba(13,12,9,.06))}
+  62%{opacity:1;transform:translateY(.5%) scale(.985)}
+  100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.stk-stage.armed .stk{opacity:1}.stk-stage.armed .stk.in{animation:none}}
 </style>
 </head>
@@ -499,12 +512,14 @@ html:not(.embed) .page{padding-top:64px}
     <div class="chapter-media">
 <div class="stack">
 <div class="stk-stage" role="img" aria-label="Six Berero campaign stickers stacked in a pile: The 6 Pack, Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and Life is Beachy">
-  <div class="stk" style="--w:62%;--x:-15;--y:-15;--r:-9deg;--i:0;--m:url(m:casa-berero/stk-6pack)"><div class="stk-in"><img src="m:casa-berero/stk-6pack" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
-  <div class="stk" style="--w:66%;--x:12;--y:-19;--r:7deg;--i:1;--m:url(m:casa-berero/stk-lager)"><div class="stk-in"><img src="m:casa-berero/stk-lager" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
-  <div class="stk" style="--w:64%;--x:-9;--y:15;--r:-5deg;--i:2;--m:url(m:casa-berero/stk-mixed)"><div class="stk-in"><img src="m:casa-berero/stk-mixed" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
-  <div class="stk" style="--w:36%;--x:24;--y:9;--r:12deg;--i:3;--m:url(m:casa-berero/stk-hops)"><div class="stk-in"><img src="m:casa-berero/stk-hops" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
-  <div class="stk" style="--w:40%;--x:-25;--y:5;--r:-11deg;--i:4;--m:url(m:casa-berero/stk-stash)"><div class="stk-in"><img src="m:casa-berero/stk-stash" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
-  <div class="stk" style="--w:42%;--x:5;--y:3;--r:6deg;--i:5;--m:url(m:casa-berero/stk-beachy)"><div class="stk-in"><img src="m:casa-berero/stk-beachy" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+  <div class="stk-table">
+    <div class="stk" style="--x:23%;--y:31%;--w:38%;--r:-8deg;--xm:30%;--ym:15%;--wm:52%;--rm:-8deg;--i:0;--m:url(m:casa-berero/stk-6pack)"><div class="stk-in"><img src="m:casa-berero/stk-6pack" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+    <div class="stk" style="--x:52%;--y:24%;--w:41%;--r:5deg;--xm:70%;--ym:24%;--wm:54%;--rm:6deg;--i:1;--m:url(m:casa-berero/stk-lager)"><div class="stk-in"><img src="m:casa-berero/stk-lager" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+    <div class="stk" style="--x:79%;--y:37%;--w:37%;--r:-4deg;--xm:35%;--ym:45%;--wm:60%;--rm:-4deg;--i:2;--m:url(m:casa-berero/stk-mixed)"><div class="stk-in"><img src="m:casa-berero/stk-mixed" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+    <div class="stk" style="--x:25%;--y:71%;--w:25%;--r:9deg;--xm:74%;--ym:55%;--wm:34%;--rm:10deg;--i:3;--m:url(m:casa-berero/stk-hops)"><div class="stk-in"><img src="m:casa-berero/stk-hops" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+    <div class="stk" style="--x:52%;--y:70%;--w:30%;--r:-9deg;--xm:30%;--ym:78%;--wm:40%;--rm:-9deg;--i:4;--m:url(m:casa-berero/stk-stash)"><div class="stk-in"><img src="m:casa-berero/stk-stash" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+    <div class="stk" style="--x:78%;--y:73%;--w:32%;--r:6deg;--xm:70%;--ym:82%;--wm:44%;--rm:5deg;--i:5;--m:url(m:casa-berero/stk-beachy)"><div class="stk-in"><img src="m:casa-berero/stk-beachy" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+  </div>
 </div>
 <figcaption>One sticker for every pack</figcaption>
 </div>
@@ -817,19 +832,19 @@ document.querySelectorAll('.track').forEach(t=>{
 // embedded in the drive: keep links between case studies inside the frame
 if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});
 // ---- this page's own blocks ----
-// r474: the sticker pile lands as the stage rises through the screen (one sticker per sixth of the way)
+// r474d: the stickers land as the table rises through the screen (one per sixth of the way); the sheen drifts with it
 (function(){
   var st=document.querySelector('.stk-stage');if(!st)return;
   var items=[].slice.call(st.querySelectorAll('.stk')),n=0,raf=0;
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){st.classList.add('rm');return}
   st.classList.add('armed');
-  function land(){var el=items[n++];if(el)el.classList.add('in')}
   function run(){raf=0;var r=st.getBoundingClientRect(),vh=innerHeight||800;
-    var c=r.top+r.height*.5,p=(vh*.98-c)/(vh*.5);
+    if(r.bottom<-vh||r.top>vh*2)return;
+    var c=r.top+r.height*.5,p=(vh*.98-c)/(vh*.55);
     var t=Math.max(0,Math.min(items.length,Math.ceil(p*items.length)));
     if(r.bottom<0)t=items.length;
-    while(n<t)land();
-    if(n>=items.length){removeEventListener('scroll',on);removeEventListener('resize',on)}}
+    while(n<t){items[n++].classList.add('in')}
+    st.style.setProperty('--sp',Math.max(0,Math.min(1,(vh-r.top)/(vh+r.height))).toFixed(3))}
   function on(){if(!raf)raf=requestAnimationFrame(run)}
   addEventListener('scroll',on,{passive:true});addEventListener('resize',on);run();
 })();

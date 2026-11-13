@@ -329,7 +329,8 @@ figure.only-sm{display:none}
   const heroMedia = P.heroHtml ? P.heroHtml : P.hero ? (Array.isArray(P.hero)
     ? `<div class="hero-row">${P.hero.map((it) => fig(it, { eager: true })).join("")}</div>`
     : fig({ fixed: P.hero.fixed !== false, ...P.hero, r: P.hero.r || (P.hero.fixed === false ? undefined : 1.778) }, { eager: true })) : "";
-  h.push(`  <header class="card hero">
+  const DXh = (P.decor || {}).hero; // r474d: a decorative piece in the hero (Yoshi's gyoza)
+  h.push(`  <header class="card hero">${DXh ? `\n    ${DXh}` : ""}
     <div class="inner">
       <div class="hero-top">
         <div class="hero-title">
