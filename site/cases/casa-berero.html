@@ -373,6 +373,20 @@ html:not(.embed) .page{padding-top:64px}
   .screen--scroll img{animation:none}
   .hero-media .frame,.film-frame,.hero-media .frame>img,.hero-media .frame>video{animation:none;clip-path:none;scale:1;translate:none}
 }
+/* ---- this page's own blocks ---- */
+/* r474: the sticker pile */
+.stk-stage{position:relative;width:min(100%,620px);aspect-ratio:1;margin:clamp(8px,3vw,40px) auto;contain:layout paint}
+.stk{position:absolute;left:50%;top:50%;width:var(--w);translate:-50% -50%;z-index:var(--i);filter:drop-shadow(0 1px 1px rgba(13,12,9,.30)) drop-shadow(0 7px 12px rgba(13,12,9,.13))}
+@supports (width:1cqw){.stk-stage{container-type:inline-size}.stk{translate:calc(-50% + var(--x) * 1cqw) calc(-50% + var(--y) * 1cqw)}}
+.stk-in{position:relative;rotate:var(--r);transform-origin:50% 60%}
+.stk-in picture{display:block}
+.stk-in img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.stk-sheen{position:absolute;inset:0;pointer-events:none;background:linear-gradient(118deg,transparent 30%,rgba(255,255,255,.34) 46%,rgba(255,255,255,0) 58%),linear-gradient(0deg,rgba(13,12,9,.05),transparent 45%);mix-blend-mode:soft-light;opacity:0}
+.stk.in .stk-sheen,.stk-stage.rm .stk-sheen{opacity:1;-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
+.stk-stage.armed .stk{opacity:0}
+.stk-stage.armed .stk.in{opacity:1;animation:stk-land .2s cubic-bezier(.3,.7,.4,1) both}
+@keyframes stk-land{0%{opacity:0;transform:translateY(-7%) scale(1.07);filter:drop-shadow(0 1px 1px rgba(13,12,9,.08)) drop-shadow(0 18px 22px rgba(13,12,9,.10))}60%{opacity:1;transform:translateY(.4%) scale(.985)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.stk-stage.armed .stk{opacity:1}.stk-stage.armed .stk.in{animation:none}}
 </style>
 </head>
 <body>
@@ -483,10 +497,17 @@ html:not(.embed) .page{padding-top:64px}
       </div>
     </div>
     <div class="chapter-media">
-<figure style="--r:1.538">
-  <div class="frame"><img src="m:casa-berero/camp-stickers" alt="Six campaign stickers on black: The 6 Pack, Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and Life is Beachy" width="1600" height="1040" loading="lazy" decoding="async"></div>
-  <figcaption>One sticker for every pack</figcaption>
-</figure>
+<div class="stack">
+<div class="stk-stage" role="img" aria-label="Six Berero campaign stickers stacked in a pile: The 6 Pack, Lager than Life, Mixed Feelings, Hops Around, Ioan's Secret Stash and Life is Beachy">
+  <div class="stk" style="--w:62%;--x:-15;--y:-15;--r:-9deg;--i:0;--m:url(m:casa-berero/stk-6pack)"><div class="stk-in"><img src="m:casa-berero/stk-6pack" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+  <div class="stk" style="--w:66%;--x:12;--y:-19;--r:7deg;--i:1;--m:url(m:casa-berero/stk-lager)"><div class="stk-in"><img src="m:casa-berero/stk-lager" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+  <div class="stk" style="--w:64%;--x:-9;--y:15;--r:-5deg;--i:2;--m:url(m:casa-berero/stk-mixed)"><div class="stk-in"><img src="m:casa-berero/stk-mixed" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+  <div class="stk" style="--w:36%;--x:24;--y:9;--r:12deg;--i:3;--m:url(m:casa-berero/stk-hops)"><div class="stk-in"><img src="m:casa-berero/stk-hops" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+  <div class="stk" style="--w:40%;--x:-25;--y:5;--r:-11deg;--i:4;--m:url(m:casa-berero/stk-stash)"><div class="stk-in"><img src="m:casa-berero/stk-stash" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+  <div class="stk" style="--w:42%;--x:5;--y:3;--r:6deg;--i:5;--m:url(m:casa-berero/stk-beachy)"><div class="stk-in"><img src="m:casa-berero/stk-beachy" alt="" loading="lazy" decoding="async" draggable="false"><i class="stk-sheen" aria-hidden="true"></i></div></div>
+</div>
+<figcaption>One sticker for every pack</figcaption>
+</div>
 <div class="rail bleed" data-rail>
   <div class="rail-head">
     <h4><span class="pill" style="--rot:-11deg">The</span> <span class="pill" style="--rot:11deg">packs</span></h4>
@@ -795,6 +816,23 @@ document.querySelectorAll('.track').forEach(t=>{
 });
 // embedded in the drive: keep links between case studies inside the frame
 if(document.documentElement.classList.contains('embed'))document.querySelectorAll('a[href^="/work/"]').forEach(a=>{a.href=a.getAttribute('href')+'?embed=1'});
+// ---- this page's own blocks ----
+// r474: the sticker pile lands as the stage rises through the screen (one sticker per sixth of the way)
+(function(){
+  var st=document.querySelector('.stk-stage');if(!st)return;
+  var items=[].slice.call(st.querySelectorAll('.stk')),n=0,raf=0;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){st.classList.add('rm');return}
+  st.classList.add('armed');
+  function land(){var el=items[n++];if(el)el.classList.add('in')}
+  function run(){raf=0;var r=st.getBoundingClientRect(),vh=innerHeight||800;
+    var c=r.top+r.height*.5,p=(vh*.98-c)/(vh*.5);
+    var t=Math.max(0,Math.min(items.length,Math.ceil(p*items.length)));
+    if(r.bottom<0)t=items.length;
+    while(n<t)land();
+    if(n>=items.length){removeEventListener('scroll',on);removeEventListener('resize',on)}}
+  function on(){if(!raf)raf=requestAnimationFrame(run)}
+  addEventListener('scroll',on,{passive:true});addEventListener('resize',on);run();
+})();
 </script>
 </body>
 </html>

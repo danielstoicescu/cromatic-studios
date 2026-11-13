@@ -124,6 +124,26 @@ html.embed .nav{display:none}
 .s-tap{width:119px;bottom:26px;right:-9%;z-index:6}
 .s-pot{width:90px;top:9%;right:10%;z-index:6}
 .t-23 .ti img,.t-crowd .ti img{object-position:50% 0}
+/* r474: the fast-forward tab to SCF25 and its run */
+.ffw{position:fixed;right:0;top:96px;z-index:40;display:flex;align-items:center;gap:10px;padding:10px 14px 10px 16px;background:var(--sage);color:var(--ink);border:1px solid var(--ink);border-right:0;border-radius:3em 0 0 3em;font-size:.95rem;font-weight:700;line-height:1.1;text-decoration:none;white-space:nowrap;
+  transform:translateX(110%);transition:transform .2s cubic-bezier(.2,.8,.2,1),visibility 0s .2s;visibility:hidden}
+.ffw.on{transform:translateX(var(--tuck,46px));visibility:visible;transition:transform .2s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.ffw.on:hover,.ffw.on:focus-visible{transform:none}
+.ffw:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.ffw-ic svg{display:block;width:20px;height:20px;fill:currentColor}
+.ffw-k{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.78em;font-weight:600;letter-spacing:.04em;margin-right:2px}
+.ffw-go{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--sage);font-size:15px}
+.ffw.gone{transform:translateX(110%)!important;visibility:hidden;transition:transform .2s cubic-bezier(.4,0,1,1),visibility 0s .2s}
+@media (max-width:767px){.ffw{top:auto;bottom:max(18px,calc(env(safe-area-inset-bottom) + 12px));font-size:.86rem;padding:9px 12px 9px 14px;gap:8px}.ffw-ic svg{width:17px;height:17px}}
+.ffw-fx{position:fixed;inset:0;z-index:39;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,rgba(13,12,9,.10) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.ffw-fx::before{content:"";position:absolute;left:0;right:0;height:14%;top:0;transform:translateY(-120%);background:linear-gradient(180deg,transparent,rgba(255,255,255,.35),transparent);animation:ffw-roll .45s linear infinite}
+.ffw-fx.run{opacity:1;animation:ffw-jit .12s steps(2) infinite}
+.ffw-tag{position:absolute;top:18px;right:18px;display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ink);color:#fff;border-radius:6px;font:700 15px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em}
+.ffw-tag svg{width:16px;height:16px;fill:currentColor}
+@keyframes ffw-roll{to{transform:translateY(820%)}}
+@keyframes ffw-jit{0%{transform:translate(0,0)}50%{transform:translate(1.5px,-1px)}100%{transform:translate(-1px,1px)}}
+html.ffw-running main.sc{filter:blur(.6px) saturate(1.15)}
+@media (prefers-reduced-motion:reduce){.ffw,.ffw.on,.ffw.gone{transition:none}.ffw-fx{display:none}}
 /* cases-473: our 2025 stand, six portrait tiles, two a row on phones */
 @media (max-width:767px){.ys-25s{padding-top:10px}.ys-25s .t{width:calc(50% - 5px)}}
 
@@ -317,6 +337,9 @@ html.embed .nav{display:none}
     <li class="lng" hidden></li>
   </ul>
 </nav>
+<!-- r474 (Daniel): a fast-forward tab to our stand at SCF25; tucked at the right edge, out on hover or focus -->
+<a class="ffw" href="#scf25" aria-label="Fast-forward to Cromatic Studios at SCF25"><span class="ffw-ic"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 5.2v13.6L12 12zM12 5.2v13.6L21.5 12z"/></svg></span><span class="ffw-t"><span class="ffw-k">FW to:</span> Cromatic Studios @ SCF25</span><span class="ffw-go" aria-hidden="true">&#8595;</span></a>
+<div class="ffw-fx" aria-hidden="true"><span class="ffw-tag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 5.2v13.6L12 12zM12 5.2v13.6L21.5 12z"/></svg> &times;16</span></div>
 <main class="sc">
 
 <header class="hero">
@@ -584,9 +607,9 @@ html.embed .nav{display:none}
 </section>
 
 <!-- cases-473 (Anne's new work, Nov 2026): 2025, our own stand at the festival (phone photos and clips from 3-4 Oct 2025) -->
-<section class="st">
+<section class="st" id="scf25">
   <div class="st-box"><div class="st-in">
-    <h2 class="hp" data-fx="o8-26-10 b0-26-15">In 2025 we had a <b><i>stand</i></b> at the festival. On its wall, five years of Slow Coffee Festival.</h2>
+    <h2 class="hp" data-fx="o8-26-10 b0-26-15">Cromatic Studios @ SCF25</h2>
   </div></div>
 </section>
 
@@ -682,6 +705,46 @@ html.embed .nav{display:none}
   }
   function kick(){if(!raf)raf=requestAnimationFrame(run)}
   addEventListener("scroll",kick,{passive:true});addEventListener("resize",kick);run();
+})();
+</script>
+<script>
+// r474: the fast-forward tab. Tucked in at the right edge once the page has painted, out on hover or focus; a click races
+// down to #scf25 in about 2 s (eased, every other frame, scanlines and a x16 tag, a soft tape whir made with Web Audio,
+// silent if the browser says no). Reduced motion: a plain smooth scroll. It leaves once the section is reached.
+(function(){
+  var a=document.querySelector('.ffw'),fx=document.querySelector('.ffw-fx'),sec=document.getElementById('scf25');
+  if(!a||!sec)return;
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches,busy=false;
+  function tuck(){var go=a.querySelector('.ffw-go');a.style.setProperty('--tuck',(go?go.offsetWidth+14:40)+'px')}
+  function show(){tuck();a.classList.add('on')}
+  if(document.readyState==='complete')setTimeout(show,500);else addEventListener('load',function(){setTimeout(show,500)});
+  function past(){return sec.getBoundingClientRect().top<innerHeight*.7}
+  function check(){a.classList.toggle('gone',past())}
+  addEventListener('scroll',function(){if(!busy)check()},{passive:true});check();
+  function target(){return Math.max(0,sec.getBoundingClientRect().top+scrollY-80)}
+  function whir(dur){
+    try{var C=window.AudioContext||window.webkitAudioContext;if(!C)return;var ac=new C();if(ac.state==='suspended')ac.resume();
+      var n=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=Math.random()*2-1;
+      var s=ac.createBufferSource();s.buffer=b;var f=ac.createBiquadFilter();f.type='bandpass';f.Q.value=6;
+      var t=ac.currentTime;f.frequency.setValueAtTime(500,t);f.frequency.exponentialRampToValueAtTime(2600,t+dur*.45);f.frequency.exponentialRampToValueAtTime(900,t+dur);
+      var g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+.12);g.gain.setValueAtTime(.05,t+dur-.3);g.gain.linearRampToValueAtTime(0,t+dur);
+      var o=ac.createOscillator(),og=ac.createGain();o.frequency.value=24;og.gain.value=.018;o.connect(og);og.connect(g.gain);
+      s.connect(f);f.connect(g);g.connect(ac.destination);s.start(t);o.start(t);s.stop(t+dur);o.stop(t+dur);s.onended=function(){try{ac.close()}catch(e){}};
+    }catch(e){}
+  }
+  a.addEventListener('click',function(e){
+    e.preventDefault();if(busy)return;
+    var to=target();
+    if(RM){scrollTo({top:to,behavior:'smooth'});a.classList.add('gone');return}
+    busy=true;a.classList.add('gone');var from=scrollY,dur=2000,t0=performance.now(),fr=0;
+    document.documentElement.classList.add('ffw-running');fx.classList.add('run');whir(dur/1000);
+    var ease=function(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+    (function step(now){var p=Math.min(1,(now-t0)/dur);fr++;
+      if(p>=1||fr%2===0){scrollTo({top:from+(to-from)*ease(p),behavior:'instant'})}
+      if(p<1)requestAnimationFrame(step);
+      else{fx.classList.remove('run');document.documentElement.classList.remove('ffw-running');scrollTo({top:target(),behavior:'instant'});busy=false;check();try{sec.querySelector('h2').setAttribute('tabindex','-1');sec.querySelector('h2').focus({preventScroll:true})}catch(x){}}
+    })(t0);
+  });
 })();
 </script>
 </body>
