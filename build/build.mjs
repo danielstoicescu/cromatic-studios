@@ -737,6 +737,18 @@ for (const slug of R.canvasSlugs) page(`work/${slug}`, R.canvasPage(slug));
         try { const buf = readFileSync(join(root, "site", "fonts", `dm-serif-display-${k}.woff2`)); const rel = `assets/fonts/dm-serif-display-${k}-${hash(buf).slice(0, 8)}.woff2`; mkdirSync(join(pub, "assets", "fonts"), { recursive: true }); writeFileSync(join(pub, rel), buf); ff.push(`@font-face{font-family:'Steam Serif';font-style:${style};font-weight:400;font-display:swap;src:url(/${rel}) format('woff2');unicode-range:${range}}`); } catch (e) { console.warn("[build] steam serif:", e.message); }
       }
       if (ff.length) steam = steam.replace("</head>", `<style>${ff.join("")}</style>\n</head>`);
+      // r474 (Daniel): Steam's own typeface, N27 (atipo; the studio holds the webfont licence, "N27 Webfont Complete"),
+      // for the page's headings: Bold only, subset to latin + latin-ext (site/fonts/n27-bold-*.woff2, from the OTF),
+      // preloaded, with an Arial fallback sized to N27's widths and metrics (size-adjust 91%) so the swap does not move the page
+      {
+        const nf = [];
+        for (const [k, range] of [["latin", "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215"], ["latin-ext", "U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1EFF,U+20A0-20AB,U+20AD-20C0"]]) {
+          try { const buf = readFileSync(join(root, "site", "fonts", `n27-bold-${k}.woff2`)); const rel = `assets/fonts/n27-bold-${k}-${hash(buf).slice(0, 8)}.woff2`; mkdirSync(join(pub, "assets", "fonts"), { recursive: true }); writeFileSync(join(pub, rel), buf); nf.push([rel, range]); } catch (e) { console.warn("[build] steam n27:", e.message); }
+        }
+        if (nf.length) steam = steam.replace("</head>", `<link rel="preload" href="/${nf[0][0]}" as="font" type="font/woff2" crossorigin>\n<style>${nf.map(([rel, range]) => `@font-face{font-family:'Steam N27';font-style:normal;font-weight:700;font-display:swap;src:url(/${rel}) format('woff2');unicode-range:${range}}`).join("")}
+@font-face{font-family:'Steam N27 fallback';src:local('Arial Bold'),local('Arial-BoldMT'),local('Helvetica Neue Bold'),local('Arial');font-weight:700;size-adjust:91%;ascent-override:104%;descent-override:27%;line-gap-override:0%}
+h1,h2,h3{font-family:'Steam N27','Steam N27 fallback',system-ui,sans-serif;font-weight:700;letter-spacing:-.02em}</style>\n</head>`);
+      }
       // r139a: the three serif files (43 KB) are asked for only when the line comes near (two screens ahead), not with
       // the title: until then the line, far below, is set in the same stack without 'Steam Serif'
       const SB = ".steam-big{max-width:none;font-family:'Steam Serif',";
