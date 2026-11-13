@@ -34704,7 +34704,7 @@ void main(){
     const M = {
       "Slow Coffee Festival": { badge: bScf, img: sP25b, scf: true },
       "Two Minutes": { badge: bTm, img: tmCover, tm: true },
-      "Yoshi Izakaya": { badge: bYoshi },
+      "Yoshi Izakaya": { badge: bYoshi, vid: "m:covers/yoshi" }, // r474: its illustrated reel as the card's cover
       "K\u00f3mpus": { badge: bKompus },
       "Investimental": { badge: bInvestimental },
       "Steam": { badge: bSteam, img: steamCoverImg, vid: steamCoverVid, ig: true },
@@ -34721,7 +34721,9 @@ void main(){
     const m = projectMedia(p.name);
     const box = el("span", `msp-media ${cls || ""}`);
     box.style.background = BRANDC[p.name]?.c || p.accent;
-    if (m.vid) {
+    // r474: a video cover only when the visitor has not asked for less motion or less data (then its still, if any)
+    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches || !!(navigator.connection && navigator.connection.saveData);
+    if (m.vid && !calm) {
       const v = el("video");
       v.src = m.vid; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
       box.appendChild(v);
