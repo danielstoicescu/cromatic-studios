@@ -214,6 +214,12 @@ figcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:6
 .chapter--product .chapter-side{background:var(--purple-soft)}
 .chapter--video .chapter-side{background:var(--orange-soft)}
 @media (min-width:1100px){.chapter{grid-template-columns:minmax(220px,2.4fr) minmax(0,9.6fr)}.chapter .chapter-side{background:var(--white)}} /* r480 (Nov audit): on a wide screen no empty pastel slab beside the work; the pastel stays on phones, where the side is a band over the chapter */
+/* r480-C (Nov audit, Daniel: fast, nothing waits on an animation): entrances end within ~0.6 s, hovers within 0.2 s, and no words wait unseen for a reveal: quote lines and their source are visible from the start */
+.client-row .pill{animation-duration:.4s}.client-row li:nth-child(1) .pill{animation-delay:.1s}.client-row li:nth-child(2) .pill{animation-delay:.16s}.client-row li:nth-child(3) .pill{animation-delay:.22s}
+.hero-media{animation-duration:.45s;animation-delay:0s}.hero-media .frame,.film-frame{animation-duration:.5s;animation-delay:0s}.hero-media .frame>img,.hero-media .frame>video{animation-duration:.6s;animation-delay:0s}
+.line>span,.is-in .line>span{transform:none;opacity:1;transition:none}.quote cite,.result-quote cite{opacity:1;transition:none}
+.pill-title.is-dropped .pill:first-child{animation-duration:.45s}.pill-title.is-dropped .pill:last-child{animation-duration:.45s;animation-delay:.08s}
+.device{transition-duration:.2s}.proj .frame{transition-duration:.2s}.sb-l{transition-duration:.4s!important;transition-delay:0s!important}
 .deliverables{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .deliverables li{padding:5px 16px 7px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:700}
 .chapter-media{padding:var(--media-pad);display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(28px,3vw,48px);--stack-gap:clamp(28px,3vw,48px);align-content:start;min-width:0}
@@ -762,8 +768,8 @@ if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
   titles.forEach(t=>t.classList.add('drop-ready'));
   const dropIo=new IntersectionObserver(es=>es.forEach(e=>{
     if(e.isIntersecting){e.target.classList.add('is-dropped');dropIo.unobserve(e.target);}
-  }),{threshold:.6});
-  titles.forEach(t=>dropIo.observe(t));
+  }),{threshold:0,rootMargin:"0px 0px -12% 0px"});
+  titles.forEach(t=>dropIo.observe(t)); // r480-C: the titles drop as soon as they are on screen, never wait unseen
 }
 
 // quote: reveal one line at a time

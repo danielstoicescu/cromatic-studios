@@ -2188,3 +2188,17 @@ html:not(.m-sky) .sb-plate { background: var(--paper); padding: .02em .2em .06em
   .streets-nav a, .zd-list a.zd { min-height: 44px; }
   .ftr a:not(.btn):not(.ftr-dir) { display: inline-flex; align-items: center; min-height: 44px; }
 }
+
+/* r480-C (Nov audit; Daniel: fast, never hold anything for an animation): every control answers within 0.2 s, the
+   entrances end within ~0.6 s, and nothing waits unseen for a reveal: a revealed block is on the page from the start
+   and only settles its last 12 px. Reduced motion keeps its own rules (none of this applies there) */
+@media (prefers-reduced-motion: no-preference) {
+  :where(a, button, summary, .btn, input, select, label, .chip) { transition-duration: .18s !important; }
+  .js .rv { opacity: 1; transform: translateY(12px); transition: transform .4s var(--eoq); }
+  .js .rv.in { transform: none; }
+  .js .c2-title .w { animation-duration: .45s; animation-delay: calc(var(--k) * 40ms); }
+  .pass { animation-duration: .4s; }
+  .pw-h.si .si-w::before, .pw-h.si .si-w::after { animation-duration: .45s; }
+  .rs-boxes i { animation-duration: .6s; }
+  .js .stats.in .st-inf b { animation-duration: .6s; animation-delay: 0s; }
+}
