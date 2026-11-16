@@ -178,7 +178,7 @@ export async function optimizeImages(pub, root, log = console.log) {
   for (const v of out.values()) if (v.avif && cardImgs.has(v.orig)) cardAvif.set(v.src, v);
   // rewrite the pages
   for (const f of htmls) {
-    const html = readFileSync(f, "utf8").replace(/<video\b(?![^>]*\bposter=)([^>]*)>/gi, (m, at, off, str) => (underPic(str, off) ? `<video poster="${CLEAR}"${at}>` : m)); // r480b (Tudor, UI 10): a film that sits on its still picture says so: a clear poster, so the picture under it shows until the film plays (nothing fetched)
+    const html = readFileSync(f, "utf8");
     let next = html.replace(/<img\b([^>]*?)\bsrc="(\/assets\/[^"]+\.(?:jpe?g|png)|\/assets\/m\/[^"]+\.webp)"([^>]*)>/gi, (m, a, src, b) => {
       const v = out.get(src);
       if (!v || /\bsrcset=/.test(m) || /\bdata-full\b/.test(m)) return m;
@@ -264,14 +264,6 @@ function heroRange(t, f) {
   return b < 0 ? null : [a, b];
 }
 const attr = (tag, k) => (new RegExp(`\\s${k}="([^"]*)"`).exec(tag) || [])[1];
-const CLEAR = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
-// r480b: the picture a film sits on: the last <img> with one of our pictures, close before the <video> in the same box
-function underPic(t, at) {
-  const back = t.slice(Math.max(0, at - 900), at);
-  if (/<\/(?:figure|section|article|li|a)>/i.test(back.slice(back.lastIndexOf("<img")))) return null;
-  const m = [...back.matchAll(/<img\b[^>]*?\b(?:data-lz-)?src="(\/assets\/[^"]+\.(?:jpe?g|png|webp))"/gi)].pop();
-  return m ? m[1] : null;
-}
 function gatePage(html, f, lqipOf) {
   let t = html;
   const hr = heroRange(t, f);
