@@ -4377,8 +4377,8 @@ body.scheme-sketch .hud.hud-popat { filter: none; }
 .map-welcome { padding: 34px 28px 24px; }
 .map-welcome .mw-in { padding-top: 8px; }
 .map-welcome .mw-t { display: block; margin: 0 auto 26px; max-width: 470px; text-align: center; text-wrap: balance;
-  font: 900 clamp(34px, min(4.4vw, 6.2vh), 58px)/.95 CromaticSans, CromaticSans, sans-serif; letter-spacing: -.04em; color: #FED012;
-  -webkit-text-stroke: 2.5px #141414; paint-order: stroke fill; text-shadow: 4px 4px 0 #141414; transform: rotate(-3deg); }
+  font: 900 clamp(34px, min(4.4vw, 6.2vh), 58px)/.95 CromaticSans, CromaticSans, sans-serif; letter-spacing: -.04em; color: #141414;
+  text-shadow: 3px 3px 0 #FED012; transform: rotate(-3deg); } /* r480 (Nov audit; Daniel: never outlined type): solid ink, the yellow as its hard shadow, no contour */
 .map-welcome .mw-how { margin: 0 0 24px; }
 .map-welcome .mw-how span:nth-of-type(n) i { width: 64px; height: 64px; background: #ECE9E4; border: 1px solid #141414; box-shadow: none; color: #141414; font-size: 0; }
 .map-welcome .mw-how span i svg { display: block; width: 26px; height: 26px; }
@@ -4386,7 +4386,7 @@ body.scheme-sketch .hud.hud-popat { filter: none; }
 .map-welcome .mw-how em { margin-top: -24px; opacity: .3; }
 @media (max-width: 520px) {
   .map-welcome { padding: 30px 16px 16px; }
-  .map-welcome .mw-t { font-size: 32px; -webkit-text-stroke-width: 2px; text-shadow: 3px 3px 0 #141414; margin-bottom: 18px; }
+  .map-welcome .mw-t { font-size: 32px; text-shadow: 2.5px 2.5px 0 #FED012; margin-bottom: 18px; }
   .map-welcome .mw-how { margin: 0 0 16px; }
   .map-welcome .mw-how span:nth-of-type(n) i { width: 48px; height: 48px; } /* (TASK-007: 64 / 48, room for the explainers) */
   .map-welcome .mw-how span i svg { width: 22px; height: 22px; }
@@ -4394,7 +4394,7 @@ body.scheme-sketch .hud.hud-popat { filter: none; }
 }
 .map-welcome .mw-in { padding-bottom: 6px; } /* r137a: the last button's 2px shadow is no longer shaved off by the scroller */
 :is(.theme-menu, .map-rides) .wt-lead { text-wrap: balance; }
-@media (max-width: 520px) { .map-welcome .mw-t { -webkit-text-stroke-width: 1.6px; text-shadow: 2.5px 2.5px 0 #141414; } }
+@media (max-width: 520px) { .map-welcome .mw-t { text-shadow: 2.5px 2.5px 0 #FED012; } }
 
 /* r137a (Daniel): the place card's call to action. Pointing at it previews what is about to happen: the card turns to
    frosted glass (the map shows through), grows a touch and a thin frame breathes out round it, as the page that is
@@ -4482,7 +4482,7 @@ body:not(.scheme-sketch) .map-card .mcd-body :is(p, .mcd-eyebrow, .mcd-svc) { co
 @media (max-width: 520px) and (max-height: 650px) {
   .map-welcome { padding: 26px 14px 12px; }
   .map-welcome .mw-in { padding-top: 4px; }
-  .map-welcome .mw-t { font-size: 27px; margin-bottom: 12px; -webkit-text-stroke-width: 1.5px; text-shadow: 2px 2px 0 #141414; }
+  .map-welcome .mw-t { font-size: 27px; margin-bottom: 12px; text-shadow: 2px 2px 0 #FED012; }
   .map-welcome .mw-how { margin: 0 0 10px; }
   .map-welcome .mw-how span { gap: 5px; }
   .map-welcome .mw-how span:nth-of-type(n) i { width: 44px; height: 44px; }
