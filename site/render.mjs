@@ -749,12 +749,12 @@ ${footer}`;
       <p><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a></p>
       <p class="c-direct"><a href="mailto:${STUDIO.email}">${STUDIO.email}</a> · <a href="tel:+40728978068">${STUDIO.phone}</a> · Strada Olari 9, Bucharest</p>
     </div></section>`;
-  const hubHero = (eyebrow, h1, lead, col) => `<section class="c-hero c2-hero hub-hero">
+  const hubHero = (eyebrow, h1, lead, col, workHref = "#work") => `<section class="c-hero c2-hero hub-hero">
     <div class="wrap">
       <p class="eyebrow mono">${esc(eyebrow)}</p>
       <h1 class="c2-title">${esc(h1).split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
       <p class="lead hub-lead">${lead}</p>
-      <div class="btns"><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a><a class="btn" href="#work">See the work</a></div>
+      <div class="btns"><a class="btn btn-y" href="/site/#contact">${STAR}<span>Start a project</span></a><a class="btn" href="${workHref}">See the work</a></div>
     </div></section>`;
   const cards = (items, col) => `<div class="hub-cards">${items.map((x, i) => `<article class="hub-card" style="--sc:${col}"><span class="mono">${String(i + 1).padStart(2, "0")}</span><h3>${esc(x.t)}</h3><p>${x.p}</p></article>`).join("")}</div>`;
 
@@ -864,7 +864,7 @@ ${footer}`;
     return `${head({ title, desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub" style="--bc:#B098C8;--bt:#111">
-  ${hubHero("The crew · Bucharest · since 2014", "Brilliant humans, one coffee at a time", "An independent creative studio in Bucharest. We discover AI every day, and we still believe in the collective power of brilliant humans.", "#B098C8")}
+  ${hubHero("The crew · Bucharest · since 2014", "Brilliant humans, one coffee at a time", "An independent creative studio in Bucharest. We discover AI every day, and we still believe in the collective power of brilliant humans.", "#B098C8", "/work/")}
   <section class="wrap c2-lead hub-intro">
     <p>Cromatic Studios started in <strong>2014</strong> with two people and a company name written on a napkin. It was founded by <strong>Daniel Stoicescu</strong>, who is still the studio's creative architect. Today the studio is led by two partners, who are also brothers: <strong>Daniel Stoicescu</strong>, the founder, and <strong>Cristian Stoicescu</strong>, the CEO.</p>
     <p>Strategy, identity, websites, film and content are made here, under one roof, for indie founders, startups and established companies.</p>
