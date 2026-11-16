@@ -128,7 +128,7 @@ mark { background: var(--y); color: var(--ink); border-radius: 6px; padding: 0 .
 .numbers li { padding: 22px 18px 0 0; border-right: 1px solid var(--line); margin-right: 18px; }
 .numbers li:last-child { border-right: 0; }
 .numbers b { display: block; font: 900 clamp(44px, 5vw, 76px)/1 var(--sans); letter-spacing: -.04em; }
-.numbers li:nth-child(1) b { color: var(--y); -webkit-text-stroke: 2px var(--ink); }
+.numbers li:nth-child(1) b { color: var(--y); text-shadow: 3px 3px 0 var(--ink); } /* r480b: solid, no contour */
 .numbers li:nth-child(2) b { color: var(--g); } .numbers li:nth-child(3) b { color: var(--b); } .numbers li:nth-child(4) b { color: var(--r); } .numbers li:nth-child(5) b { color: var(--p); }
 .numbers span { display: block; font-size: 14px; line-height: 1.35; margin-top: 10px; opacity: .7; }
 @media (max-width: 900px) { .numbers { grid-template-columns: repeat(2, 1fr); } .numbers li { border-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 20px; } }
