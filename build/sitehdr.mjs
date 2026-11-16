@@ -22,15 +22,16 @@ function blocks(css) {
   return out;
 }
 
-function lift(css) {
+function lift(css, KEEP, DROP, scope) {
   let out = "";
   for (const [pre, body] of blocks(css)) {
-    if (pre.startsWith("@media")) { const inner = lift(body); if (inner) out += `${pre}{${inner}}`; continue; }
+    if (pre.startsWith("@media")) { const inner = lift(body, KEEP, DROP, scope); if (inner) out += `${pre}{${inner}}`; continue; }
     if (pre.startsWith("@keyframes dkRoll")) { out += `${pre}{${body}}`; continue; }
     if (pre.startsWith("@")) continue;
     const sels = splitSel(pre).filter((s) => KEEP.test(s) && !DROP.test(s));
     if (!sels.length) continue;
-    const scoped = sels.map((s) => (/^\.hdr(?![\w-])/.test(s) || /^\.skip\b/.test(s) ? s : `.hdr ${s}`));
+    const own = new RegExp(`^\\.${scope}(?![\\w-])`);
+    const scoped = sels.map((s) => (own.test(s) || /^\.skip\b/.test(s) ? s : `.${scope} ${s}`));
     out += `${scoped.join(",")}{${body}}`;
   }
   return out;
@@ -42,7 +43,7 @@ export function makeSiteHeader({ siteCss, A }) {
   const logo = A("logoLandscape"), r = A("m:drive-car/dacia-1300-roll.webp"), s = A("m:drive-car/dacia-1300-parked.webp");
   const DK = r && s ? `<span class="dk" aria-hidden="true"><i class="dk-roll" style="--dk-s:url(${s.src});--dk-r:url(${r.src})"></i></span>` : "";
   const css = `<link rel="stylesheet" href="/fonts.css"><style id="czh-css">.hdr,.skip{${vars}}
-${lift(siteCss)}
+${lift(siteCss, KEEP, DROP, "hdr")}
 .hdr{position:fixed;left:0;right:0;top:0;z-index:9998;font-family:var(--f,CromaticSans),"CromaticSans Fallback",system-ui,sans-serif;color:var(--ink);line-height:1.5}
 .hdr .wrap{width:min(1280px,100% - 2 * clamp(16px,4vw,40px));margin-inline:auto}.hdr a{color:inherit}.hdr *{box-sizing:border-box}
 .hdr .menu-btn{flex:0 0 auto}.hdr .mnav a{color:var(--ink)}
@@ -75,4 +76,17 @@ html.embed .hdr,html.embed .czc,html.embed .skip{display:none!important}
 </header>${crumb ? `\n<nav class="czc" aria-label="${L.crumbL}"><a href="${work}">${L.work}</a><span aria-hidden="true">/</span><span aria-current="page">${crumb}</span></nav>` : ""}`;
   };
   return { css, js, html };
+}
+
+// r480b (Tudor, UI 2: "two footers"): the cases end on the website's own footer too (the studio, the address and the
+// way there, the links), its rules lifted the same way, scoped under .ftr; build/footer.mjs adds the strip inside it
+const KEEP_F = /\.ftr[\w-]*(?![\w-])/;
+const DROP_F = /\.(?:m-|mm-|pw|hc-|f5|czp|sv5)|#|\.js\b|html\.|\bbody\b|:root/;
+export function makeSiteFooter({ siteCss }) {
+  const vars = blocks(siteCss).filter(([p]) => p === ":root").map(([, b]) => b.split(";").filter((d) => d.trim().startsWith("--")).join(";")).join(";");
+  return `<style id="czft-css">.ftr{${vars}}
+${lift(siteCss, KEEP_F, DROP_F, "ftr")}
+.ftr{font-family:var(--f,CromaticSans),"CromaticSans Fallback",system-ui,sans-serif;color:var(--ink);line-height:1.5}.ftr *{box-sizing:border-box}.ftr a{color:inherit}.ftr p{margin:0 0 8px}
+.ftr .wrap{width:min(1280px,100% - 2 * clamp(16px,4vw,40px));margin-inline:auto}.ftr .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+html.embed .ftr-in,html.embed .ftr-motto{display:none}</style>`;
 }

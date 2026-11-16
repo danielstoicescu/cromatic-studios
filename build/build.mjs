@@ -721,8 +721,12 @@ const caseEnd = (raw, slug) => {
   if (/class="card (?:related|cta)"|<section class="c-end"|class="c2-next"/.test(raw)) console.warn(`[build] work/${slug}: an own ending is still there`);
   return raw;
 };
+const { makeSiteFooter } = await import("./sitehdr.mjs");
+const SITE_FTR_CSS = makeSiteFooter({ siteCss }); // r480b
 const page = (path, raw) => {
   raw = ytFacade(raw, ytPoster);
+  // r480b (Tudor, UI 2): a case made outside site/render.mjs ends on the website's own footer, like the rest of the site
+  if (path.startsWith("work/") && !raw.includes('class="ftr"') && raw.includes("</main>")) { const i = raw.lastIndexOf("</body>"); if (i > 0) { raw = raw.slice(0, i) + R.footerBlock + "\n" + raw.slice(i); raw = raw.replace("</head>", `${SITE_FTR_CSS}\n</head>`); } }
   // r138d: the shared ending is the last thing in <main>, after the page's own ending is taken out (caseEnd)
   if (path.startsWith("work/")) { raw = caseEnd(raw, path.slice(5)); const block = hubLinks(path.slice(5)); if (block && raw.includes("</main>")) { const i = raw.lastIndexOf("</main>"); raw = raw.slice(0, i) + block + "\n" + raw.slice(i); } else console.warn(`[build] ${path}: no </main>, no shared ending`); }
   const p = `/${path}/`, slug = path.replace(/^work\//, "");

@@ -1071,5 +1071,5 @@ ${footer}`;
 <script>${L.assets?.js || ""}</script>
 </body></html>`;
   }
-  return { workStreets, home, casePage, canvasPage, industryPage, workPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
+  return { footerBlock: footer.replace(/<\/body><\/html>\s*$/, ""), workStreets, home, casePage, canvasPage, industryPage, workPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
 }
