@@ -116,12 +116,12 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-main,.czp-stub{background:var(--pap);border:2px solid var(--ink)}
 .czp-main{border-radius:24px 0 0 24px;border-right:0;padding:0 24px 20px;-webkit-mask:radial-gradient(circle 13px at 100% 0,#0000 12.5px,#000 13px) top/100% 51% no-repeat,radial-gradient(circle 13px at 100% 100%,#0000 12.5px,#000 13px) bottom/100% 51% no-repeat;mask:radial-gradient(circle 13px at 100% 0,#0000 12.5px,#000 13px) top/100% 51% no-repeat,radial-gradient(circle 13px at 100% 100%,#0000 12.5px,#000 13px) bottom/100% 51% no-repeat}
 .czp-stub{border-radius:0 24px 24px 0;border-left:2px dashed rgba(13,12,9,.45);display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:26px 16px 18px;background:linear-gradient(var(--y),var(--y)) top/100% 8px no-repeat,var(--pap);-webkit-mask:radial-gradient(circle 13px at 0 0,#0000 12.5px,#000 13px) top/100% 51% no-repeat,radial-gradient(circle 13px at 0 100%,#0000 12.5px,#000 13px) bottom/100% 51% no-repeat;mask:radial-gradient(circle 13px at 0 0,#0000 12.5px,#000 13px) top/100% 51% no-repeat,radial-gradient(circle 13px at 0 100%,#0000 12.5px,#000 13px) bottom/100% 51% no-repeat;transform-origin:0 0}
-.czp-top{display:flex;justify-content:space-between;gap:10px;margin:0 -24px 14px;padding:10px 24px;background:var(--y);border-bottom:2px solid var(--ink);border-radius:22px 0 0 0;font:700 10.5px/1.2 'JetBrains Mono',ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase}
+.czp-top{display:flex;justify-content:space-between;gap:10px;margin:0 -24px 14px;padding:10px 24px;background:var(--y);border-bottom:2px solid var(--ink);border-radius:22px 0 0 0;font:700 12px/1.2 'JetBrains Mono',ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase}
 .czp-air i{font-style:normal;margin-right:6px}
 .czp-route{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:0 0 12px;margin-bottom:14px;border-bottom:1.5px dashed var(--ln)}
 .czp-end{display:grid;grid-template-columns:auto auto;align-items:baseline;column-gap:10px}.czp-end small{grid-column:1/-1;margin-bottom:3px}
 .czp-to{text-align:right;justify-content:end}
-.czp-end small,.czp-sk small,.czp-ref small{font:700 10px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.czp-end small,.czp-sk small,.czp-ref small{font:700 12px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
 .czp-end b{font-weight:900;font-size:34px;line-height:.9;letter-spacing:-.04em}
 .czp-end em{font-style:normal;font-size:12.5px;line-height:1.2;color:var(--mut);font-weight:500;max-width:9.5em}
 .czp-to{grid-template-columns:auto auto}.czp-to small{grid-area:1/1/2/3}.czp-to em{grid-area:2/1;text-align:right}.czp-to b{grid-area:2/2}
@@ -132,7 +132,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-q{border:0;margin:0 0 14px;padding:0;min-width:0}
 .czp-q legend{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:0;margin:0 0 8px;font-weight:800;font-size:15px;line-height:1.25}
 .czp-q legend i{font-style:normal;font-weight:500;font-size:12.5px;color:var(--mut)}
-.czp-n{font:700 10.5px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.1em;color:var(--um)}
+.czp-n{font:700 12px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.1em;color:var(--um)}
 .czp-pair{display:grid;gap:0 20px}
 .czp-chips{display:flex;flex-wrap:wrap;gap:6px}
 .czp-chip{font-family:inherit;font-weight:600;font-size:14px;line-height:1;padding:9px 13px;min-height:36px;border-radius:999px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;transition:background .18s,box-shadow .18s,translate .18s}
@@ -172,7 +172,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-go[disabled]{opacity:.7;cursor:progress}
 .czp-stamp{position:absolute;right:calc(var(--sw) + 28px);bottom:22px;display:grid;justify-items:center;gap:2px;padding:10px 16px;border:3px solid var(--um);border-radius:14px;color:var(--um);rotate:-9deg;opacity:0;scale:1.6;pointer-events:none;background:rgba(251,250,245,.6)}
 .czp-stamp b{font-weight:900;font-size:28px;letter-spacing:.02em;text-transform:uppercase;line-height:1}
-.czp-stamp small{font:700 10px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.18em}
+.czp-stamp small{font:700 12px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.18em}
 .czp.done .czp-main{padding-bottom:96px}
 .czp.done .czp-stamp{opacity:.92;scale:1;transition:opacity .2s .45s,scale .35s cubic-bezier(.2,1.6,.4,1) .45s}
 .czp.done .czp-stub{animation:czpTear .9s cubic-bezier(.5,0,.75,0) .1s forwards}
@@ -183,7 +183,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-legs span{display:grid}.czp-legs b{font-weight:900;font-size:24px;letter-spacing:-.02em}.czp-legs i{font-style:normal;font-size:12px;color:var(--mut)}
 .czp-legs .hop{color:var(--um);font-weight:800}
 .czp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 22px}
-.czp-grid span{display:grid;gap:4px;font-weight:800;font-size:17px}.czp-grid small{font:700 10.5px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.16em;color:var(--mut)}
+.czp-grid span{display:grid;gap:4px;font-weight:800;font-size:17px}.czp-grid small{font:700 12px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.16em;color:var(--mut)}
 @container czp (min-width:600px){
 .czp-row{grid-template-columns:repeat(2,minmax(0,1fr))}
 .czp-f textarea{min-height:50px;height:50px}
@@ -194,11 +194,11 @@ export const PASS_CSS = `<style id="czp-css">
 @media (max-width:640px){
 .czp{grid-template-columns:1fr}
 .czp-main{border-radius:22px 22px 0 0;border-right:2px solid var(--ink);border-bottom:0;padding:0 16px 16px;-webkit-mask:radial-gradient(circle 13px at 0 100%,#0000 12.5px,#000 13px) left/51% 100% no-repeat,radial-gradient(circle 13px at 100% 100%,#0000 12.5px,#000 13px) right/51% 100% no-repeat;mask:radial-gradient(circle 13px at 0 100%,#0000 12.5px,#000 13px) left/51% 100% no-repeat,radial-gradient(circle 13px at 100% 100%,#0000 12.5px,#000 13px) right/51% 100% no-repeat}
-.czp-top{margin:0 -16px 12px;padding:10px 16px;border-radius:20px 20px 0 0;font-size:10px}
+.czp-top{margin:0 -16px 12px;padding:10px 16px;border-radius:20px 20px 0 0;font-size:12px}
 .czp-top span:last-child{display:none}
 .czp-route{gap:10px;padding-bottom:10px;margin-bottom:12px}
 .czp-end,.czp-to{grid-template-columns:auto}.czp-to small,.czp-to em,.czp-to b{grid-area:auto}
-.czp-end b{font-size:30px}.czp-end em{font-size:11.5px}
+.czp-end b{font-size:30px}.czp-end em{font-size:12px}
 .czp-q{margin-bottom:12px}
 .czp-chip{min-height:44px;padding:11px 13px}
 .czp-ta label{white-space:normal;line-height:1.25}
@@ -207,7 +207,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-leg{display:none}
 .czp-sks{grid-template-columns:auto auto auto;gap:0 14px;justify-content:start}.czp-skb{grid-column:auto}
 .czp-sk b{font-size:24px}.czp-sk b.czp-sm{font-size:16px;line-height:24px}
-.czp-code{margin:0;grid-template-columns:auto;width:96px}.czp-bars{height:28px}.czp-ref small{display:none}.czp-ref b{font-size:11px}
+.czp-code{margin:0;grid-template-columns:auto;width:96px}.czp-bars{height:28px}.czp-ref small{display:none}.czp-ref b{font-size:12px}
 .czp-go{grid-column:1/-1;min-height:56px;justify-content:center;gap:12px;text-align:center}
 .czp-stamp{right:16px;bottom:16px;transform-origin:100% 100%;scale:1.15}.czp.done .czp-main{padding-bottom:96px;border-bottom:2px solid var(--ink);border-radius:22px;-webkit-mask:none;mask:none}
 }
