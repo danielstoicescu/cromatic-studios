@@ -331,7 +331,7 @@ html.ffw-running main.sc{filter:blur(.6px) saturate(1.15)}
 .ss img{transition:none}
 .ss img.go{transition:translate .5s ease}
 @media (prefers-reduced-motion:no-preference){
-  .js .rv{opacity:0;translate:0 28px;transition:opacity .8s cubic-bezier(.2,.7,.2,1),translate .8s cubic-bezier(.2,.7,.2,1)}
+  .js .rv{opacity:1;translate:0 12px;transition:translate .4s cubic-bezier(.2,.7,.2,1)} /* r480b: visible from the start, settles in 0.4 s */
   .js .rv.in{opacity:1;translate:none}
   .stk{translate:0 var(--py,0px)}
   .ic-in img{scale:var(--sc,1)}

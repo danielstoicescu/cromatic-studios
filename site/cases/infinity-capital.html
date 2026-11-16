@@ -476,7 +476,7 @@ html:not(.embed) .page{padding-top:64px}
 
 /* business cards, fanned out */
 .ic-cards{background:var(--ic-mist);aspect-ratio:16/8;display:grid;place-items:center}
-.ic-card{position:absolute;width:30%;height:auto;left:35%;top:33%;border-radius:4px;box-shadow:0 26px 50px -22px rgba(32,38,49,.55),0 2px 6px rgba(32,38,49,.12);transition:transform 1.3s var(--ic-ease),box-shadow .4s ease;transition-delay:calc(var(--i) * .12s)}
+.ic-card{position:absolute;width:30%;height:auto;left:35%;top:33%;border-radius:4px;box-shadow:0 26px 50px -22px rgba(32,38,49,.55),0 2px 6px rgba(32,38,49,.12);transition:transform .5s var(--ic-ease),box-shadow .18s ease;transition-delay:calc(var(--i, 0) * .04s) * .12s)}
 .ic-card:nth-child(1){z-index:3}.ic-card:nth-child(2){z-index:2}
 .ic-cards.is-on .ic-card:nth-child(1){transform:translate(-108%,-10%) rotate(-6deg)}
 .ic-cards.is-on .ic-card:nth-child(2){transform:translate(0,12%) rotate(1.5deg)}
@@ -516,7 +516,7 @@ html:not(.embed) .page{padding-top:64px}
   [data-ic].is-on .ic-ring-art{animation:ic-draw 2.6s cubic-bezier(.55,.05,.25,1) .15s both,ic-spin 140s linear 2.8s infinite}
   .ic-stage.is-on .ic-ring-art{animation-delay:.35s,3s}
   [data-ic] .ic-l{opacity:0;transform:translateY(38%);filter:blur(6px)}
-  [data-ic].is-on .ic-l{opacity:1;transform:none;filter:none;transition:transform 1.2s var(--ic-ease),opacity .9s ease,filter .9s ease;transition-delay:calc(.9s + var(--i) * .075s)}
+  [data-ic].is-on .ic-l{opacity:1;transform:none;filter:none;transition:transform .45s var(--ic-ease),opacity .3s ease,filter .3s ease;transition-delay:calc(var(--i) * .03s)}
   [data-ic].is-on .ic-l--sub{transition-delay:1.75s}
   [data-ic] .ic-fl path{stroke-dasharray:1 1;stroke-dashoffset:1}
   [data-ic].is-on .ic-fl path{stroke-dashoffset:0;transition:stroke-dashoffset .5s cubic-bezier(.65,0,.35,1);transition-delay:calc(var(--i) * .04s)} /* r480b: drawn by ~0.6 s (was 4.6) */

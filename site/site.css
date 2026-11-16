@@ -2250,4 +2250,12 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
 
 /* r480b (Tudor S2, the rest): the street heads settle in 0.4 s (they took 0.8 s) */
 @media (prefers-reduced-motion: no-preference) { .js .dom-street :is(.sh-sub, .sh-lead, .sh-more) { transition-duration: .3s, .4s, .18s, .18s; transition-delay: 0s, 0s, 0s, 0s; } }
-@media (max-width: 760px) { .sh-more, html:not(.m-sky) .street-band + .street-head .sh-more { min-height: 44px; } }
+@media (max-width: 760px) { .sh-more, html:not(.m-sky) .street-band + .street-head .sh-more { min-height: 46px; } } /* 46: still 44 while the street card lands at 96 percent scale */
+
+/* r480b (Tudor S2/QW 7, the rest): the case-template reveals and the street signs: visible from the start, settled in
+   0.4 s (they waited at opacity 0 for 0.9 to 1.2 s) */
+@media (prefers-reduced-motion: no-preference) {
+  .js .c2-reveal { opacity: 1; transform: translateY(12px); transition: transform .4s var(--eoq); }
+  .js .c2-reveal .c2-fig img { transition: clip-path .4s var(--eoq), transform .4s var(--eoq); }
+  .js .dom-street .street-sign { transition: opacity .3s var(--eoq), transform .4s var(--bounce), rotate .4s var(--bounce); }
+}
