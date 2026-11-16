@@ -1087,6 +1087,9 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
   // through the stylesheet it swapped in ~60 ms after the first paint and nudged the h1's red and blue copies (CLS 0.0004,
   // desktop). Preloaded on desktops only: phones draw no copies. After the viewport meta, or a phone still reads the
   // media query against the default 980 px layout and fetches it (RO mobile LCP +40 ms)
+  // r480c (Tudor: /work/eliade-18/ was indexable but in neither the sitemap nor the hub): the studio's own floor page,
+  // kept unlisted on purpose, now also out of the index (its links still followed)
+  if (/^(work\/eliade-18|ro\/proiecte\/eliade-18)\/index\.html$/.test(relative(pub, p2).replace(/\\/g, "/"))) n2 = n2.replace(/<meta name="robots" content="[^"]*">/, '<meta name="robots" content="noindex, follow">');
   // r480b (Daniel's standing rule, Tudor round 2: 98 case pages could still be zoomed): mobile zoom stays locked on every page
   if (/\.html$/.test(f)) n2 = n2.replace(/<meta name="viewport" content="(?![^"]*user-scalable)([^"]*)">/g, (m, c) => `<meta name="viewport" content="${c.replace(/,?\s*viewport-fit=cover/, "")}, maximum-scale=1, user-scalable=no${/viewport-fit=cover/.test(c) ? ", viewport-fit=cover" : ""}">`);
   if (/\.html$/.test(f) && GS["latin-ext"] && /<html lang="ro"/.test(n2) && n2.includes('class="pwall pw-first"') && !n2.includes(`rel="preload" href="${GS["latin-ext"]}"`)) n2 = n2.replace(/(<meta name="viewport"[^>]*>)/, `$1\n<link rel="preload" href="${GS["latin-ext"]}" as="font" type="font/woff2" media="(min-width: 701px)" crossorigin>`);
