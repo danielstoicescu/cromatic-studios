@@ -196,7 +196,7 @@ html.embed .cs-bar{display:none}
     if (/<a class="drive-btn[ "]/.test(html)) html = html.replace(/<a class="drive-btn(?=[ "])/, `${sw}<a class="drive-btn`); // r365: the class may carry more (dk-host)
     // r480 (Daniel 10 Nov: case pages get the site header; on phones the logo and a breadcrumb): a page that had the
     // "← Cromatic Studios" pill gets the shared case header instead (build/build.mjs caseHeader), language switch inside
-    else if (caseHeader && /<a class="cs-back"[^>]*>[^<]*<\/a>/.test(html)) html = html.replace(/<a class="cs-back"[^>]*>[^<]*<\/a>/, () => caseHeader(html, enPath, lang, other, label, name));
+    else if (caseHeader && /<a class="cs-back"[^>]*>[^<]*<\/a>/.test(html)) { html = html.replace(/<a class="cs-back"[^>]*>[^<]*<\/a>/, () => caseHeader(html, enPath, lang, other, label, name)); if (!/<main[^>]*\bid=/.test(html)) html = html.replace(/<main\b/, '<main id="main"'); } // r480b: the skip link's target
     else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style>${/class="cs-back"/.test(html) ? CASE_BAR : ""}<a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
     // r387: on the case pages the back link and the language switch sit in a landmark (axe "region")
     html = html.replace(/(<a class="lang-sw lang-fixed"[^>]*>[^<]*<\/a>)((?:\s|<!--[^>]*-->)*)(<a class="cs-back"[^>]*>[^<]*<\/a>)/, `$2<nav class="cs-nav" aria-label="Cromatic Studios">$3$1</nav>`);

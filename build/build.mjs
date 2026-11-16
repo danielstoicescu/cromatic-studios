@@ -353,11 +353,10 @@ writeFileSync(join(pub, "favicon.ico"), icoFromPng(readFileSync(src("favicon-32.
 const notFound = (ro) => `${head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n").replace(/<title>[^<]*<\/title>/, `<title>${ro ? "Drum greșit" : "Off the map"} · Cromatic Studios</title>`).replace(/<meta name="robots"[^>]*>/, '<meta name="robots" content="noindex">').replace(/<html lang="en"/, ro ? '<html lang="ro"' : '<html lang="en"')}
 <link rel="stylesheet" href="/fonts.css">
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fbfaf5;color:#0d0c09;font:18px/1.5 CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}main{max-width:560px}.k{font:500 12px/1.4 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;margin:0}h1{font-size:clamp(36px,7vw,64px);line-height:1;font-weight:800;margin:.3em 0 .25em;letter-spacing:-.01em}p{margin:0 0 8px}.go{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}.go a{display:inline-flex;align-items:center;min-height:48px;padding:0 24px;border-radius:999px;border:2px solid #0d0c09;color:#0d0c09;font-weight:700;text-decoration:none;transition:background-color .15s}.go a.y{background:#FED012;box-shadow:0 2px 0 #0d0c09}.go a:hover{background:#fff}.go a:focus-visible,.c a:focus-visible{outline:3px solid #119BFE;outline-offset:3px}.c{margin-top:22px;font-size:16px}.c a{color:inherit;display:inline-block;padding:12px 4px}</style>
-</head><body><main>${ro
+</head><body>${SITE_HDR ? SITE_HDR.css + SITE_HDR.html({ lang: ro ? "ro" : "en", other: ro ? "/site/" : "/ro/", label: ro ? "EN" : "RO", name: ro ? "English" : "Română", crumb: "", mainId: "main" }) : ""}<main id="main">${ro
   ? `<p class="k">404 · în afara hărții</p><h1>Drumul ăsta nu e pe harta noastră.</h1><p>Proiectele sunt însă toate aici.</p><div class="go"><a class="y" href="/ro/proiecte/">Vezi proiectele</a><a href="/ro/">Acasă</a><a href="/ro/#contact">Contact</a></div><p class="c"><a href="/city/">sau condu prin orașul Cromatic</a> · <a href="/site/" lang="en">English</a></p>`
-  : `<p class="k">404 · off the map</p><h1>This road isn't on our map.</h1><p>The work is all still here, though.</p><div class="go"><a class="y" href="/work/">See the work</a><a href="/site/">Home</a><a href="/site/#contact">Contact</a></div><p class="c"><a href="/city/">or drive in the Cromatic City</a> · <a href="/ro/" lang="ro">Română</a></p>`}</main></body></html>`;
-writeFileSync(join(pub, "404.html"), notFound(false));
-mkdirSync(join(pub, "ro"), { recursive: true }); writeFileSync(join(pub, "ro", "404.html"), notFound(true));
+  : `<p class="k">404 · off the map</p><h1>This road isn't on our map.</h1><p>The work is all still here, though.</p><div class="go"><a class="y" href="/work/">See the work</a><a href="/site/">Home</a><a href="/site/#contact">Contact</a></div><p class="c"><a href="/city/">or drive in the Cromatic City</a> · <a href="/ro/" lang="ro">Română</a></p>`}</main>${SITE_HDR ? SITE_HDR.js : ""}</body></html>`;
+let SITE_HDR = null; // r480b: the website's header for the pages without its stylesheet (set with the case header below)
 // ---- the lo-fi website: /site/ and /work/<slug>/ ----
 const dims = (buf) => {
   if (buf[0] === 0x89 && buf[1] === 0x50) return [buf.readUInt32BE(16), buf.readUInt32BE(20)];
@@ -879,35 +878,14 @@ const roPaths = [];
   // the language switch. On a phone: the logo, the breadcrumb, Contact and the language. Paper bar, 64 px, slides away
   // as you read down and back as you scroll up (180 ms, transform only); nothing inside the map's frame (html.embed)
   {
-    const lg = A("logoLandscape");
-    const esc1 = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-    const CZH_CSS = `<link rel="stylesheet" href="/fonts.css"><style>.czh{position:fixed;left:0;right:0;top:0;z-index:9998;padding-top:env(safe-area-inset-top,0px);background:#fbfaf5;border-bottom:1px solid rgba(13,12,9,.12);font-family:CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;color:#0d0c09;transition:transform .18s cubic-bezier(.2,.7,.2,1),visibility 0s}
-.czh-in{display:flex;align-items:center;gap:clamp(12px,2.4vw,28px);height:64px;max-width:1280px;margin:0 auto;padding:0 clamp(16px,3vw,32px)}
-.czh a{color:inherit;text-decoration:none}
-.czh-logo{display:flex;align-items:center;min-height:44px;flex:0 0 auto}.czh-logo img{display:block;height:26px;width:auto}
-.czh-crumb{display:flex;align-items:center;gap:8px;min-width:0;font-size:15px;font-weight:500;color:#57524a}
-.czh-crumb a{display:inline-flex;align-items:center;min-height:44px;font-weight:700;color:#0d0c09}
-.czh-crumb [aria-current]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.czh-nav{display:flex;align-items:center;gap:clamp(14px,2vw,26px);margin-left:auto;font-size:15px;font-weight:700}
-.czh-nav a{display:inline-flex;align-items:center;min-height:44px}
-.czh-nav a:hover,.czh-crumb a:hover{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
-.czh-nav .czh-ct{padding:0 16px;border-radius:10px;background:#0d0c09;color:#fbfaf5}.czh-nav .czh-ct:hover{background:#FED012;color:#0d0c09;text-decoration:none}
-.czh-lang{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;font-size:13px;font-weight:700;letter-spacing:.06em}
-.czh a:focus-visible{outline:2px solid #0d0c09;outline-offset:3px;border-radius:6px}
-html.cb-up .czh{transform:translateY(calc(-100% - 2px));visibility:hidden;transition:transform .18s cubic-bezier(.4,0,1,1),visibility 0s .18s}
-html.cb-up .czh:focus-within{transform:none;visibility:visible}
-html.embed .czh{display:none}
-@media (max-width:760px){.czh-nav .czh-wide{display:none}.czh-in{gap:10px}.czh-logo img{height:20px}.czh-crumb{font-size:14px}.czh-nav{gap:4px}.czh-nav .czh-ct{padding:0 12px}}
-@media (max-width:560px){.czh-nav .czh-ct{display:none}.czh-logo img{height:18px}.czh-in{gap:8px;padding:0 16px}.czh-crumb{gap:6px}.czh-lang{min-width:40px;margin-right:-6px}}
-@media (max-width:400px){.czh-crumb .czh-sep,.czh-crumb [aria-current]{display:none}}
-@media (prefers-reduced-motion:reduce){.czh{transition:none!important}}</style>`;
-    const CZH_JS = `<script>(function(){var h=document.documentElement;if(h.classList.contains("embed"))return;var y=scrollY,q=0;function f(){q=0;var n=scrollY,d=n-y;if(n<90){h.classList.remove("cb-up");y=n;return}if(Math.abs(d)>8){h.classList.toggle("cb-up",d>0);y=n}}addEventListener("scroll",function(){if(!q)q=requestAnimationFrame(f)},{passive:true})})();</script>`;
+    // r480b (Tudor, round 2: "two header designs"): the website's own header (build/sitehdr.mjs), with the case's
+    // breadcrumb under it and a skip link; the same header on the 404 pages (written at the end of the build)
+    const { makeSiteHeader } = await import("./sitehdr.mjs");
+    SITE_HDR = makeSiteHeader({ siteCss, A });
     I18N.setCaseHeader((html, enPath, lang, other, label, name) => {
-      const ro = lang === "ro", home = ro ? "/ro/" : "/site/"; // r480b (B1): "/site/", the build's name for the home (homemove.mjs turns it into "/"; a bare "/" there means the city)
       const t = (/<title>([^<]*)<\/title>/.exec(html)?.[1] || "").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "’").split(/ — | · | \| |: /)[0].trim(); // the brand's name, as the title opens
-      const L = ro ? { work: "Proiecte", svc: "Servicii", team: "Echipa", ct: "Contact", crumb: "Unde ești" } : { work: "Work", svc: "Services", team: "Team", ct: "Contact", crumb: "You are here" };
-      const work = ro ? "/ro/proiecte/" : "/work/", team = ro ? "/ro/echipa/" : "/team/";
-      return `${CZH_CSS}<header class="czh"><div class="czh-in"><a class="czh-logo" href="${home}">${lg ? `<img src="${lg.src}" alt="Cromatic Studios" width="${lg.w}" height="${lg.h}">` : "Cromatic Studios"}</a><nav class="czh-crumb" aria-label="${L.crumb}"><a href="${work}">${L.work}</a>${t ? `<span class="czh-sep" aria-hidden="true">/</span><span aria-current="page">${esc1(t)}</span>` : ""}</nav><nav class="czh-nav" aria-label="${ro ? "Principal" : "Main"}"><a class="czh-wide" href="${work}">${L.work}</a><a class="czh-wide" href="${home}#services">${L.svc}</a><a class="czh-wide" href="${team}">${L.team}</a><a class="czh-ct" href="${home}#contact">${L.ct}</a><a class="lang-sw czh-lang" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}">${label}</a></nav></div></header>${CZH_JS}`;
+      const crumb = t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      return SITE_HDR.css + SITE_HDR.html({ lang, other, label, name, crumb }) + SITE_HDR.js;
     });
   }
   const enPaths = new Set(["/site/", ...hubPaths, ...workPaths].filter((p) => PAGES[p]));
@@ -1200,6 +1178,9 @@ ${CONSENT /* r211 (Daniel: GA4 on the mini-game): the site's consent card and GA
   }
 }
 // r356: the website becomes the home page, the map moves to /city/ (build/homemove.mjs), before the precompression
+// r480b: the 404 pages, now that the website's header exists (they wear it too)
+writeFileSync(join(pub, "404.html"), notFound(false));
+mkdirSync(join(pub, "ro"), { recursive: true }); writeFileSync(join(pub, "ro", "404.html"), notFound(true));
 { const { moveHome } = await import("./homemove.mjs"); moveHome({ pub, SITE: SITE_URL }); }
 // r382 (Mira's audit: <meta charset> after the first 1024 bytes on 112 pages, the passes above add scripts and styles
 // at the top of the head): on every page of ours, the charset is the first thing in <head>
