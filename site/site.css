@@ -2219,3 +2219,12 @@ html.js .wk .bento .bcard { transition-delay: 0s; }
 .wk-studio { padding-top: 8px; }
 .wk-studio p { margin: 10px 0 0; font-size: var(--fs-5); font-weight: 700; }
 .wk-studio a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink); text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 2px; }
+
+/* r480b (Tudor: the home logo link was 143 x 13 at 412): the logo link is 44 px tall, the picture inside unchanged */
+.brand { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 760px) {
+  /* r480b (Tudor S6 leftovers): 44 px to tap for the street clips' pause, the team's Instagram links and the city link */
+  .sb-pp, html:not(.m-sky) .sb-pp { width: 44px; height: 44px; }
+  .cr-link { display: inline-flex; align-items: center; min-height: 44px; }
+  .f5 .pw-city, html:not(.m-sky) .f5c .pw-city { min-height: 44px; }
+}

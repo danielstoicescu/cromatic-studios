@@ -184,3 +184,7 @@ html.mm-lock { overflow: hidden; }
 .mm-all a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
 .mm-all a:hover { text-decoration-color: var(--yellow); }
 .mm.none .mm-all { display: none; }
+
+/* r480b (Tudor S6): the Work dialog's two selects and its search field are 44 px to tap */
+.mm-sel select { min-height: 44px; }
+.mm-search input { min-height: 44px; }
