@@ -287,7 +287,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\
     return `<div class="street-band${pd ? " has-media" : ""}">
         <div class="sb-stage"><span class="sb-media">${media}${video}</span><i class="sb-veil" aria-hidden="true"></i></div>
         <div class="sb-copy">
-          <p class="sb-name${street.length > 18 ? " is-long" : ""}" aria-hidden="true">${esc(street)}</p>
+          <p class="sb-name${street.length > 18 ? " is-long" : ""}" aria-hidden="true"><span class="sb-plate">${esc(street)}</span></p>
         </div>
       </div>`;
   };

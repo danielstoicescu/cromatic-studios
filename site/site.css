@@ -2169,3 +2169,9 @@ html:not(.m-sky) .sb-copy { top: calc((100% - 80px) / 2); bottom: auto; translat
 .wk-jump a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 .wk-streets > .wrap { display: grid; gap: clamp(64px, 9vw, 120px); }
 .wk-street { scroll-margin-top: 80px; }
+
+/* r480 (Nov audit: "Medical Avenue" white on a pastel render, nearly invisible): the street's name on a solid paper
+   plate in ink, never on the picture itself; no outline, no scrim. The render stays pure image around it */
+html:not(.m-sky) .sb-name { color: var(--ink); text-shadow: none; line-height: 1.08; }
+html:not(.m-sky) .sb-plate { background: var(--paper); padding: .02em .2em .06em; border-radius: .1em; -webkit-box-decoration-break: clone; box-decoration-break: clone; box-shadow: 0 2px 0 rgba(13,12,9,.9); }
+
