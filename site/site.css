@@ -2228,3 +2228,10 @@ html.js .wk .bento .bcard { transition-delay: 0s; }
   .cr-link { display: inline-flex; align-items: center; min-height: 44px; }
   .f5 .pw-city, html:not(.m-sky) .f5c .pw-city { min-height: 44px; }
 }
+
+/* r480b (Tudor, UI 3: pills only on real controls): the names that are not buttons read as text. The friends of the
+   studio and a street's other clients as one line with dots, the crew's names plain under their faces */
+.friends { gap: 4px 0; }
+.fpill { padding: 0; border: 0; border-radius: 0; background: none; font-weight: 700; }
+.fpill:not(:last-child)::after { content: "·"; margin: 0 .55em; font-weight: 400; color: var(--muted); }
+.cr-name { padding: 4px 0 0; border: 0; border-radius: 0; background: none; margin-top: 4px; }

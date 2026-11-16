@@ -222,6 +222,7 @@ figcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:6
 .pill-title.is-dropped .pill:first-child{animation-duration:.45s!important}.pill-title.is-dropped .pill:last-child{animation-duration:.45s!important;animation-delay:.08s!important}
 .device{transition-duration:.2s!important}.proj .frame{transition-duration:.2s!important}.sb-l{transition-duration:.4s!important;transition-delay:0s!important}
 @media (max-width:760px){.client-row a.pill,.client-row .pill{position:relative}.client-row .pill::after{content:"";position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}} /* r480b (Daniel via Tudor): the discipline chips keep their 35 px look, 44 px to tap */
+.deliverables{gap:2px 0}.deliverables li{padding:0;border:0;border-radius:0;background:none}.deliverables li:not(:last-child)::after{content:"·";margin:0 .5em;font-weight:400} /* r480b (UI 3): the deliverables are a line of text, not pills */
 .deliverables{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .deliverables li{padding:5px 16px 7px;border:var(--line);border-radius:999px;background:var(--white);font-size:var(--fs-ui);line-height:var(--lh-ui);font-weight:700}
 .chapter-media{padding:var(--media-pad);display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(28px,3vw,48px);--stack-gap:clamp(28px,3vw,48px);align-content:start;min-width:0}
