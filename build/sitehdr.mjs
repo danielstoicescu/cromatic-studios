@@ -53,6 +53,7 @@ html:not(.embed) .page,html:not(.embed) main.sc{padding-top:8px!important}
 html.cb-up .hdr{transform:translateY(calc(-100% - 2px));visibility:hidden;transition:transform .18s cubic-bezier(.4,0,1,1),visibility 0s .18s}
 .hdr{transition:transform .18s cubic-bezier(.2,.7,.2,1),visibility 0s}.hdr:focus-within{transform:none!important;visibility:visible!important}
 html.embed .hdr,html.embed .czc,html.embed .skip{display:none!important}
+:focus-visible{outline:3px solid #0d0c09!important;outline-offset:3px!important;border-radius:4px}.czp :focus-visible{outline-color:#FED012!important} /* r480c: one focus ring, as on the home */
 @media (prefers-reduced-motion:reduce){.hdr{transition:none!important}}</style>`;
   // hide on the way down, back on the way up (as the old case bar did); the phone menu opens and closes
   const js = `<script>(function(){var h=document.documentElement;if(h.classList.contains("embed"))return;var y=scrollY,q=0;function f(){q=0;var n=scrollY,d=n-y;var m=document.getElementById("mnav");if(m&&m.classList.contains("open"))return;if(n<90){h.classList.remove("cb-up");y=n;return}if(Math.abs(d)>8){h.classList.toggle("cb-up",d>0);y=n}}addEventListener("scroll",function(){if(!q)q=requestAnimationFrame(f)},{passive:true});var b=document.querySelector(".hdr .menu-btn"),m=document.getElementById("mnav");if(b&&m)b.addEventListener("click",function(){var o=m.classList.toggle("open");b.setAttribute("aria-expanded",o?"true":"false")})})();</script>`;

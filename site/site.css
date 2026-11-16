@@ -2284,3 +2284,8 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
 /* r480c (Tudor: the team photo grid kept a hole on phones): the three-column grid closes square at every width */
 .photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) { grid-column: span 2; }
 .photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) img { aspect-ratio: 8 / 5; }
+
+/* r480c (Tudor: three kinds of focus ring): one ring for every control, 3 px ink with a 3 px gap; yellow where the
+   ground is dark (the boarding pass, the city band) */
+:focus-visible { outline: 3px solid #0d0c09 !important; outline-offset: 3px !important; }
+.czp :focus-visible, .hc-card :focus-visible, .hc-card:focus-visible { outline-color: #FED012 !important; }
