@@ -2280,3 +2280,7 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
 /* r480c (Tudor S5: the home's hero text at x 48): on a desktop the first fold sits on the one container (x 80 at
    1440), the TV wall inside it */
 @media (min-width: 901px) { html .pwall.pw-first.f5 { padding-inline: max(var(--gx), calc((100% - var(--wrap)) / 2)); } }
+
+/* r480c (Tudor: the team photo grid kept a hole on phones): the three-column grid closes square at every width */
+.photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) { grid-column: span 2; }
+.photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) img { aspect-ratio: 8 / 5; }
