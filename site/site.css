@@ -1946,15 +1946,17 @@ html:not(.m-sky) .pwall.f5c.formed .pw-k { animation: k-hit .5s cubic-bezier(.2,
    under the screen's middle (50svh less the title, the gap and half the heart); a short scroll lays it in, centred on the
    screen with the title still above it (site.js also never lets it finish later than the title's top reaching the top). */
 @media (max-width: 900px) {
-  html:not(.m-sky) .pwall.pw-first.f5c { grid-template-areas: "h" "c" "w" "s"; padding-top: clamp(28px, 6.4svh, 68px); padding-bottom: clamp(44px, 7svh, 72px); }
+  html:not(.m-sky) .pwall.pw-first.f5c { grid-template-areas: "h" "s" "d" "w" "k"; padding-top: clamp(28px, 6.4svh, 68px); padding-bottom: clamp(44px, 7svh, 72px); }
   html:not(.m-sky) .f5c .pw-h { font-size: min(12.75vw, 7.5svh); line-height: 1; } /* r472: 1.25x */
   html:not(.m-sky) .f5c .f5-wall { margin-top: clamp(18px, 3svh, 28px); }
   html:not(.m-sky) .f5c .f5-say { margin-top: clamp(22px, 4svh, 36px); }
-  /* r480 (Daniel 10 Nov: "se adaugă un buton de contact care duce la boarding pass"): the contact door sits right under
-     the title, so it is in the first screen; the heart follows it (still just under the title, r461), the offer after */
-  html:not(.m-sky) .f5c .f5-say { display: contents; }
-  html:not(.m-sky) .f5c .pw-cta { grid-area: c; margin: clamp(14px, 2.4svh, 22px) 0 0; justify-self: center; }
-  html:not(.m-sky) .f5c .pw-offer { grid-area: s; margin-top: clamp(22px, 4svh, 36px); }
+  /* r480 (Daniel 10 Nov: "se adaugă un buton de contact care duce la boarding pass"); r480b (Tudor: the subline left the
+     fold): on a phone the first screen reads title, the offer line, the contact door, then the heart forms under them
+     (r461: still right under the words); the city link waits under the heart */
+  html:not(.m-sky) .f5c .f5-say, html:not(.m-sky) .f5c .pw-cta { display: contents; }
+  html:not(.m-sky) .f5c .pw-offer { grid-area: s; margin-top: clamp(10px, 1.8svh, 16px); }
+  html:not(.m-sky) .f5c .pw-dream { grid-area: d; justify-self: center; margin-top: clamp(12px, 2svh, 18px); }
+  html:not(.m-sky) .f5c .pw-city { grid-area: k; justify-self: center; margin-top: 14px; min-height: 44px; }
 }
 @media (max-width: 700px) {
   html:not(.m-sky) .pwall.pw-first.f5c { padding-top: max(20px, calc(50svh - 138px - min(173px, 22.3svh))); }
