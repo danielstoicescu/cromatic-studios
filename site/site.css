@@ -2269,3 +2269,10 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
    (the card is drawn at 96 percent, so the button is drawn at 46) */
 .dom-more { display: inline-flex; align-items: center; min-height: 44px; }
 @media (max-width: 760px) { .sb-pp, html:not(.m-sky) .sb-pp { width: 46px; height: 46px; } }
+
+/* r480c (Tudor S4: OMA and Witanalytica collages 1.45 s, the Two Minutes title 0.85 s): the collage pieces settle in
+   0.45 s as each arrives, and a long title's words arrive within 0.6 s */
+@media (prefers-reduced-motion: no-preference) {
+  .cv-el, .cv-el.k-img { transition-duration: .3s, .45s; }
+  .js .c2-title .w { animation-duration: .4s; animation-delay: calc(min(var(--k), 5) * 30ms); }
+}

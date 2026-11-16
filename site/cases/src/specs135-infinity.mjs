@@ -284,6 +284,8 @@ const CSS = `
   .ic-zoom img{scale:1.06}
   .ic-card{transition:none}
 }
+
+  @media (prefers-reduced-motion:no-preference){[data-ic].is-on,[data-ic].is-on *{transition-duration:.45s!important;transition-delay:0s!important}[data-ic].is-on .ic-ring-art,.ic-stage.is-on .ic-ring-art{animation:ic-draw .6s cubic-bezier(.55,.05,.25,1) 0s both,ic-spin 140s linear .6s infinite!important}} /* r480c (Tudor S4): every entrance done by about 0.6 s */
 `;
 
 // ---------------------------------------------------------------- script: reveal on view, scroll-linked depth
