@@ -2175,3 +2175,10 @@ html:not(.m-sky) .sb-copy { top: calc((100% - 80px) / 2); bottom: auto; translat
 html:not(.m-sky) .sb-name { color: var(--ink); text-shadow: none; line-height: 1.08; }
 html:not(.m-sky) .sb-plate { background: var(--paper); padding: .02em .2em .06em; border-radius: .1em; -webkit-box-decoration-break: clone; box-decoration-break: clone; box-shadow: 0 2px 0 rgba(13,12,9,.9); }
 
+/* r480 (Nov audit: 66 of 145 targets under 44 px at 412): every link that stands on its own is 44 px tall on a phone,
+   by its box, not by bigger type; links inside running text stay as they are */
+@media (max-width: 760px) {
+  .hc-classic, .pw-city, .sh-more, .hdr .lang-sw, .ftr-dir, .c-txt a { display: inline-flex; align-items: center; min-height: 44px; }
+  .streets-nav a, .zd-list a.zd { min-height: 44px; }
+  .ftr a:not(.btn):not(.ftr-dir) { display: inline-flex; align-items: center; min-height: 44px; }
+}

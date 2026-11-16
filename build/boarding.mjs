@@ -200,8 +200,9 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-end,.czp-to{grid-template-columns:auto}.czp-to small,.czp-to em,.czp-to b{grid-area:auto}
 .czp-end b{font-size:30px}.czp-end em{font-size:11.5px}
 .czp-q{margin-bottom:12px}
-.czp-chip{min-height:40px;padding:10px 13px}
+.czp-chip{min-height:44px;padding:11px 13px}
 .czp-ta label{white-space:normal;line-height:1.25}
+.czp-intro a{display:inline-flex;align-items:center;min-height:44px}
 .czp-stub{border-radius:0 0 22px 22px;border-left:2px solid var(--ink);border-top:2px dashed rgba(13,12,9,.45);display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px 16px;padding:16px 16px 18px;background:var(--pap);-webkit-mask:radial-gradient(circle 13px at 0 0,#0000 12.5px,#000 13px) left/51% 100% no-repeat,radial-gradient(circle 13px at 100% 0,#0000 12.5px,#000 13px) right/51% 100% no-repeat;mask:radial-gradient(circle 13px at 0 0,#0000 12.5px,#000 13px) left/51% 100% no-repeat,radial-gradient(circle 13px at 100% 0,#0000 12.5px,#000 13px) right/51% 100% no-repeat}
 .czp-leg{display:none}
 .czp-sks{grid-template-columns:auto auto auto;gap:0 14px;justify-content:start}.czp-skb{grid-column:auto}
