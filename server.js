@@ -491,7 +491,7 @@ function serveBeta(req, res) {
 // test pages, author archives and the feed are gone for good (410).
 const PRIMARY_HOST = process.env.PRIMARY_HOST ?? "cromaticstudios.com";
 const OLD = {
-  "/proiecte/": "/ro/proiecte/", "/servicii/": "/ro/#services", "/contact/": "/ro/#contact", "/avi-garden/": "/ro/#work", "/proiecte/7-oale/": "/ro/#work",
+  "/proiecte/": "/ro/proiecte/", "/servicii/": "/ro/#services", "/contact/": "/#contact", "/ro/contact/": "/ro/#contact", "/avi-garden/": "/ro/#work", "/proiecte/7-oale/": "/ro/#work",
   "/proiecte/help4brain/": "/ro/proiecte/help-4-brain/", "/proiecte/sip/": "/ro/proiecte/sip-coffee-wine/",
   // r138a (Daniel): the old Slow Coffee page (written in English) and its short address go to the rebuilt English page
   "/proiecte/slow-coffee-festival-history/": "/work/slow-coffee-festival/", "/scf/": "/work/slow-coffee-festival/",
@@ -499,6 +499,8 @@ const OLD = {
   "/proiecte/yoshy-izakaya/": "/ro/proiecte/yoshi-izakaya/", "/proiecte/arca/": "/ro/proiecte/arca-resort/",
   // r139c (N46): the Witanalytica page's address now spells the brand
   "/work/witanalitica/": "/work/witanalytica/", "/ro/proiecte/witanalitica/": "/ro/proiecte/witanalytica/",
+  // r480 (Nov audit): /contact/ keeps the language it is asked in: English to the English contact, /ro/contact/ to the
+  // Romanian one (it sent everyone to /ro/#contact)
   // r480 (Nov audit; Daniel 10 Nov: "/services/ redirect"): the folders above the service and industry pages answer:
   // services go to the home's services, industries to the work hub, street by street
   "/services/": "/#services", "/ro/servicii/": "/ro/#services", "/industries/": "/work/", "/ro/industrii/": "/ro/proiecte/"
