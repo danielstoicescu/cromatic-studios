@@ -2296,3 +2296,10 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
 :focus-visible { outline: 3px solid #0d0c09 !important; outline-offset: 3px !important; box-shadow: 0 0 0 3px #FED012 !important; }
 .czp :focus-visible, .hc-card :focus-visible, .hc-card:focus-visible { outline-color: #0d0c09 !important; }
 .czp input:focus-visible, .czp textarea:focus-visible, .czp select:focus-visible { box-shadow: none !important; }
+
+/* r480d (Tudor round 4: the two-column photo at the end was a 400 px file, soft): the wide cell goes to the one wide
+   photo with a large file ("lolz", 1200 px), moved to the end; the last small photo takes its single cell */
+.photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) { grid-column: auto; }
+.photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) img { aspect-ratio: 4 / 5; }
+.photos:not(.studio .photos) > figure:nth-child(6):nth-last-child(3) { order: 1; grid-column: span 2; }
+.photos:not(.studio .photos) > figure:nth-child(6):nth-last-child(3) img { aspect-ratio: 8 / 5; }
