@@ -790,7 +790,7 @@ document.querySelectorAll('[data-lines]').forEach(el=>{
     const words=[...el.querySelectorAll('.w')];
     const lines=[];let top=null;
     words.forEach(w=>{const t=Math.round(w.offsetTop);if(top===null||t!==top){lines.push([]);top=t;}lines[lines.length-1].push(w.textContent);});
-    el.innerHTML=lines.map((l,i)=>`<span class="line" style="--i:${i}"><span>${l.join(' ')}</span></span>`).join('');
+    el.innerHTML=lines.map((l,i)=>`<span class="line" style="--i:${i}"><span>${l.join(' ')}</span></span>`).join(' '); /* r480b: a space between the lines, so a screen reader does not join their words */
     const holder=el.closest('blockquote')||el;
     holder.style.setProperty('--lines',lines.length);
   };
