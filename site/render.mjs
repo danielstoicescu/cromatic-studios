@@ -40,7 +40,8 @@ export function makeRender({ SITE, A, cssHref, jsHref, fonts, kz, heroCity = nul
   const vid = (name, poster, cls = "") => {
     const a = name.startsWith("/") ? { src: name } : A(name); // a path: the film's own file, for a card whose deck cut is too small
     if (!a) return "";
-    const p = poster && A(poster);
+    const VP = { boxesvideo_default: "m:two-minutes/boxes-poster", labBox: "m:two-minutes/lab-poster" }; // r480b (Tudor, UI 10): stills for the films that had none
+    const p = (poster || VP[name]) && A(poster || VP[name]);
     // played only while on screen (site.js); nothing downloads before that
     return `<video class="lv ${cls}" data-src="${a.src}"${p ? ` poster="${p.src}"` : ""} muted loop playsinline preload="none" aria-hidden="true"></video>`;
   };

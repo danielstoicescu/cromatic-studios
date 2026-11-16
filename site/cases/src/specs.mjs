@@ -364,7 +364,7 @@ export const PAGES = [
         text: "An e-shop in French, built to sell the collection in its new market: perfumes, lifestyle and the story of the house.",
         deliverables: ["E-commerce website", "UI design", "Web development"],
         media: [
-          { site: { label: "routineparis.com", href: "https://routineparis.com/", d: { video: cs("2025/06/homepage-scroll.webm"), r: 1.886, alt: "Scrolling through the Routine Paris homepage" }, m: { img: cs("2025/06/Routine-Paris-mobil-1.jpg"), r: 0.528, alt: "The Routine Paris shop on a phone" } }, head: ["The", "e-shop"], cap: "The shop, in French, on desktop and phone." },
+          { site: { label: "routineparis.com", href: "https://routineparis.com/", d: { video: cs("2025/06/homepage-scroll.webm"), poster: cs("2025/06/homepage-scroll-poster.jpg"), r: 1.886, alt: "Scrolling through the Routine Paris homepage" }, m: { img: cs("2025/06/Routine-Paris-mobil-1.jpg"), r: 0.528, alt: "The Routine Paris shop on a phone" } }, head: ["The", "e-shop"], cap: "The shop, in French, on desktop and phone." },
           { row: [{ img: cs("2025/06/Routine-Paris-mobil-2.jpg"), alt: "The Parfums page on a phone" }, { img: cs("2025/06/Routine-Paris-mobil-3.jpg"), alt: "The Style de vie page on a phone" }, { img: cs("2025/06/web.jpg"), alt: "The Routine Paris shop on a laptop", full: true }] }
         ]
       }
@@ -534,10 +534,10 @@ export const PAGES = [
             { img: cs("2025/07/Create-watchlist-popup-–-1-1.jpg"), alt: "Creating a watchlist" }
           ], cap: "The desktop platform: markets, orders, portfolios and watchlists on one screen" },
           { row: [
-            { video: cs("2025/07/lists.mp4"), r: 0.46, alt: "Browsing market lists in the app" },
+            { video: cs("2025/07/lists.mp4"), poster: cs("2025/07/lists-poster.jpg"), r: 0.46, alt: "Browsing market lists in the app" },
             { img: cs("2025/07/lista-2.jpg"), alt: "Company details with buy and sell" },
             { img: cs("2025/07/order-2.jpg"), alt: "Order history in green" },
-            { video: cs("2025/07/Charts.mp4"), r: 0.463, alt: "Portfolio charts in the app" }
+            { video: cs("2025/07/Charts.mp4"), poster: cs("2025/07/Charts-poster.jpg"), r: 0.463, alt: "Portfolio charts in the app" }
           ], cap: "The native app: lists, company details, orders and charts" },
           { btn: { href: "https://cromaticstudios.com/wp-content/uploads/2025/09/UI_UX-Case-studies-Cromatic.pdf", label: "Read the full UI/UX case study (PDF)" } }
         ]
@@ -621,7 +621,7 @@ export const PAGES = [
         "Bepco, from Brașov, is <strong>the first pilot project and private urban investment in high-efficiency cogeneration</strong> in Romania, bringing the city modern, cleaner energy solutions since 2010.",
         "A growing company, it needed a <strong>transformation</strong>: a new visual identity for a <strong>clearer and stronger vision</strong>."
       ],
-      media: [{ row: [v("2025/06/Bepco_A.webm", 1, { alt: "Bepco brand animation with chevrons around a hexagon" }), v("2025/06/Bepco_B.webm", 1, { alt: "Bepco brand animation with a field of hexagons" }), v("2025/06/bepco_c-1.mp4", 1, { alt: "Bepco brand animation with three cubes" })], cap: "The hexagon, in motion." }],
+      media: [{ row: [v("2025/06/Bepco_A.webm", 1, { alt: "Bepco brand animation with chevrons around a hexagon" }), v("2025/06/Bepco_B.webm", 1, { alt: "Bepco brand animation with a field of hexagons" }), v("2025/06/bepco_c-1.mp4", 1, { poster: cs("2025/06/bepco_c-1-poster.jpg"), alt: "Bepco brand animation with three cubes" })], cap: "The hexagon, in motion." }],
       quote: { text: "Our mission is to build, together, a more efficient and safer energy future for people.", cite: "Bepco, on its website" }
     },
     solution: {
