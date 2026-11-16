@@ -89,6 +89,7 @@ ${streets.map(street).join("\n")}
 <p class="mm-pd"></p>
 </aside>
 </div>
+<p class="mm-all"><a href="/work/">All the work <span aria-hidden="true">→</span></a></p>
 <div class="mm-empty" hidden><p class="mm-e1">Nothing for that yet.</p><p class="mm-e2">Try a client, a field or a street.</p><button type="button" class="mm-reset">Show all the work</button></div>
 </div>
 </div>

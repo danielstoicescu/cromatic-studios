@@ -348,9 +348,16 @@ writeFileSync(join(pub, "robots.txt"), robotsTxt(SITE_URL));
 writeFileSync(join(pub, "site.webmanifest"), manifest());
 for (const f of ["icon.svg", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "favicon-spin.png", "cup-spin.png"]) copyFileSync(src(f), join(pub, f));
 writeFileSync(join(pub, "favicon.ico"), icoFromPng(readFileSync(src("favicon-32.png"))));
-writeFileSync(join(pub, "404.html"), `${head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n").replace(/<title>[^<]*<\/title>/, "<title>Off the map · Cromatic Studios</title>").replace(/<meta name="robots"[^>]*>/, '<meta name="robots" content="noindex">')}
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d0c09;color:#fbfaf5;font:16px/1.5 Poppins,system-ui,sans-serif;text-align:center}h1{font-size:clamp(32px,6vw,56px);margin:.2em 0}a{display:inline-block;margin:18px 4px 0;padding:12px 22px;border-radius:999px;background:#FED012;color:#0d0c09;font-weight:800;text-decoration:none}a.o{background:none;color:#fbfaf5;box-shadow:inset 0 0 0 2px #fbfaf5}</style>
-</head><body><main><p>404 · OFF THE MAP</p><h1>This road isn't on our map.</h1><p>Turn around, the coffee is still warm.</p><a href="/">Back to the drive</a> <a class="o" href="/site/">The website</a> <a class="o" href="/ro/" lang="ro">Site-ul în română</a></main></body></html>`); // beta 3.46 r215 (Daniel, QA pass): the 404 also leads to the plain website, in English and in Romanian (it only led to the 3D map)
+// r480 (Nov audit, Daniel): the 404's main action leads to the work, not back to the 3D drive; the Romanian side
+// (/ro/...) answers with its own copy (server.js picks /ro/404.html); the house paper, ink and type
+const notFound = (ro) => `${head.split("\n").filter((l) => !l.includes("%%SITE_URL%%")).join("\n").replace(/<title>[^<]*<\/title>/, `<title>${ro ? "Drum greșit" : "Off the map"} · Cromatic Studios</title>`).replace(/<meta name="robots"[^>]*>/, '<meta name="robots" content="noindex">').replace(/<html lang="en"/, ro ? '<html lang="ro"' : '<html lang="en"')}
+<link rel="stylesheet" href="/fonts.css">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fbfaf5;color:#0d0c09;font:18px/1.5 CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}main{max-width:560px}.k{font:500 12px/1.4 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;margin:0}h1{font-size:clamp(36px,7vw,64px);line-height:1;font-weight:800;margin:.3em 0 .25em;letter-spacing:-.01em}p{margin:0 0 8px}.go{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}.go a{display:inline-flex;align-items:center;min-height:48px;padding:0 24px;border-radius:999px;border:2px solid #0d0c09;color:#0d0c09;font-weight:700;text-decoration:none;transition:background-color .15s}.go a.y{background:#FED012;box-shadow:0 2px 0 #0d0c09}.go a:hover{background:#fff}.go a:focus-visible,.c a:focus-visible{outline:3px solid #119BFE;outline-offset:3px}.c{margin-top:22px;font-size:16px}.c a{color:inherit;display:inline-block;padding:12px 4px}</style>
+</head><body><main>${ro
+  ? `<p class="k">404 · în afara hărții</p><h1>Drumul ăsta nu e pe harta noastră.</h1><p>Proiectele sunt însă toate aici.</p><div class="go"><a class="y" href="/ro/proiecte/">Vezi proiectele</a><a href="/ro/">Acasă</a><a href="/ro/#contact">Contact</a></div><p class="c"><a href="/city/">sau condu prin orașul Cromatic</a> · <a href="/" lang="en">English</a></p>`
+  : `<p class="k">404 · off the map</p><h1>This road isn't on our map.</h1><p>The work is all still here, though.</p><div class="go"><a class="y" href="/work/">See the work</a><a href="/">Home</a><a href="/#contact">Contact</a></div><p class="c"><a href="/city/">or drive in the Cromatic City</a> · <a href="/ro/" lang="ro">Română</a></p>`}</main></body></html>`;
+writeFileSync(join(pub, "404.html"), notFound(false));
+mkdirSync(join(pub, "ro"), { recursive: true }); writeFileSync(join(pub, "ro", "404.html"), notFound(true));
 // ---- the lo-fi website: /site/ and /work/<slug>/ ----
 const dims = (buf) => {
   if (buf[0] === 0x89 && buf[1] === 0x50) return [buf.readUInt32BE(16), buf.readUInt32BE(20)];
@@ -850,6 +857,7 @@ page("site", R.home(COVERS));
 // r131: industry hubs (the map's streets), service pages and the team
 for (const sl of R.industrySlugs) page(`industries/${sl}`, R.industryPage(sl, COVERS));
 for (const sl of R.serviceSlugs) page(`services/${sl}`, R.servicePage(sl, COVERS));
+page("work", R.workPage(COVERS)); // r480: the /work/ hub (and /ro/proiecte/)
 page("team", R.teamPage());
 // r136: the privacy policy (EN here, RO through the dictionary)
 page("privacy", R.privacyPage());
@@ -860,7 +868,7 @@ try {
   for (const p of Object.keys(PAGES)) { const f = join(pub, p, "index.html"); try { const t = readFileSync(f, "utf8"), o = MM.inject(t); if (o !== t) writeFileSync(f, o); } catch {} }
   console.log(`[megamenu] ${MM.count()} pages, ${MM.total} places, ${(MM.bytes / 1024).toFixed(1)} KB of markup each`);
 } catch (e) { console.warn("[build] megamenu skipped:", e.message); }
-const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/", "/privacy/"];
+const hubPaths = [...R.industrySlugs.map((x) => `/industries/${x}/`), ...R.serviceSlugs.map((x) => `/services/${x}/`), "/team/", "/privacy/", "/work/"];
 const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "steam"])].map((s) => `/work/${s}/`).sort();
 // r133: the Romanian website, from the English pages and site/i18n/ro.json
 const roPaths = [];

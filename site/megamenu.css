@@ -178,3 +178,9 @@ html.mm-lock { overflow: hidden; }
   .mm-in { opacity: 1; }
 }
 .mm.filtering .mm-grid .mm-i { color: var(--ink); }
+
+/* r480 (Daniel 10 Nov): "All the work" at the base of the menu, to the /work/ hub */
+.mm-all { margin: 26px 0 0; }
+.mm-all a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+.mm-all a:hover { text-decoration-color: var(--yellow); }
+.mm.none .mm-all { display: none; }

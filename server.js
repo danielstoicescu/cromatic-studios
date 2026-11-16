@@ -337,7 +337,7 @@ function serve(req, res) {
   // r135f: files from the old WordPress media library (offers, brand hubs as .html, and what they use) are read on
   // request from the WordPress folder still on this server; never loaded at start, never crashing the site
   if (!f && path.startsWith("/wp-content/uploads/")) { try { if (oldWp(req, res, path)) return; } catch (e) { console.error("[old-wp]", e.message); } }
-  if (!f) { f = files.get("/404.html"); status = 404; }
+  if (!f) { f = (path.startsWith("/ro/") && files.get("/ro/404.html")) || files.get("/404.html"); status = 404; } // r480: the Romanian 404 for /ro/...
   if (!f) { res.writeHead(404, { "Content-Type": "text/plain" }); return res.end("Not found"); }
   const headers = {
     "Content-Type": f.type,
@@ -491,14 +491,17 @@ function serveBeta(req, res) {
 // test pages, author archives and the feed are gone for good (410).
 const PRIMARY_HOST = process.env.PRIMARY_HOST ?? "cromaticstudios.com";
 const OLD = {
-  "/proiecte/": "/ro/#work", "/servicii/": "/ro/#services", "/contact/": "/ro/#contact", "/avi-garden/": "/ro/#work", "/proiecte/7-oale/": "/ro/#work",
+  "/proiecte/": "/ro/proiecte/", "/servicii/": "/ro/#services", "/contact/": "/ro/#contact", "/avi-garden/": "/ro/#work", "/proiecte/7-oale/": "/ro/#work",
   "/proiecte/help4brain/": "/ro/proiecte/help-4-brain/", "/proiecte/sip/": "/ro/proiecte/sip-coffee-wine/",
   // r138a (Daniel): the old Slow Coffee page (written in English) and its short address go to the rebuilt English page
   "/proiecte/slow-coffee-festival-history/": "/work/slow-coffee-festival/", "/scf/": "/work/slow-coffee-festival/",
   "/proiecte/slow/": "/ro/proiecte/slow-coffee-festival/",
   "/proiecte/yoshy-izakaya/": "/ro/proiecte/yoshi-izakaya/", "/proiecte/arca/": "/ro/proiecte/arca-resort/",
   // r139c (N46): the Witanalytica page's address now spells the brand
-  "/work/witanalitica/": "/work/witanalytica/", "/ro/proiecte/witanalitica/": "/ro/proiecte/witanalytica/"
+  "/work/witanalitica/": "/work/witanalytica/", "/ro/proiecte/witanalitica/": "/ro/proiecte/witanalytica/",
+  // r480 (Nov audit; Daniel 10 Nov: "/services/ redirect"): the folders above the service and industry pages answer:
+  // services go to the home's services, industries to the work hub, street by street
+  "/services/": "/#services", "/ro/servicii/": "/ro/#services", "/industries/": "/work/", "/ro/industrii/": "/ro/proiecte/"
 };
 // r356 (Daniel, 28 Oct: "Poți face mutarea direct pe live"): the website is the home page, the 3D map lives at /city/.
 // /site/ goes home for good; an old deep link into the map (a parameter the map reads, or a campaign link from the

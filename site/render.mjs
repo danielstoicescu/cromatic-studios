@@ -786,6 +786,46 @@ ${header(false)}
 ${footer}`;
   }
 
+  // r480 (Daniel, 10 Nov: "/work/ = hub simplu: cele 4 străzi + pass, fără filtre"): every case, street by street, as on
+  // the home page but without the street clips (a light page), then the way to the boarding pass
+  function workPage(covers = {}) {
+    const path = "/work/", title = "Work · Cromatic Studios";
+    const desc = "Every Cromatic Studios case, street by street: specialty coffee and food, banks and fintech, clinics and pharma, print and stickers.";
+    const all = [];
+    const streets = Object.entries(STREETS).map(([k, [street, col]]) => {
+      const list = streetList(k, covers);
+      if (!list.length) return "";
+      list.filter((p) => p.page).forEach((p) => all.push(p.page));
+      const ind = industryOf(k), info = STREET_INFO[k] || { t: "", lead: "" };
+      return `<div class="dom dom-street wk-street" id="street-${k.toLowerCase()}" style="--dc:${col};--dt:${STREET_INK[k] || "#fff"}">
+      <div class="street-head">
+        <div class="sh-main">
+          <h2 class="sh-title"><span class="street-sign"><span class="ss-name">${esc(street)}</span></span> <span class="sh-sub">${esc(info.t)}</span></h2>
+          <p class="sh-lead">${esc(info.lead)}</p>
+          ${ind ? `<a class="sh-more" href="/industries/${ind.slug}/" aria-label="${esc(info.t)}: the whole street"><span>The whole street</span> <i aria-hidden="true">→</i></a>` : ""}
+        </div>
+      </div>
+      ${bentoGrid(list, covers)}
+      ${k === "C" ? zdRow() : ""}
+    </div>`;
+    }).join("");
+    const ld = hubLd(path, title, desc, [["Work", path]], [listLd(path, all, "Cromatic Studios: case studies")]);
+    return `${head({ title, desc, path, ld })}
+${header(false)}
+<main id="main" class="case hub wk" style="--bc:#FED012;--bt:#111">
+  <section class="c-hero c2-hero hub-hero">
+    <div class="wrap">
+      <p class="eyebrow mono">The work</p>
+      <h1 class="c2-title">${esc("Four streets, one city.").split(" ").map((w, k) => `<span class="w" style="--k:${k}">${w}</span>`).join(" ")}</h1>
+      <p class="lead hub-lead">Every brand we have built, on the street of its trade. Pick one and walk in.</p>
+      <p class="wk-jump mono">${Object.entries(STREETS).map(([k, [street]]) => `<a href="#street-${k.toLowerCase()}">${esc(street)}</a>`).join(" ")}</p>
+    </div></section>
+  <section class="sec wk-streets" id="work"><div class="wrap">${streets}</div></section>
+  ${hubEnd}
+</main>
+${footer}`;
+  }
+
   function servicePage(slug, covers = {}) {
     const d = SERVICE_PAGES.find((x) => x.slug === slug);
     const col = ({ "The Dream": "#28C840", "The Voice": "#B098C8", "The World": "#119BFE", "The Crowd": "#F65342" })[d.chapter] || "#FED012";
@@ -1026,5 +1066,5 @@ ${footer}`;
 <script>${L.assets?.js || ""}</script>
 </body></html>`;
   }
-  return { workStreets, home, casePage, canvasPage, industryPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
+  return { workStreets, home, casePage, canvasPage, industryPage, workPage, servicePage, teamPage, privacyPage, landingPage, industrySlugs: INDUSTRIES.map((x) => x.slug), serviceSlugs: SERVICE_PAGES.map((x) => x.slug), slugs: Object.keys(CASES), canvasSlugs: Object.keys(CANVASES).filter((k) => canvases[k]) };
 }
