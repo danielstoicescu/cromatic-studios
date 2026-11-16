@@ -2235,3 +2235,8 @@ html.js .wk .bento .bcard { transition-delay: 0s; }
 .fpill { padding: 0; border: 0; border-radius: 0; background: none; font-weight: 700; }
 .fpill:not(:last-child)::after { content: "·"; margin: 0 .55em; font-weight: 400; color: var(--muted); }
 .cr-name { padding: 4px 0 0; border: 0; border-radius: 0; background: none; margin-top: 4px; }
+
+/* r480b (Tudor S11): the header's text links get the same visible focus as every other stop (it was a 1 px blue ring,
+   2.8:1 on paper); a street's name plate stays solid all the way out of the screen (it faded leaving the top) */
+.nav a:focus-visible, .mnav a:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+html:not(.m-sky) .sb-copy { opacity: 1; }

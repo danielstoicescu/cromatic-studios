@@ -51,7 +51,8 @@ body.map-mode #cz-ck{bottom:auto;top:calc(186px + env(safe-area-inset-top));tran
 @media (max-width:600px){#cz-ck{left:0;right:0;bottom:0;grid-template-columns:1fr auto;grid-template-areas:"t row" "p row";column-gap:12px;padding:10px 12px calc(10px + env(safe-area-inset-bottom)) 16px;border-radius:16px 16px 0 0;border-width:2px 0 0;box-shadow:0 -6px 20px rgba(13,12,9,.14)}#cz-ck b{font-size:14.5px}#cz-ck p{font-size:12px;line-height:1.28}#cz-ck .ck-row{gap:5px}#cz-ck button{padding:7px 12px;font-size:13px}body.map-mode #cz-ck{bottom:auto;top:calc(186px + env(safe-area-inset-top));left:10px;right:10px;border-radius:18px;border-width:2px}}
 html.embed #cz-ck,body.map-boarding #cz-ck,body.modal-open #cz-ck,body.scf-open #cz-ck{display:none}
 html.embed #cz-ck.ck-ask{display:flex}
-#cz-ck button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}`;
+#cz-ck button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+html:has(.czp :focus) #cz-ck:not(.ck-ask){visibility:hidden}`;
   const js = `(function(){var ID=${JSON.stringify(GA_ID)},GTM=${JSON.stringify(GTM_ID)},K="cz-consent",OAI=${JSON.stringify(OAI_PIXEL)};
 var ONB=/[?&]onb(&|$)/.test(location.search);/* r140: the city inside /onboarding/ counts nothing, asks nothing */
 var EMB=ONB||/[?&]embed=1/.test(location.search)||document.documentElement.classList.contains("embed");
