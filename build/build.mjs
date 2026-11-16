@@ -1117,7 +1117,7 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
   // under the logo everywhere again, live included, so it is clear which version we are looking at
   if (/\.html$/.test(f) && BUILD_LABEL && n2.includes("</head>")) {
     if (!n2.includes('name="cz-build"')) n2 = n2.replace("</head>", `<meta name="cz-build" content="${BUILD_LABEL}">\n</head>`);
-    if (!n2.includes('id="cz-bl"')) n2 = n2.replace("</head>", `<!-- build: ${BUILD_LABEL} -->\n<style id="cz-bl">.brand{position:relative}.cz-build{display:block;position:absolute;right:0;left:auto;text-align:right;top:calc(50% + 15px);margin-top:0;font:500 12px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;opacity:.64;color:currentColor;white-space:nowrap;pointer-events:none;mix-blend-mode:normal}</style>\n</head>`);
+    if (!n2.includes('id="cz-bl"')) n2 = n2.replace("</head>", `<!-- build: ${BUILD_LABEL} -->\n<style id="cz-bl">.brand{position:relative}.hdr .brand .cz-build{top:calc(50% + 15px);margin-top:0}.cz-build{display:block;position:absolute;right:0;left:auto;text-align:right;top:100%;margin-top:3px;font:500 12px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;opacity:.64;color:currentColor;white-space:nowrap;pointer-events:none;mix-blend-mode:normal}</style>\n</head>`);
     if (!n2.includes('class="cz-build"')) n2 = n2.replace(/(<a class="brand" href="\/(?:site\/|ro\/(?:site\/)?)"[^>]*>[\s\S]*?)(<\/a>)/, `$1<span class="cz-build" translate="no" aria-hidden="true">${BUILD_LABEL}</span>$2`);
   }
   // long titles lose the studio suffix first in Google (~60 characters show); the brand stays in og:site_name and the schema
