@@ -26313,15 +26313,15 @@ void main() {
         ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = "rgba(0,0,0,.18)"; for (let y = 1; y < h; y += 3) ctx.fillRect(0, y, w, 1); // scanlines
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        if (big) { ctx.font = `900 ${big}px ui-monospace, Menlo, monospace`; ctx.lineWidth = Math.max(2, big / 7); ctx.strokeStyle = "#c6402e";
-        ctx.strokeText("I O N", w / 2, h * 0.58); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", w / 2, h * 0.58); }
+        if (big) { ctx.font = `900 ${big}px ui-monospace, Menlo, monospace`; ctx.fillStyle = "#c6402e"; ctx.fillText("I O N", w / 2 + Math.max(1, big / 14), h * 0.58 + Math.max(1, big / 14)); // r480c: a solid hard shadow, no contour
+        ctx.fillStyle = "#FED012"; ctx.fillText("I O N", w / 2, h * 0.58); }
       };
       // beta 3.44 (Daniel): the game is now "2 MINUTES 2 FIGHT w/ I O N": the cabinet's screen and marquee say so
       // the game's own hand-drawn 2 (a round top, the diagonal, a flat base), one pixel a cell, with its dark edge
       const TWO = ["..###..", ".##.##.", "##...##", "....##.", "..###..", ".##....", "#######"];
       const two = (ctx, x0, y0) => { for (const [col, o] of [["#7a1a10", 1], ["#FED012", 0]]) { ctx.fillStyle = col; TWO.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === "#") ctx.fillRect(x0 + x + o, y0 + y + o, 1, 1); })); } };
-      const word = (ctx, s2, x, y, fill) => { ctx.textAlign = "left"; ctx.lineWidth = 2; ctx.strokeStyle = "#c6402e"; ctx.strokeText(s2, x, y); ctx.fillStyle = fill; ctx.fillText(s2, x, y); };
-      const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 4, 3); word(ctx, "MINUTES", 14, 7, "#f3eefe"); two(ctx, 4, 14); word(ctx, "FIGHT", 14, 18, "#FED012"); ctx.textAlign = "center"; ctx.font = "900 13px ui-monospace, Menlo, monospace"; ctx.strokeText("I O N", 34, 37); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", 34, 37); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", 10, 37); });
+      const word = (ctx, s2, x, y, fill) => { ctx.textAlign = "left"; ctx.fillStyle = "#c6402e"; ctx.fillText(s2, x + 1, y + 1); ctx.fillStyle = fill; /* r480c: solid shadow, no contour */ ctx.fillText(s2, x, y); };
+      const scrTex = paint(64, 48, (ctx) => { title(ctx, 64, 48, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 4, 3); word(ctx, "MINUTES", 14, 7, "#f3eefe"); two(ctx, 4, 14); word(ctx, "FIGHT", 14, 18, "#FED012"); ctx.textAlign = "center"; ctx.font = "900 13px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#c6402e"; ctx.fillText("I O N", 35, 38); ctx.fillStyle = "#FED012"; ctx.fillText("I O N", 34, 37); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", 10, 37); });
       // beta 3.48 r217 (Daniel, QA round 2): the marquee has the whole name too, "w/ I O N" after "2 FIGHT", right-aligned to
       // the measured text (80x26 is also the marquee's own shape, so the letters are no longer stretched)
       const marTex = paint(80, 26, (ctx) => { title(ctx, 80, 26, 0); ctx.font = "900 8px ui-monospace, Menlo, monospace"; two(ctx, 3, 2); word(ctx, "MINUTES", 13, 6, "#f3eefe"); two(ctx, 3, 14); word(ctx, "FIGHT", 13, 18, "#FED012"); const xi = 78 - Math.ceil(ctx.measureText("I O N").width); word(ctx, "I O N", xi, 18, "#FED012"); ctx.font = "700 6px ui-monospace, Menlo, monospace"; ctx.fillStyle = "#f3eefe"; ctx.fillText("w/", xi - 2 - Math.ceil(ctx.measureText("w/").width), 18); });
@@ -28922,7 +28922,7 @@ void main() {
         ctx.clearRect(0, 0, 128, 160);
         ctx.font = "900 150px CromaticSans, CromaticSans, sans-serif";
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.lineWidth = 12; ctx.lineJoin = "round"; ctx.strokeStyle = "rgba(20,24,20,.55)"; ctx.strokeText(ch, 64, 88);
+        ctx.fillStyle = "rgba(20,24,20,.55)"; ctx.fillText(ch, 70, 95); // r480c: a solid shadow under the letter, no contour
         ctx.fillStyle = "#ffffff"; ctx.fillText(ch, 64, 88);
       });
       const lm = new MeshBasicMaterial({ map: tex, transparent: true, side: DoubleSide, alphaTest: 0.2 });
@@ -33084,7 +33084,7 @@ void main(){
     for (const [c, tl] of [[0.5, 0.3], [-0.5, 0.62]]) { const st = new Mesh(new SphereGeometry(4.68, 4, 12, Math.PI * (c - 0.035), Math.PI * 0.07, 0, Math.PI * tl), red); st.position.copy(helmet.position); st.scale.copy(helmet.scale); g.add(st); } // front half to the visor's top, back half down the nape
     // r201 (Daniel): a subtle 14: white on the red nose (read from behind the car), dark on the white engine cover's flanks
     {
-      const num = (ink, edge) => canvasTexture(128, 96, (ctx) => { ctx.font = "italic 900 84px system-ui, -apple-system, Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round"; ctx.lineWidth = 8; ctx.strokeStyle = edge; ctx.strokeText("14", 64, 52); ctx.fillStyle = ink; ctx.fillText("14", 64, 52); });
+      const num = (ink, edge) => canvasTexture(128, 96, (ctx) => { ctx.font = "italic 900 84px system-ui, -apple-system, Arial, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = edge; ctx.fillText("14", 67, 55); /* r480c: solid shadow, no contour */ ctx.fillStyle = ink; ctx.fillText("14", 64, 52); });
       const decal = (tex) => { const m = new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); m.userData.outlineParameters = { visible: false }; return m; };
       const nose = new PlaneGeometry(5.2, 3.9); nose.rotateX(-Math.PI / 2); nose.rotateY(Math.PI); nose.translate(0, 15.56, 38);
       g.add(new Mesh(nose, decal(num("#ffffff", "rgba(20,20,20,.55)"))));
