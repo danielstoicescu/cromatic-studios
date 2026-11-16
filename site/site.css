@@ -2259,3 +2259,8 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
   .js .c2-reveal .c2-fig img { transition: clip-path .4s var(--eoq), transform .4s var(--eoq); }
   .js .dom-street .street-sign { transition: opacity .3s var(--eoq), transform .4s var(--bounce), rotate .4s var(--bounce); }
 }
+
+/* r480c (Tudor B1: the home's crew names sat 6 px inside their photos): the home crew block had its own pill rules
+   (.studio .crew .cr-name: -14 px margin, padding, shadow); the plain names now win there too */
+.cr-name, .studio .crew .cr-name { margin-top: 8px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.studio .crew li:hover .cr-name { translate: none; rotate: none; }
