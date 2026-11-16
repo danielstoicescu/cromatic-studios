@@ -852,7 +852,7 @@ if(document.documentElement.classList.contains('embed'))document.querySelectorAl
   function paint(p){
     var Wd=st.offsetWidth;
     for(var i=0;i<N;i++){
-      var t=cl((p*1.06-i*.135)/.33),s=fall(t),h=1-s,r=R[i];
+      var t=i?cl((p*1.06-(i-1)*.15)/.3):1,s=fall(t),h=1-s,r=R[i]; /* r480: the first sticker already lies on the table, so the card is never blank */
       var press=t>.86?Math.sin((t-.86)/.14*Math.PI)*.012:0;
       var y=-h*Wd*.86,rot=r+h*(i%2?-16:14),zs=1+h*.16-press;
       stk[i].style.transform='translate(-50%,-50%) translate3d(0,'+y.toFixed(1)+'px,0) rotate('+rot.toFixed(2)+'deg) scale('+zs.toFixed(4)+')';

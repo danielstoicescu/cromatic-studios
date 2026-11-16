@@ -193,10 +193,14 @@ export async function optimizeImages(pub, root, log = console.log) {
     });
     // r139a: a film's poster: its tiny preview inline while the page loads, then the WebP copy for the screen (960 px
     // wide, the 1600 one on a wide or dense screen) once it has loaded; with no preview, the WebP copy straight away
-    next = next.replace(/<video\b([^>]*?)\bposter="(\/assets\/[^"]+\.(?:jpe?g|png))"([^>]*)>/gi, (m, a, src, b) => {
+    // r480 (Nov audit: "Steam's hero opens on a blurry frame"): a film in a case's hero (inside its .hero-media) is the
+    // first thing seen, so its poster is the sharp 960 copy from the start (the large one still follows on a wide screen)
+    const heroAt = next.indexOf('class="hero-media"');
+    next = next.replace(/<video\b([^>]*?)\bposter="(\/assets\/[^"]+\.(?:jpe?g|png))"([^>]*)>/gi, (m, a, src, b, at) => {
       const v = out.get(src);
       if (!v) return m;
       const sm = (v.set.find((x) => x.w >= 960) || v.set[v.set.length - 1]).src, lg = v.set[v.set.length - 1].src;
+      if (heroAt >= 0 && at > heroAt && at - heroAt < 1500) return `<video${a}poster="${sm}"${lg !== sm ? ` data-poster="${sm}" data-poster-lg="${lg}"` : ""}${b}>`;
       return v.lqip ? `<video${a}poster="${v.lqip}" data-poster="${sm}"${lg !== sm ? ` data-poster-lg="${lg}"` : ""}${b}>` : `<video${a}poster="${sm}"${b}>`;
     });
     // r139d: a case page loads in order: the title and its one LCP picture first, the rest after (gatePage)
