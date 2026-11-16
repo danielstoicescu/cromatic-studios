@@ -2264,3 +2264,8 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
    (.studio .crew .cr-name: -14 px margin, padding, shadow); the plain names now win there too */
 .cr-name, .studio .crew .cr-name { margin-top: 8px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .studio .crew li:hover .cr-name { translate: none; rotate: none; }
+
+/* r480c (Tudor S3): "Meet the team" is 44 px to tap; the street clips' pause keeps 44 px even while its card lands
+   (the card is drawn at 96 percent, so the button is drawn at 46) */
+.dom-more { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 760px) { .sb-pp, html:not(.m-sky) .sb-pp { width: 46px; height: 46px; } }
