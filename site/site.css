@@ -2201,6 +2201,12 @@ html:not(.m-sky) .sb-plate { background: var(--paper); padding: .02em .2em .06em
   .js .c2-title .w { animation-duration: .45s; animation-delay: calc(var(--k) * 40ms); }
   .pass { animation-duration: .4s; }
   .pw-h.si .si-w::before, .pw-h.si .si-w::after { animation-duration: .45s; }
+  /* r480b (Tudor: the experiences split still ended at 980 ms): the letters arrive closer together, done by ~0.6 s */
+  .pw-h.si { animation-duration: .45s; }
+  .pw-h.si .si-w::before, .pw-h.si .si-w::after { animation-delay: calc(40ms + var(--i) * 14ms); }
+  html:not(.m-sky) .pw-h.si .si-k::before, html:not(.m-sky) .pw-h.si .si-k::after { animation-delay: calc(140ms + var(--k0) * 12ms + (var(--i) - var(--k0)) * 18ms); }
+  html:not(.m-sky) .pw-h.si .pw-k { animation-duration: .4s; animation-delay: calc(120ms + var(--k0) * 12ms); }
+  html.js:not(.crt-w):not(.m-sky) .pw-h.si .pw-x { animation-duration: .4s, 3.2s; animation-delay: calc(120ms + var(--k0) * 12ms), 1.6s; }
   .rs-boxes i { animation-duration: .6s; }
   .js .stats.in .st-inf b { animation-duration: .6s; animation-delay: 0s; }
 }
