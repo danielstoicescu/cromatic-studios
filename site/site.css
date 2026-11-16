@@ -2289,3 +2289,10 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
    ground is dark (the boarding pass, the city band) */
 :focus-visible { outline: 3px solid #0d0c09 !important; outline-offset: 3px !important; }
 .czp :focus-visible, .hc-card :focus-visible, .hc-card:focus-visible { outline-color: #FED012 !important; }
+
+/* r480d (Tudor round 4: the ink ring vanished on dark grounds, 1.00:1 beside the pass and on The Aesthetic Court; the
+   yellow one was 1.41:1 on the pass's paper): one two-tone ring that reads on any ground: the 3 px gap is filled
+   yellow, the ring around it is ink. On light grounds the ink ring shows, on dark ones the yellow band */
+:focus-visible { outline: 3px solid #0d0c09 !important; outline-offset: 3px !important; box-shadow: 0 0 0 3px #FED012 !important; }
+.czp :focus-visible, .hc-card :focus-visible, .hc-card:focus-visible { outline-color: #0d0c09 !important; }
+.czp input:focus-visible, .czp textarea:focus-visible, .czp select:focus-visible { box-shadow: none !important; }
