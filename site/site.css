@@ -2240,3 +2240,7 @@ html.js .wk .bento .bcard { transition-delay: 0s; }
    2.8:1 on paper); a street's name plate stays solid all the way out of the screen (it faded leaving the top) */
 .nav a:focus-visible, .mnav a:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
 html:not(.m-sky) .sb-copy { opacity: 1; }
+
+/* r480b (Tudor, UI: the team photo grid ended on two photos and a hole): in the three-column grid the last photo
+   takes the two free cells, so the grid closes square */
+@media (min-width: 601px) { .photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) { grid-column: span 2; } .photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) img { aspect-ratio: 8 / 5; } }
