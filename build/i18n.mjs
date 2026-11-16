@@ -194,6 +194,9 @@ html.embed .cs-bar{display:none}
     const other = lang === "ro" ? enPath : ro, label = lang === "ro" ? "EN" : "RO", name = lang === "ro" ? "English" : "Română";
     const sw = `<a class="lang-sw" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}">${label}</a>`;
     if (/<a class="drive-btn[ "]/.test(html)) html = html.replace(/<a class="drive-btn(?=[ "])/, `${sw}<a class="drive-btn`); // r365: the class may carry more (dk-host)
+    // r480 (Daniel 10 Nov: case pages get the site header; on phones the logo and a breadcrumb): a page that had the
+    // "← Cromatic Studios" pill gets the shared case header instead (build/build.mjs caseHeader), language switch inside
+    else if (caseHeader && /<a class="cs-back"[^>]*>[^<]*<\/a>/.test(html)) html = html.replace(/<a class="cs-back"[^>]*>[^<]*<\/a>/, () => caseHeader(html, enPath, lang, other, label, name));
     else html = html.replace(/(<body[^>]*>)/, `$1\n<style>html.embed .lang-fixed{display:none}</style>${/class="cs-back"/.test(html) ? CASE_BAR : ""}<a class="lang-sw lang-fixed" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}" style="position:fixed;right:14px;top:14px;z-index:9999;padding:10px 14px;border-radius:999px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;font:800 14px/1 system-ui,sans-serif;text-decoration:none">${label}</a>`);
     // r387: on the case pages the back link and the language switch sit in a landmark (axe "region")
     html = html.replace(/(<a class="lang-sw lang-fixed"[^>]*>[^<]*<\/a>)((?:\s|<!--[^>]*-->)*)(<a class="cs-back"[^>]*>[^<]*<\/a>)/, `$2<nav class="cs-nav" aria-label="Cromatic Studios">$3$1</nav>`);
@@ -217,5 +220,6 @@ html.embed .cs-bar{display:none}
   // TASK-122: entries made by the build itself (an ads landing's own "ro" fields, build/landings.mjs), added to the
   // dictionary for this run only; a block they do not cover is still listed in ro.missing.json like any other
   function add(entries) { for (const [k, v] of Object.entries(entries)) if (v != null && v !== "") D.set(norm(k), v); }
-  return { translate, alternates, saveMissing, sameAsEnglish, add, keptEnglish: KEEP.size, size: D.size };
+  let caseHeader = null; // r480: set by the build (it knows the logo); (html, enPath, lang, otherPath, otherLabel, otherName) => header HTML
+  return { translate, alternates, saveMissing, sameAsEnglish, add, setCaseHeader: (f) => { caseHeader = f; }, keptEnglish: KEEP.size, size: D.size };
 }

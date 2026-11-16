@@ -812,7 +812,7 @@ const caseSlugs = [];
   try { files = readdirSync(join(root, "site", "cases")).filter((f) => f.endsWith(".html")); } catch {}
   for (const f of files) {
     const slug = f.slice(0, -5);
-    const html = readFileSync(join(root, "site", "cases", f), "utf8")
+    let html = readFileSync(join(root, "site", "cases", f), "utf8")
       .replaceAll("%%SITE_URL%%", SITE_URL)
       .replace(/(["'(])m:([\w-]+\/[\w.-]+)(?=["')])/g, (m, q, k) => {
         const a = mediaMap.get(`m:${k}`);
@@ -820,6 +820,10 @@ const caseSlugs = [];
         return q + (a ? a.src : "");
       })
       .replace(/(<meta property="og:image" content=")\//, `$1${SITE_URL}/`);
+    // r480 (Daniel 10 Nov: "Steam și Slow Coffee Festival primesc headerul site-ului; la SCF dispare meniul galben"): Slow
+    // Coffee Festival takes the shared case header too (the i18n pass swaps this pill for it); its own yellow menu goes,
+    // its green ticket and everything else stay
+    if (slug === "slow-coffee-festival" && !html.includes('class="cs-back"')) html = html.replace(/<body([^>]*)>/, (m) => `${m}\n<style>#sc-nav{display:none!important}html:not(.embed) main.sc{padding-top:64px}</style><a class="cs-back" href="/site/#work">← Cromatic Studios</a>`);
     page(`work/${slug}`, czlCase(html));
     caseSlugs.push(slug);
   }
@@ -862,6 +866,42 @@ const workPaths = [...new Set([...R.slugs, ...R.canvasSlugs, ...caseSlugs, "stea
 const roPaths = [];
 {
   const I18N = makeI18n(root);
+  // r480 (Daniel 10 Nov; audits Nov: "49 of 55 case pages still have the minimal header"): one header on every case page,
+  // in place of the "← Cromatic Studios" pill: the logo, a breadcrumb (Work / the case), Work, Services, Team, Contact and
+  // the language switch. On a phone: the logo, the breadcrumb, Contact and the language. Paper bar, 64 px, slides away
+  // as you read down and back as you scroll up (180 ms, transform only); nothing inside the map's frame (html.embed)
+  {
+    const lg = A("logoLandscape");
+    const esc1 = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    const CZH_CSS = `<link rel="stylesheet" href="/fonts.css"><style>.czh{position:fixed;left:0;right:0;top:0;z-index:9998;padding-top:env(safe-area-inset-top,0px);background:#fbfaf5;border-bottom:1px solid rgba(13,12,9,.12);font-family:CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;color:#0d0c09;transition:transform .18s cubic-bezier(.2,.7,.2,1),visibility 0s}
+.czh-in{display:flex;align-items:center;gap:clamp(12px,2.4vw,28px);height:64px;max-width:1280px;margin:0 auto;padding:0 clamp(16px,3vw,32px)}
+.czh a{color:inherit;text-decoration:none}
+.czh-logo{display:flex;align-items:center;min-height:44px;flex:0 0 auto}.czh-logo img{display:block;height:26px;width:auto}
+.czh-crumb{display:flex;align-items:center;gap:8px;min-width:0;font-size:15px;font-weight:500;color:#57524a}
+.czh-crumb a{display:inline-flex;align-items:center;min-height:44px;font-weight:700;color:#0d0c09}
+.czh-crumb [aria-current]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.czh-nav{display:flex;align-items:center;gap:clamp(14px,2vw,26px);margin-left:auto;font-size:15px;font-weight:700}
+.czh-nav a{display:inline-flex;align-items:center;min-height:44px}
+.czh-nav a:hover,.czh-crumb a:hover{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
+.czh-nav .czh-ct{padding:0 16px;border-radius:10px;background:#0d0c09;color:#fbfaf5}.czh-nav .czh-ct:hover{background:#FED012;color:#0d0c09;text-decoration:none}
+.czh-lang{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;font-size:13px;font-weight:700;letter-spacing:.06em}
+.czh a:focus-visible{outline:2px solid #0d0c09;outline-offset:3px;border-radius:6px}
+html.cb-up .czh{transform:translateY(calc(-100% - 2px));visibility:hidden;transition:transform .18s cubic-bezier(.4,0,1,1),visibility 0s .18s}
+html.cb-up .czh:focus-within{transform:none;visibility:visible}
+html.embed .czh{display:none}
+@media (max-width:760px){.czh-nav .czh-wide{display:none}.czh-in{gap:10px}.czh-logo img{height:20px}.czh-crumb{font-size:14px}.czh-nav{gap:4px}.czh-nav .czh-ct{padding:0 12px}}
+@media (max-width:560px){.czh-nav .czh-ct{display:none}.czh-logo img{height:18px}.czh-in{gap:8px;padding:0 16px}.czh-crumb{gap:6px}.czh-lang{min-width:40px;margin-right:-6px}}
+@media (max-width:400px){.czh-crumb .czh-sep,.czh-crumb [aria-current]{display:none}}
+@media (prefers-reduced-motion:reduce){.czh{transition:none!important}}</style>`;
+    const CZH_JS = `<script>(function(){var h=document.documentElement;if(h.classList.contains("embed"))return;var y=scrollY,q=0;function f(){q=0;var n=scrollY,d=n-y;if(n<90){h.classList.remove("cb-up");y=n;return}if(Math.abs(d)>8){h.classList.toggle("cb-up",d>0);y=n}}addEventListener("scroll",function(){if(!q)q=requestAnimationFrame(f)},{passive:true})})();</script>`;
+    I18N.setCaseHeader((html, enPath, lang, other, label, name) => {
+      const ro = lang === "ro", home = ro ? "/ro/" : "/";
+      const t = (/<title>([^<]*)<\/title>/.exec(html)?.[1] || "").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "’").split(/ — | · | \| |: /)[0].trim(); // the brand's name, as the title opens
+      const L = ro ? { work: "Proiecte", svc: "Servicii", team: "Echipa", ct: "Contact", crumb: "Unde ești" } : { work: "Work", svc: "Services", team: "Team", ct: "Contact", crumb: "You are here" };
+      const work = ro ? "/ro/proiecte/" : "/work/", team = ro ? "/ro/echipa/" : "/team/";
+      return `${CZH_CSS}<header class="czh"><div class="czh-in"><a class="czh-logo" href="${home}">${lg ? `<img src="${lg.src}" alt="Cromatic Studios" width="${lg.w}" height="${lg.h}">` : "Cromatic Studios"}</a><nav class="czh-crumb" aria-label="${L.crumb}"><a href="${work}">${L.work}</a>${t ? `<span class="czh-sep" aria-hidden="true">/</span><span aria-current="page">${esc1(t)}</span>` : ""}</nav><nav class="czh-nav" aria-label="${ro ? "Principal" : "Main"}"><a class="czh-wide" href="${work}">${L.work}</a><a class="czh-wide" href="${home}#services">${L.svc}</a><a class="czh-wide" href="${team}">${L.team}</a><a class="czh-ct" href="${home}#contact">${L.ct}</a><a class="lang-sw czh-lang" href="${other}" hreflang="${label.toLowerCase()}" lang="${label.toLowerCase()}" title="${name}">${label}</a></nav></div></header>${CZH_JS}`;
+    });
+  }
   const enPaths = new Set(["/site/", ...hubPaths, ...workPaths].filter((p) => PAGES[p]));
   for (const p of enPaths) {
     const file = join(pub, p, "index.html");
