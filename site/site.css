@@ -2250,3 +2250,4 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
 
 /* r480b (Tudor S2, the rest): the street heads settle in 0.4 s (they took 0.8 s) */
 @media (prefers-reduced-motion: no-preference) { .js .dom-street :is(.sh-sub, .sh-lead, .sh-more) { transition-duration: .3s, .4s, .18s, .18s; transition-delay: 0s, 0s, 0s, 0s; } }
+@media (max-width: 760px) { .sh-more, html:not(.m-sky) .street-band + .street-head .sh-more { min-height: 44px; } }
