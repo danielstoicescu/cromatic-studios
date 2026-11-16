@@ -244,7 +244,7 @@ const CSS = `
   [data-ic].is-on .ic-l{opacity:1;transform:none;filter:none;transition:transform 1.2s var(--ic-ease),opacity .9s ease,filter .9s ease;transition-delay:calc(.9s + var(--i) * .075s)}
   [data-ic].is-on .ic-l--sub{transition-delay:1.75s}
   [data-ic] .ic-fl path{stroke-dasharray:1 1;stroke-dashoffset:1}
-  [data-ic].is-on .ic-fl path{stroke-dashoffset:0;transition:stroke-dashoffset 2.4s cubic-bezier(.65,0,.35,1);transition-delay:calc(.4s + var(--i) * .28s)}
+  [data-ic].is-on .ic-fl path{stroke-dashoffset:0;transition:stroke-dashoffset .5s cubic-bezier(.65,0,.35,1);transition-delay:calc(var(--i) * .04s)} /* r480b: drawn by ~0.6 s (was 4.6) */
   .ic-stage.is-on .ic-fl path{transition-delay:calc(1.6s + var(--i) * .22s)}
   [data-ic].is-on .ic-f path{animation:ic-float 7s ease-in-out infinite alternate;animation-delay:calc(2.6s + var(--i) * -1.9s)}
   @keyframes ic-float{from{transform:translateY(-10px)}to{transform:translateY(12px)}}
