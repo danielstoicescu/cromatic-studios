@@ -1073,6 +1073,8 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
   // through the stylesheet it swapped in ~60 ms after the first paint and nudged the h1's red and blue copies (CLS 0.0004,
   // desktop). Preloaded on desktops only: phones draw no copies. After the viewport meta, or a phone still reads the
   // media query against the default 980 px layout and fetches it (RO mobile LCP +40 ms)
+  // r480b (Daniel's standing rule, Tudor round 2: 98 case pages could still be zoomed): mobile zoom stays locked on every page
+  if (/\.html$/.test(f)) n2 = n2.replace(/<meta name="viewport" content="(?![^"]*user-scalable)([^"]*)">/g, (m, c) => `<meta name="viewport" content="${c.replace(/,?\s*viewport-fit=cover/, "")}, maximum-scale=1, user-scalable=no${/viewport-fit=cover/.test(c) ? ", viewport-fit=cover" : ""}">`);
   if (/\.html$/.test(f) && GS["latin-ext"] && /<html lang="ro"/.test(n2) && n2.includes('class="pwall pw-first"') && !n2.includes(`rel="preload" href="${GS["latin-ext"]}"`)) n2 = n2.replace(/(<meta name="viewport"[^>]*>)/, `$1\n<link rel="preload" href="${GS["latin-ext"]}" as="font" type="font/woff2" media="(min-width: 701px)" crossorigin>`);
   // r136 (N30): the regular weights too (Darker Grotesque), and on the hubs, services and team the mono eyebrow above
   // the fold (JetBrains Mono): their late swap moved the intro (CLS 0.11-0.15 on a slow phone)
