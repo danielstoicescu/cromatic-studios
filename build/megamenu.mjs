@@ -40,7 +40,9 @@ export function makeMegaMenu({ root, pub, R, COVERS }) {
   // a picture's two sizes; the image pass's copies (same hash, two widths) as one short token, "hash.960.480"
   const pair = (big, small) => { const a = /^\/assets\/w\/([0-9a-f]{12})-(\w+)\.webp$/.exec(big), b = /^\/assets\/w\/([0-9a-f]{12})-(\w+)\.webp$/.exec(small); return a && b && a[1] === b[1] ? `${a[1]}.${a[2]}.${b[2]}` : `${big},${small}`; };
   const W = SI_WORDS.en;
-  const streets = R.workStreets(COVERS);
+  // r480 (Nov audit, flagged 10 Nov): the menu lists only brands with a case; the five that fell back to the home
+  // (Lapterra, Zdrovit, Sofmedica, Medcity, Clinica Dr. K) are off it. Zdrovit's brands stay, in their park's row
+  const streets = R.workStreets(COVERS).map((s) => ({ ...s, list: s.list.filter((p) => p.page) }));
   const total = streets.reduce((n, s) => n + s.list.length + (s.zd.length ? 1 : 0), 0);
   const gal = {};
   const pics = (cover, page) => {
