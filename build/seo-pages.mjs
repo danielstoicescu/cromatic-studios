@@ -222,12 +222,12 @@ export function seoPage(html, { path, SITE, project, media, lastmod, wp, dg }) {
     });
   }
 
-  // 4. Darker Grotesque from our own domain, the Latin file preloaded (Google's late swap moved the hero: CLS)
-  if (dg && dg.latin) html = html.replace(/<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Darker\+Grotesque[^"]*" rel="stylesheet">/, () =>
-    `<link rel="preload" href="${dg.latin}" as="font" type="font/woff2" crossorigin>\n<style>@font-face{font-family:"Darker Grotesque";font-style:normal;font-weight:300 900;font-display:swap;src:url(${dg.latin}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}${dg["latin-ext"] ? `@font-face{font-family:"Darker Grotesque";font-style:normal;font-weight:300 900;font-display:swap;src:url(${dg["latin-ext"]}) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}` : ""}@font-face{font-family:"Darker Grotesque Fallback";src:local("Arial"),local("Helvetica"),local("Liberation Sans");size-adjust:79.8%;ascent-override:132.8%;descent-override:37.1%;line-gap-override:0%}</style>`)
-      // until the face arrives, Arial scaled to its width and line metrics (measured from the font files) holds the layout still
-      .replace(/--font:"Darker Grotesque",/g, dg.cs ? '--font:CromaticSans,"Darker Grotesque","Darker Grotesque Fallback",' : '--font:"Darker Grotesque","Darker Grotesque Fallback",')
-      .replace("</head>", dg.cs ? `<style>${dg.cs}</style>\n</head>` : "</head>")
+  // 4. r481: the case pages' type is CromaticSans (Google Sans Flex, self-hosted): the old Darker Grotesque link from
+  // Google Fonts becomes the Flex Latin preload and the CromaticSans faces with their measured fallback (no swap shift),
+  // and every "Darker Grotesque" in the page's own stacks reads CromaticSans
+  if (dg && dg.cs) html = html.replace(/<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Darker\+Grotesque[^"]*" rel="stylesheet">\n?/, () => (dg.flex ? `<link rel="preload" href="${dg.flex}" as="font" type="font/woff2" crossorigin>\n` : "") + `<style>${dg.cs}</style>\n`)
+      .replace(/"Darker Grotesque"(?:,"Darker Grotesque Fallback")?/g, 'CromaticSans,"CromaticSans Fallback"')
+      .replace(/--font:CromaticSans,"CromaticSans Fallback"/g, '--font:CromaticSans,"CromaticSans Fallback"')
       .replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>\n?(?![\s\S]*fonts\.googleapis\.com\/css)/, "");
   const headEnd = html.indexOf("</head>");
   let head = html.slice(0, headEnd), body = html.slice(headEnd);

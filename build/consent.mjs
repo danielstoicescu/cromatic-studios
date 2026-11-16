@@ -31,7 +31,7 @@
 // still open elsewhere (the map's, under the game's frame) closes: the map and the game always agree.
 export function consentSnippet(GA_ID, GTM_ID = "", OAI_PIXEL = "") {
   if (!GA_ID) return "";
-  const css = `#cz-ck{position:fixed;left:50%;bottom:16px;z-index:2147483000;box-sizing:border-box;width:min(460px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 22px 20px;border-radius:24px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;box-shadow:0 14px 40px rgba(13,12,9,.2);font:500 15px/1.4 CromaticSans,"Darker Grotesque",system-ui,sans-serif;transform:translate(-50%,16px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
+  const css = `#cz-ck{position:fixed;left:50%;bottom:16px;z-index:2147483000;box-sizing:border-box;width:min(460px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:18px 22px 20px;border-radius:24px;background:#fff;color:#0d0c09;border:2.5px solid #0d0c09;box-shadow:0 14px 40px rgba(13,12,9,.2);font:500 15px/1.4 CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;transform:translate(-50%,16px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s}
 #cz-ck.on{transform:translate(-50%,0);opacity:1}
 #cz-ck b{display:block;font:800 19px/1.2 CromaticSans,system-ui,sans-serif;letter-spacing:-.01em;margin:0}
 #cz-ck p{margin:2px 0 0;max-width:34ch;color:#3d3a34;font-size:15px;line-height:1.4;text-wrap:balance}
