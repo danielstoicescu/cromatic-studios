@@ -228,6 +228,7 @@ function page(P, all) {
 :root{--accent:${accent.bg};--accent-fg:${accent.fg || "var(--ink)"};--accent-ink:${accent.ink};--frame-bg:#d9d9d9}
 .solution-intro{background:var(--accent);color:var(--accent-fg)}
 .quote blockquote p{color:var(--accent-ink)}
+.quote blockquote .q-en{font-size:clamp(17px,1.5vw,21px);line-height:1.4;font-weight:500;margin:.9em 0 0;opacity:.85}html[lang="ro"] .quote blockquote .q-en{display:none}
 .frame{background:var(--frame-bg)}
 .frame--contain img{object-fit:contain}
 .frame[data-czl] .czl{position:absolute;inset:0;width:100%!important;height:100%!important;opacity:0;transition:opacity .6s ease;pointer-events:none;contain:strict}
@@ -370,7 +371,8 @@ ${pr.media.map(block).join("\n")}
       </div>` : ""}${pr.quote ? `
       <div class="quote">
         <blockquote>
-          <p data-lines>“${pr.quote.text}”</p>
+          <p data-lines${pr.quote.lang ? ` lang="${pr.quote.lang}"` : ""}>“${pr.quote.text}”</p>${pr.quote.en ? `
+          <p class="q-en">${pr.quote.en}</p>` : "" /* r480: a client's line in Romanian keeps its words, the English under it */}
           <cite>${pr.quote.cite}</cite>
         </blockquote>
       </div>` : ""}

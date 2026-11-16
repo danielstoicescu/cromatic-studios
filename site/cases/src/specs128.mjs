@@ -465,7 +465,7 @@ export const PAGES128 = [
     problem: {
       // r473d (Daniel): no words in the opening, "it speaks for itself"
       p: [],
-      quote: { text: "Nu vinzi doar bere. Creezi un loc în care lumea vrea să revină.", cite: "From the Berero B2B deck" }
+      quote: { text: "Nu vinzi doar bere. Creezi un loc în care lumea vrea să revină.", lang: "ro", en: "You don’t just sell beer. You make a place people want to come back to.", cite: "From the Berero B2B deck" }
     },
     solution: {
       h: "COMM + UNITY",

@@ -321,6 +321,7 @@ figcaption{margin-top:var(--caption-gap);font-size:var(--fs-small);font-weight:6
 :root{--accent:#111111;--accent-fg:#ffffff;--accent-ink:#111111;--frame-bg:#d9d9d9}
 .solution-intro{background:var(--accent);color:var(--accent-fg)}
 .quote blockquote p{color:var(--accent-ink)}
+.quote blockquote .q-en{font-size:clamp(17px,1.5vw,21px);line-height:1.4;font-weight:500;margin:.9em 0 0;opacity:.85}html[lang="ro"] .quote blockquote .q-en{display:none}
 .frame{background:var(--frame-bg)}
 .frame--contain img{object-fit:contain}
 .frame::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1.5px rgba(18,18,18,.1);pointer-events:none}
@@ -434,7 +435,8 @@ html:not(.embed) .page{padding-top:64px}
 
       <div class="quote">
         <blockquote>
-          <p data-lines>“Nu vinzi doar bere. Creezi un loc în care lumea vrea să revină.”</p>
+          <p data-lines lang="ro">“Nu vinzi doar bere. Creezi un loc în care lumea vrea să revină.”</p>
+          <p class="q-en">You don’t just sell beer. You make a place people want to come back to.</p>
           <cite>From the Berero B2B deck</cite>
         </blockquote>
       </div>
