@@ -2210,3 +2210,12 @@ html:not(.m-sky) .sb-plate { background: var(--paper); padding: .02em .2em .06em
   .rs-boxes i { animation-duration: .6s; }
   .js .stats.in .st-inf b { animation-duration: .6s; animation-delay: 0s; }
 }
+
+/* r480b (Tudor, round 2): the /work/ hub shows its cards and their names at once: no deal-in wait after a jump,
+   no name hidden until hover (this page's job is to list the work); the studio's own page closes the list */
+html.js .wk .bento:not(.in) .bcard { opacity: 1; transform: none; }
+html.js .wk .bento .bcard { transition-delay: 0s; }
+.wk .bcard .bc-name, .wk .bcard:not(.has-media) .bc-name { opacity: 1; translate: 0 0; }
+.wk-studio { padding-top: 8px; }
+.wk-studio p { margin: 10px 0 0; font-size: var(--fs-5); font-weight: 700; }
+.wk-studio a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink); text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 2px; }

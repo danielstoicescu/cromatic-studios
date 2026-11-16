@@ -289,7 +289,7 @@ const CLIENT_T = Object.fromEntries(Object.entries(T).map(([k, v]) => [k, { e: v
 export const PASS_JS = `<script id="czp-js">window.__CZP_T=${JSON.stringify(CLIENT_T).replace(/</g, "\\u003c")};(${client.toString()})();</script>`;
 
 // the content pages that end with the pass (relative to public/, before the home move: site/ is the home)
-export const PASS_PAGES = /^(?:site\/|ro\/|team\/|ro\/echipa\/|onboarding\/|ro\/onboarding\/|(?:industries|services|work)\/[^/]+\/|ro\/(?:industrii|servicii|proiecte)\/[^/]+\/)index\.html$/;
+export const PASS_PAGES = /^(?:site\/|ro\/|work\/|ro\/proiecte\/|team\/|ro\/echipa\/|onboarding\/|ro\/onboarding\/|(?:industries|services|work)\/[^/]+\/|ro\/(?:industrii|servicii|proiecte)\/[^/]+\/)index\.html$/;
 
 // one page: the slot a page left (<div data-czp-slot>hidden inputs</div>) gets the ticket; a content page without one
 // gets the closing section before its footer; any page with a ticket gets the CSS and the script once

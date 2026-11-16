@@ -738,7 +738,7 @@ ${footer}`;
     { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Cromatic Studios", item: `${SITE}/site/` }, ...crumbs.map(([n, u], i) => ({ "@type": "ListItem", position: i + 2, name: n, item: SITE + u }))] }
   ] });
   const faqLd = (path, faq) => ({ "@type": "FAQPage", "@id": `${SITE}${path}#faq`, mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: strip(q), acceptedAnswer: { "@type": "Answer", text: strip(a) } })) });
-  const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || ZDROVIT_BRANDS.find((b) => b.page === sl)?.name || sl })) });
+  const listLd = (path, slugs, name) => ({ "@type": "ItemList", "@id": `${SITE}${path}#work`, name, itemListElement: slugs.map((sl, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}/work/${sl}/`, name: byPage(sl)?.name || ZDROVIT_BRANDS.find((b) => b.page === sl)?.name || ({ "rdw-2023": "RDW 2023" })[sl] || sl })) });
   // TASK-074: a Zdrovit brand's case page has no portfolio entry; a service page that names it still shows its card
   const zdProj = (slug) => { const b = ZDROVIT_BRANDS.find((x) => x.page === slug); return b ? { name: b.name, cat: b.cat || "Zdrovit · Beauty & Supplement Park", desc: b.desc || b.line, page: b.page, c: b.c || "#e30613", t: b.t || "#ffffff", poster: b.poster || b.name, img: b.img } : null; };
   const hubCases = (slugs, covers, col) => bentoGrid(slugs.map((sl) => byPage(sl) || zdProj(sl)).filter(Boolean), covers, col ? ` style="--dc:${col}"` : "");
@@ -809,7 +809,7 @@ ${footer}`;
       ${k === "C" ? zdRow() : ""}
     </div>`;
     }).join("");
-    const ld = hubLd(path, title, desc, [["Work", path]], [listLd(path, all, "Cromatic Studios: case studies")]);
+    const ld = hubLd(path, title, desc, [["Work", path]], [listLd(path, [...all, "rdw-2023"], "Cromatic Studios: case studies")]);
     return `${head({ title, desc, path, ld })}
 ${header(false)}
 <main id="main" class="case hub wk" style="--bc:#FED012;--bt:#111">
@@ -820,8 +820,9 @@ ${header(false)}
       <p class="lead hub-lead">Every brand we have built, on the street of its trade. Pick one and walk in.</p>
       <p class="wk-jump mono">${Object.entries(STREETS).map(([k, [street]]) => `<a href="#street-${k.toLowerCase()}">${esc(street)}</a>`).join(" ")}</p>
     </div></section>
-  <section class="sec wk-streets" id="work"><div class="wrap">${streets}</div></section>
-  ${hubEnd}
+  <section class="sec wk-streets" id="work"><div class="wrap">${streets}
+    <div class="wk-studio"><h2 class="eyebrow mono">From the studio</h2><p><a href="/work/rdw-2023/">RDW 2023: our AI pop-up at Romanian Design Week <span aria-hidden="true">→</span></a></p></div>
+  </div></section>
 </main>
 ${footer}`;
   }
