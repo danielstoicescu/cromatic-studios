@@ -44,9 +44,9 @@ export function makeSiteHeader({ siteCss, A }) {
   const css = `<link rel="stylesheet" href="/fonts.css"><style id="czh-css">.hdr,.skip{${vars}}
 ${lift(siteCss)}
 .hdr{position:fixed;left:0;right:0;top:0;z-index:9998;font-family:var(--f,CromaticSans),"CromaticSans Fallback",system-ui,sans-serif;color:var(--ink);line-height:1.5}
-.hdr .wrap{width:min(1200px,100% - 40px);margin-inline:auto}.hdr a{color:inherit}.hdr *{box-sizing:border-box}
+.hdr .wrap{width:min(1280px,100% - 2 * clamp(16px,4vw,40px));margin-inline:auto}.hdr a{color:inherit}.hdr *{box-sizing:border-box}
 .hdr .menu-btn{flex:0 0 auto}.hdr .mnav a{color:var(--ink)}
-.czc{box-sizing:border-box;width:min(1200px,100% - 40px);margin:72px auto 0;padding:14px 0 6px;font:500 12px/1.4 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:#57524a;display:flex;gap:8px;align-items:center;min-width:0}
+.czc{box-sizing:border-box;width:min(1280px,100% - 2 * clamp(16px,4vw,40px));margin:72px auto 0;padding:14px 0 6px;font:500 12px/1.4 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:#57524a;display:flex;gap:8px;align-items:center;min-width:0}
 .czc a{color:#0d0c09;text-decoration:underline;text-underline-offset:4px;display:inline-flex;align-items:center;min-height:32px}.czc span[aria-current]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html:not(.embed) .page,html:not(.embed) main.sc{padding-top:8px!important}
 html.cb-up .hdr{transform:translateY(calc(-100% - 2px));visibility:hidden;transition:transform .18s cubic-bezier(.4,0,1,1),visibility 0s .18s}
