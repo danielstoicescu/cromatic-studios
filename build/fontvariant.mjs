@@ -61,7 +61,8 @@ export function variantSiteCss() {
    column plus their 22 px padding (the answer fills the card), the title side takes the rest. Case intro: it sits on the same axis as every section
    description below it (the third column of .c2-head), so the empty space is the grid's, not a leftover */
 @media (min-width: 1200px) { .faq { grid-template-columns: minmax(0, 1fr) calc(clamp(544px, 40vw, 576px) + 44px); } .qa summary { text-wrap: balance; } .qa details p { max-width: none; } }
-@media (min-width: 861px) { .c2-lead:not(.hub-intro) { display: grid; grid-template-columns: 90px minmax(0, 18em) minmax(0, 1fr); column-gap: 28px; } .c2-lead:not(.hub-intro) > p { grid-column: 3; } }
+@media (min-width: 861px) { body:has(.c2-head) .c2-lead:not(.hub-intro) { display: grid; grid-template-columns: 90px minmax(0, 18em) minmax(0, 1fr); column-gap: 28px; } body:has(.c2-head) .c2-lead:not(.hub-intro) > p { grid-column: 3; } }
+/* r483-7 (Tudor round 8, N1): only on cases that have that section grid; The Aesthetic Court has none, so its intro stays on the left edge with its sections */
 .sv5-card h3, .c2-ch h2, .hub-card h3, .faq summary, .sh-sub { font-weight: 400 !important; font-size: clamp(24px, 1.8vw, 26px) !important; line-height: 1.3 !important; letter-spacing: -.005em !important; }`;
   return c;
 }
