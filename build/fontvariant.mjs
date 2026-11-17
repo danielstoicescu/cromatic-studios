@@ -54,6 +54,11 @@ export function variantSiteCss() {
   if (VAR.google) c += `\n/* r481 v3 ("ca la Google"): reading text in one calm weight, generous lines, a 65-75 character column */
 .sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .ftr p:not(.czf-id), .faq p, .qa p, .legal p, .legal li { font-size: clamp(17px, 1.25vw, 18px) !important; line-height: 1.45 !important; font-weight: 400 !important; letter-spacing: 0 !important; max-width: clamp(544px, 40vw, 576px); }
 .legal { max-width: clamp(544px, 40vw, 576px); }
+/* r483-3 (Tudor round 7, R3): the boxes follow the measure instead of leaving it stranded. FAQ: the cards are the
+   column plus their 22 px padding (the answer fills the card), the title side takes the rest. Case intro: it sits on the same axis as every section
+   description below it (the third column of .c2-head), so the empty space is the grid's, not a leftover */
+@media (min-width: 1200px) { .faq { grid-template-columns: minmax(0, 1fr) calc(clamp(544px, 40vw, 576px) + 44px); } .qa summary { text-wrap: balance; } .qa details p { max-width: none; } }
+@media (min-width: 861px) { .c2-lead:not(.hub-intro) { display: grid; grid-template-columns: 90px minmax(0, 18em) minmax(0, 1fr); column-gap: 28px; } .c2-lead:not(.hub-intro) > p { grid-column: 3; } }
 .sv5-card h3, .c2-ch h2, .hub-card h3, .faq summary, .sh-sub { font-weight: 400 !important; font-size: clamp(24px, 1.8vw, 26px) !important; line-height: 1.3 !important; letter-spacing: -.005em !important; }`;
   return c;
 }
