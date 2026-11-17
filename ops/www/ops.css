@@ -123,3 +123,38 @@ body[data-cat="home"] #res { display: none !important; }
 #work.home-cap .home-more { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); }
 #work.home-cap .home-more:hover { transform: translateX(-50%) translateY(-2px); }
 #work.home-open .home-more { position: static; margin-top: 4px; }
+
+/* 17 Nov · The Core: the pending card from "Cere sesiunea" (adapter.js corePend), then the real card's moment */
+.cpd-slot { display: grid; gap: 12px; }
+.cpd-slot[hidden] { display: none; }
+.cpd-in { display: grid; gap: 10px; align-content: start; height: 100%; min-width: 0; background: var(--card); border: 1.5px solid var(--ink); border-radius: 22px; padding: 18px 18px 16px; box-shadow: 0 3px 0 var(--yellow, #f8d13b); }
+.cpd .cpd-k { font: 500 10.5px var(--f-m, ui-monospace, monospace); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.cpd .nm { font: 900 22px/1.1 var(--f-d); overflow-wrap: anywhere; }
+.cpd-st { display: flex; align-items: center; gap: 10px; font: 800 18px/1.2 var(--f-d); }
+.cpd-ind { display: inline-flex; gap: 4px; flex: none; }
+.cpd-ind i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); opacity: .2; animation: cpdDot 1.8s ease-in-out infinite; }
+.cpd-ind i:nth-child(2) { animation-delay: .3s; } .cpd-ind i:nth-child(3) { animation-delay: .6s; }
+@keyframes cpdDot { 0%, 100% { opacity: .2; } 35% { opacity: 1; } }
+.cpd-p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--muted); overflow-wrap: anywhere; }
+.cpd-p b { color: var(--ink); font-weight: 700; }
+.cpd-bar { position: relative; height: 4px; border-radius: 4px; background: var(--g1); overflow: hidden; }
+.cpd-bar span { position: absolute; inset: 0 auto 0 0; width: 34%; border-radius: 4px; background: var(--yellow, #f8d13b); animation: cpdBar 2.8s cubic-bezier(.45, 0, .55, 1) infinite; }
+@keyframes cpdBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+.cpd-t { font: 500 11px var(--f-m, ui-monospace, monospace); letter-spacing: .03em; color: var(--muted); }
+.cpd.late .cpd-in { box-shadow: 0 3px 0 var(--g2); }
+.cpd.late .cpd-bar span { background: var(--g3); animation-duration: 4.2s; }
+.cpd.error .cpd-in { box-shadow: 0 3px 0 var(--c-p0, #f27261); }
+.cpd-x { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--c-p0, #f27261); color: #000; font: 900 14px/1 var(--f-d); }
+.cpd-err { margin: 0; font-size: 15px; line-height: 1.45; color: var(--danger-ink); font-weight: 600; overflow-wrap: anywhere; }
+.cpd-act { display: flex; flex-wrap: wrap; gap: 8px; }
+.cpd .btn, .cpd-act .btn { min-height: 44px; }
+.cpd-ok { display: flex; align-items: center; gap: 8px; background: var(--t-green); border: 1px solid var(--c-done, #4cc462); border-radius: 14px; padding: 9px 12px; font: 700 14px/1.3 var(--f-d); animation: cpdOk 7s ease forwards; }
+.cpd-tick { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--c-done, #4cc462); color: #000; font: 900 12px/1 var(--f-d); }
+@keyframes cpdOk { 0% { opacity: 0; transform: translateY(-6px); } 4% { opacity: 1; transform: none; } 88% { opacity: 1; } 100% { opacity: 0; } }
+.cc.cpd-born .cc-f { border-color: var(--c-done, #4cc462); box-shadow: 0 0 0 3px var(--t-green), var(--soft); transition: border-color .2s, box-shadow .2s; }
+@media (prefers-reduced-motion: reduce) {
+  .cpd, .cpd-ind i, .cpd-bar span { animation: none; }
+  .cpd-ind i { opacity: 1; } .cpd-ind i:nth-child(2) { opacity: .55; } .cpd-ind i:nth-child(3) { opacity: .25; }
+  .cpd-bar span { width: 100%; opacity: .55; }
+  .cpd-ok { animation: none; }
+}

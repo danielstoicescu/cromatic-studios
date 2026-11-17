@@ -24,7 +24,7 @@
    "Salvăm automat, pe dispozitivul ăsta și la noi. Poți închide oricând și reiei exact de unde ai rămas.",
    "Când ce spui și ce alegi nu se potrivesc, nu e o greșeală. E exact materialul bun pentru workshop."
   ],
-  "minutes": "45–60 de minute, în două sau trei reprize"
+  "minutes": "35–45 de minute, în două reprize"
  },
  "modules": [
   {
@@ -182,7 +182,7 @@
     "deja"
    ],
    "short": "Ce ai spus deja",
-   "minutes": 6,
+   "minutes": 4,
    "why": "Ai scris deja lucruri bune despre brand. Le trecem prin sită: ce păstrăm, ce ajustăm, ce lăsăm în urmă.",
    "items": [
     {
@@ -194,6 +194,7 @@
     },
     {
      "id": "m01.tagline",
+     "workshopOnly": true,
      "kind": "verdict",
      "label": "Semnătura",
      "source": "Tagline",
@@ -208,6 +209,7 @@
     },
     {
      "id": "m01.principle",
+     "workshopOnly": true,
      "kind": "verdict",
      "label": "Principiul de produs",
      "source": "Product principle",
@@ -437,7 +439,7 @@
     "pe hartă"
    ],
    "short": "Poziționare",
-   "minutes": 10,
+   "minutes": 6,
    "why": "Poziționarea e locul pe care îl ocupi în mintea cuiva. Dacă nu-l alegi tu, ți-l alege piața.",
    "items": [
     {
@@ -499,6 +501,7 @@
     },
     {
      "id": "m04.builder",
+     "workshopOnly": true,
      "kind": "builder",
      "label": "Construiește fraza de poziționare.",
      "help": "Completează golurile. Fraza se scrie pe măsură ce lucrezi.",
@@ -538,6 +541,7 @@
     },
     {
      "id": "m04.xfactor",
+     "workshopOnly": true,
      "kind": "text",
      "label": "X factor: ce poți promite tu și nimeni altcineva?",
      "help": "Un singur lucru. Dacă îl poate spune și concurența, nu e el.",
@@ -647,6 +651,7 @@
   },
   {
    "id": "m06",
+   "workshopOnly": true,
    "title": [
     "Arhetipul",
     "tău"
@@ -1267,6 +1272,27 @@
    ],
    "short": "Valori",
    "minutes": 6,
+   "client": {
+    "title": [
+     "Valori și",
+     "atribute"
+    ],
+    "short": "Valori și atribute",
+    "minutes": 7,
+    "pull": [
+     "m08.rational",
+     "m08.emotional"
+    ],
+    "view": "cloud",
+    "why": "Un singur nor de cuvinte. În fiecare coș pui doar ce e adevărat pentru brand: trei raționale, trei emoționale, trei valori.",
+    "cloud": {
+     "label": "Trei coșuri, un singur nor.",
+     "help": "Trage fiecare cuvânt în coșul lui sau atinge cuvântul, apoi coșul. Rațional: ce primește omul. Emoțional: cu ce rămâne. Valori: ce ții și când te costă. Poți adăuga și cuvintele tale.",
+     "rational": "Rațional",
+     "emotional": "Emoțional",
+     "values": "Valori"
+    }
+   },
    "why": "Valorile sunt promisiuni pe care le ții și când te costă. Le alegem prin eliminare, ca să rămână doar cele adevărate.",
    "items": [
     {
@@ -1414,6 +1440,7 @@
     },
     {
      "id": "m08.after",
+     "workshopOnly": true,
      "kind": "text",
      "label": "Ce vrei să spună cineva despre brand după prima întâlnire?",
      "placeholder": "„N-am mai întâlnit pe cineva care…”",
@@ -1426,6 +1453,7 @@
     },
     {
      "id": "m08.core6",
+     "workshopOnly": true,
      "kind": "core6",
      "label": "Cele 6 atribute ale brandului.",
      "help": "Așa lucrăm în The Core: pe fiecare categorie, întâi brainstorm, apoi top 3, apoi unul singur. Pastilele vin din ce ai răspuns până aici și din câteva idei de pornire; adaugă oricând cuvintele tale. Cele 6 cuvinte alese scriu UVP-ul.",

@@ -39,6 +39,7 @@
         if (sigs.get(name) !== sig) { sigs.set(name, sig); changed.add(name); }
       }
       listeners.forEach((name, f) => { if (changed.has(name)) try { f(); } catch (e) { console.error(e); } });
+      corePend.sync();
     } catch (e) { if (e.code !== "not_granted") console.warn("[ops] snapshot", e.message); }
   }
   function trackEdits(tasks) {
@@ -109,6 +110,7 @@
         }
         if (name === "coreRequests" && user && user.role === "admin") {
           const d = doc || {};
+          if (d.type !== "upgrade") { const r = await addInbox({ kind: "command", text: "Sesiune nouă în The Core: " + [d.name, d.email, d.edition === "pre" ? "pregătire acasă" : d.edition, String(d.lang || "").toUpperCase()].filter(Boolean).join(" · "), payload: { type: "core-request", request: d } }); corePend.sent(d, r.id); return r; } // 17 Nov: a pending card until it is made
           return addInbox({ kind: "command", text: d.type === "upgrade" ? "The Core: trece la The Core complet · " + (d.name || d.coreId) : "Sesiune nouă în The Core: " + [d.name, d.email, d.edition === "pre" ? "pregătire acasă" : d.edition, String(d.lang || "").toUpperCase()].filter(Boolean).join(" · "), payload: { type: "core-request", request: d } }); // TASK-136: prep sessions and the upgrade
         }
         throw err("read_only");
@@ -196,6 +198,198 @@
     if (justBack.has(t.id) && now - justBack.get(t.id) < 1200) card.classList.add("ops-back");
     if (pill) { pill.setAttribute("role", "status"); const m = card.querySelector(".m"); (m || card).append(pill); }
   };
+
+  // ---------- 17 Nov · The Core: a pending card from "Cere sesiunea" until the session exists ----------
+  // Daniel pressed create and saw nothing for minutes. Now the form closes and a card takes the spot the new edition
+  // will take, saying it is being made and where the mail goes. Sources, so it survives a reload: a local copy (this
+  // browser), the inbox item of type core-request, and coreRequests/<doc> once Claude has written it. A request is
+  // known by request.createdAt + email (the page's own doc rides unchanged through the inbox into coreRequests).
+  // Done -> the real card gets a short "Sesiunea e gata" moment; error -> the reason and "Încearcă din nou".
+  const corePend = (() => {
+    const LS = "ops-core-pending", LS_SEEN = "ops-core-pending-seen", LATE_MS = 15 * 60e3, KEEP_MS = 24 * 3600e3, CHEER_MS = 7000;
+    const rd = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || "null") || d; } catch { return d; } };
+    const wr = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+    let local = rd(LS, []).filter((x) => x && x.email && x.createdAt);
+    const seen = new Set(rd(LS_SEEN, []));
+    const cheer = new Map(); // coreId|key -> {until, mail}
+    const items = new Map(); // key -> view model, rebuilt on every sync
+    let tick = 0, mo = null, placing = false;
+    const keyOf = (r) => String(r.createdAt || "") + "|" + String(r.email || "").toLowerCase();
+    const isNew = (r) => r && r.type !== "upgrade" && r.email;
+    const ts = (x) => Date.parse(x || "") || 0;
+    const saveLocal = () => wr(LS, local.slice(-12));
+    const markSeen = (k) => { seen.add(k); wr(LS_SEEN, [...seen].slice(-80)); local = local.filter((x) => keyOf(x) !== k); saveLocal(); };
+    const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function sent(d, inboxId) {
+      if (!isNew(d)) return;
+      local = local.filter((x) => keyOf(x) !== keyOf(d)).concat([{ email: d.email, name: d.name || "", edition: d.edition || "blank", lang: d.lang || "ro", createdAt: d.createdAt, requestedBy: d.requestedBy || null, retryOf: d.retryOf || null, inboxId: inboxId || null }]);
+      saveLocal();
+      const f = document.getElementById("cs"), o = document.getElementById("cs-open");
+      if (f) f.hidden = true; if (o) o.setAttribute("aria-expanded", "false");
+      // show it where the edition will sit: open the section, then bring the card into view
+      const sec = document.getElementById("core"), x = sec && sec.querySelector(".sum-x");
+      if (sec && x && !sec.classList.contains("open")) x.click();
+      sync(keyOf(d));
+    }
+
+    // every request we know of -> pending | late | error | done
+    function collect() {
+      const now = Date.now(), reqs = coll("coreRequests"), inbox = coll("inbox"), core = coll("core"), out = new Map();
+      const add = (r, extra) => {
+        if (!isNew(r)) return; const k = keyOf(r); if (seen.has(k)) return;
+        const o = out.get(k) || { key: k, email: r.email, name: r.name || "", edition: r.edition || "blank", lang: r.lang || "ro", createdAt: r.createdAt, requestedBy: r.requestedBy || null };
+        out.set(k, Object.assign(o, extra || {}));
+      };
+      for (const x of local) add(x, { local: true });
+      for (const [id, it] of Object.entries(inbox)) {
+        const p = it && it.payload; if (!p || p.type !== "core-request" || !p.request) continue;
+        if (now - ts(p.request.createdAt) > KEEP_MS) continue;
+        add(p.request, { inboxId: id, declined: it.status === "declined" || it.status === "rejected", reply: it.reply || "" });
+      }
+      for (const [doc, r] of Object.entries(reqs)) {
+        if (!isNew(r)) continue;
+        const k = keyOf(r), known = out.has(k);
+        if (!known && (r.status === "done" || now - ts(r.createdAt) > 2 * KEEP_MS)) continue; // history stays in the list under the form
+        add(r, { doc, status: r.status, error: r.error || r.errorText || r.message || "", coreId: r.coreId || null, mailSent: r.mailSent, doneAt: r.doneAt || null });
+      }
+      // the edition itself: by requestDoc, or the same email created after the request
+      for (const it of out.values()) {
+        const c = Object.values(core).find((c) => c && ((it.doc && c.requestDoc === it.doc) || (it.coreId && c.id === it.coreId) || (String(c.email || "").toLowerCase() === it.email.toLowerCase() && ts(c.createdAt) >= ts(it.createdAt) - 60e3)));
+        if (c) { it.coreId = c.id; if (it.mailSent == null) it.mailSent = c.mailSent; it.coreDone = true; }
+        it.state = it.status === "done" || it.coreDone ? "done" : it.status === "error" ? "error" : it.declined ? "error" : now - ts(it.createdAt) > LATE_MS ? "late" : "pending";
+        if (it.state === "error" && !it.error) it.error = it.declined ? (it.reply || "Claude nu a pornit cererea.") : "Eroare fără detalii.";
+        if (it.local && it.state !== "done" && !it.inboxId && !it.doc && now - ts(it.createdAt) > KEEP_MS) { markSeen(it.key); out.delete(it.key); }
+      }
+      return out;
+    }
+
+    function sync(focusKey) {
+      if (!user || user.role !== "admin") return;
+      const now = Date.now(), all = collect();
+      items.clear();
+      for (const it of all.values()) {
+        if (it.state === "done") {
+          // the moment: only when we watched it pending (local copy) or it finished in the last 10 min
+          if (it.local || now - ts(it.doneAt) < 10 * 60e3) cheer.set(it.coreId || it.key, { until: now + CHEER_MS, mail: it.mailSent, key: it.key, name: it.name, email: it.email });
+          markSeen(it.key); continue;
+        }
+        items.set(it.key, it);
+      }
+      for (const [k, c] of cheer) if (c.until < now) cheer.delete(k);
+      place();
+      watch();
+      clearInterval(tick);
+      if (items.size || cheer.size) tick = setInterval(() => { for (const [k, c] of cheer) if (c.until < Date.now()) cheer.delete(k); place(); if (!items.size && !cheer.size) clearInterval(tick); }, cheer.size ? 1000 : 30e3);
+      if (focusKey) requestAnimationFrame(() => { const n = document.querySelector('.cpd[data-key="' + CSS.escape(focusKey) + '"]'); if (n) { n.scrollIntoView({ block: "center", behavior: reduced() ? "auto" : "smooth" }); } });
+    }
+
+    const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const hhmm = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" }); };
+    function asked(iso) {
+      const d = new Date(iso); if (isNaN(d)) return "";
+      const day = (x) => x.toDateString(), t = new Date(), y = new Date(Date.now() - 864e5);
+      return "Cerută " + (day(d) === day(t) ? "azi" : day(d) === day(y) ? "ieri" : d.toLocaleDateString("ro-RO", { day: "numeric", month: "short" })) + " la " + hhmm(iso);
+    }
+    const nameOf = (it) => it.name || it.email.split("@")[0];
+
+    function card(it) {
+      const c = mk("article", "cc cpd " + it.state); c.dataset.key = it.key;
+      const f = mk("div", "cpd-in");
+      f.append(mk("span", "cpd-k", "Sesiune nouă · The Core"), mk("div", "nm", nameOf(it)));
+      const st = mk("div", "cpd-st"); st.setAttribute("role", "status");
+      if (it.state === "error") {
+        st.append(mk("span", "cpd-x", "!"), mk("span", "", "Sesiunea nu s-a creat"));
+        f.append(st, mk("p", "cpd-err", it.error));
+        const row = mk("div", "cpd-act"), again = mk("button", "btn k", "Încearcă din nou"), drop = mk("button", "btn ghost", "Renunță");
+        again.type = drop.type = "button";
+        again.onclick = () => retry(it, again);
+        drop.onclick = () => { markSeen(it.key); sync(); };
+        row.append(again, drop); f.append(row);
+      } else {
+        const ind = mk("span", "cpd-ind"); ind.setAttribute("aria-hidden", "true"); ind.append(mk("i"), mk("i"), mk("i"));
+        st.append(ind, mk("span", "", "Se creează sesiunea…"));
+        const p = mk("p", "cpd-p");
+        if (it.state === "late") p.append(mk("b", "", "Durează mai mult decât de obicei. Claude e anunțat. "), "Mailul pleacă automat către ", mk("b", "cpd-em", it.email), ".");
+        else p.append("Apare aici în câteva minute. Mailul pleacă automat către ", mk("b", "cpd-em", it.email), ".");
+        f.append(st, p);
+        const bar = mk("div", "cpd-bar"); bar.setAttribute("aria-hidden", "true"); bar.append(mk("span")); f.append(bar);
+      }
+      f.append(mk("span", "cpd-t", [asked(it.createdAt), it.edition === "pre" ? "pregătire acasă" : it.edition, String(it.lang || "ro").toUpperCase()].filter(Boolean).join(" · ")));
+      c.append(f); return c;
+    }
+
+    async function retry(it, btn) {
+      btn.disabled = true; btn.textContent = "Se trimite…";
+      const d = { email: it.email, name: it.name, edition: it.edition, lang: it.lang, status: "new", createdAt: new Date().toISOString(), requestedBy: it.requestedBy || (user && user.email) || null, retryOf: it.doc || it.inboxId || null };
+      try { await query("coreRequests").add(d); markSeen(it.key); sync(keyOf(d)); }
+      catch { btn.disabled = false; btn.textContent = "Încearcă din nou"; if (window.__opsToast) window.__opsToast("Nu am putut trimite cererea. Mai încearcă o dată.", "err"); }
+    }
+
+    // where a card goes: in the grid at the edition's sorted spot when the section is open; above the list when closed
+    function place() {
+      const sec = document.getElementById("core"), g = document.getElementById("core-g"), list = document.getElementById("cs-list");
+      if (!sec || !g || !list) return;
+      placing = true;
+      try {
+        const open = sec.classList.contains("open");
+        let slot = document.getElementById("cpd-slot");
+        if (!slot) { slot = mk("div", "cpd-slot"); slot.id = "cpd-slot"; list.before(slot); }
+        const want = new Set(items.keys());
+        for (const n of document.querySelectorAll(".cpd")) {
+          const it = items.get(n.dataset.key);
+          if (!it) { n.remove(); continue; }
+          if (n.dataset.sig !== sigOf(it)) { const fresh = card(it); fresh.dataset.sig = sigOf(it); fresh.style.animation = "none"; n.replaceWith(fresh); }
+        }
+        const order = [...items.values()].sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
+        for (const it of order) {
+          let n = document.querySelector('.cpd[data-key="' + CSS.escape(it.key) + '"]');
+          if (!n) { n = card(it); n.dataset.sig = sigOf(it); }
+          if (open) {
+            const docs = Object.values(coll("core")).sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || String(a.name || a.id).localeCompare(String(b.name || b.id)));
+            const after = docs.find((c) => (c.order ?? 99) > 99 || ((c.order ?? 99) === 99 && String(c.name || c.id).localeCompare(nameOf(it)) > 0));
+            const ref = after && g.querySelector('.cc[data-core="' + CSS.escape(after.id) + '"]');
+            if (ref) { if (n.nextElementSibling !== ref) g.insertBefore(n, ref); }
+            else if (n.parentNode !== g || (n.nextElementSibling && !n.nextElementSibling.classList.contains("cpd"))) g.append(n);
+          } else if (n.parentNode !== slot) slot.append(n);
+          want.delete(it.key);
+        }
+        slot.hidden = !slot.children.length;
+        g.querySelectorAll(":scope > .empty").forEach((e) => { e.hidden = !!g.querySelector(".cpd"); });
+        // the real card's moment
+        for (const n of g.querySelectorAll(".cc[data-core]")) {
+          const c = cheer.get(n.dataset.core), has = n.querySelector(".cpd-ok");
+          if (c && !has) {
+            const b = mk("div", "cpd-ok"); b.setAttribute("role", "status");
+            b.append(mk("span", "cpd-tick", "✓"), mk("span", "", c.mail === false ? "Sesiunea e gata · mailul nu a plecat, trimite linkul tu" : "Sesiunea e gata · mailul a plecat"));
+            const front = n.querySelector(".cc-f") || n; front.prepend(b); n.classList.add("cpd-born");
+            b.style.animationDelay = "-" + Math.max(0, CHEER_MS - (c.until - Date.now())) + "ms";
+          } else if (!c && has) { has.remove(); n.classList.remove("cpd-born"); }
+        }
+        // done but no card for it yet (the edition lands in a later snapshot): say it where the pending card was
+        for (const [k, c] of cheer) {
+          if (g.querySelector('.cc[data-core="' + CSS.escape(k) + '"]') || document.querySelector('.cpd-done[data-key="' + CSS.escape(c.key) + '"]')) continue;
+          const n = mk("article", "cc cpd cpd-done"); n.dataset.key = c.key; const f = mk("div", "cpd-in");
+          const b = mk("div", "cpd-ok"); b.setAttribute("role", "status"); b.append(mk("span", "cpd-tick", "✓"), mk("span", "", c.mail === false ? "Sesiunea e gata · mailul nu a plecat" : "Sesiunea e gata · mailul a plecat"));
+          f.append(b, mk("div", "nm", c.name || c.email)); n.append(f); (open ? g : slot).prepend(n); slot.hidden = !slot.children.length;
+        }
+        for (const n of document.querySelectorAll(".cpd-done")) if (![...cheer.values()].some((c) => c.key === n.dataset.key)) n.remove();
+        slot.hidden = !slot.children.length;
+      } finally { placing = false; if (mo) mo.takeRecords(); } // our own moves must not wake the observer
+    }
+    const sigOf = (it) => [it.state, it.error, it.email, it.name, it.edition, it.lang].join("|");
+
+    // the page rebuilds the grid on its own renders: put the cards back each time (and when the section opens or closes)
+    function watch() {
+      if (mo) return;
+      const sec = document.getElementById("core"), g = document.getElementById("core-g");
+      if (!sec || !g) return;
+      mo = new MutationObserver(() => { if (!placing && (items.size || cheer.size)) place(); });
+      mo.observe(g, { childList: true });
+      mo.observe(sec, { attributes: true, attributeFilter: ["class"] });
+    }
+    return { sent, sync };
+  })();
 
   // ---------- touch: long-press a board card, drag it to a column, let go -> the same request as a desktop drop ----------
   // (HTML5 drag and drop does not fire on touch screens.) A quick swipe still scrolls; only a 350 ms press lifts the card.

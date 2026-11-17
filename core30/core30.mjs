@@ -3,7 +3,11 @@
 //   GET  /thecore30/<client>?t=<token>      the tool (dist/, built with base /thecore30/)
 //   POST /api/core30/start                   the respondent left their email on the intro: the session starts here
 //   POST /api/core30/event                   the step log: a module completed, a "sari, revin", an export (no mail)
-//   POST /api/core30/draft                   every change, debounced by the browser (+ a beacon on page close)
+//   POST /api/core30/save                    (core-save) every change: the changed items, merged per item, acked by seq
+//   POST /api/core30/draft                   the old full-session draft (tabs from before core-save), merged the same way
+//   GET  /api/core30/<client>/answers?t=…    the merged answers, for a device that has none of them yet
+//   POST /api/core30/workshop                (core-save) the workshop's notes, marks and Core composer, merged per key
+//   GET  /api/core30/<client>/workshop?key=  (admin key) that workshop state, for a second laptop
 //   POST /api/core30/submit                  "Trimite la Cromatic": final copy + emails
 //   GET  /api/core30/<client>/config?t=…     that respondent's questionnaire, only with the right token
 //   GET  /api/core30/<client>/status?t=…     timestamps and counts only (for the Cromatic Ops dashboard), same token
@@ -29,18 +33,18 @@
 // (the last write of that hour), submits are append-only and never overwritten. Emails go to the studio
 // at the start (token editions, once) and on every submit, with the full JSON attached.
 
-import { mkdir, readFile, rename, writeFile, readdir, appendFile } from "node:fs/promises";
+import { mkdir, readFile, rename, readdir, open } from "node:fs/promises";
 import { existsSync, createReadStream, statSync } from "node:fs";
-import { join, extname, normalize } from "node:path";
+import { join, extname, normalize, dirname } from "node:path";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 
 const MAX = 25 * 1024 * 1024; // 6 reference images plus every answer stay far below this
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".json": "application/json", ".ico": "image/x-icon" };
 
-const readBody = (req) => new Promise((ok, bad) => {
+const readBodyMax = (req, max = MAX) => new Promise((ok, bad) => {
   // past the limit, keep draining (so the client gets a clean 413, not a cut connection and a proxy 502)
   let n = 0, over = false; const chunks = [];
-  req.on("data", (c) => { n += c.length; if (n > MAX) over = true; else chunks.push(c); });
+  req.on("data", (c) => { n += c.length; if (n > max) over = true; else chunks.push(c); });
   req.on("end", () => (over ? bad(Object.assign(new Error("too large"), { code: 413 })) : ok(Buffer.concat(chunks).toString("utf8"))));
   req.on("error", bad);
 });
@@ -53,24 +57,151 @@ const lockKey = (body) => { try { return String(JSON.parse(body).clientId ?? "")
 const PUBLIC_MAX = 2 * 1024 * 1024; // a public edition has no reference images
 
 // a gentle rate limit for public editions: per IP, a rolling 10-minute window
-const hits = new Map();
-function limited(req, max = 300) {
+const hits = new Map(), publicHits = new Map();
+// public editions (Lite): 1500 per 10 minutes per IP; with instant saving one visitor typing makes up to ~1 a second
+const limitedPublic = (req) => limited(req, 1500, publicHits);
+function limited(req, max = 300, store = hits) {
   const ip = String(req.headers["cf-connecting-ip"] || req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "").split(",")[0].trim();
   const now = Date.now();
-  const h = hits.get(ip);
-  if (!h || now - h.t > 600000) { hits.set(ip, { t: now, n: 1 }); if (hits.size > 5000) hits.clear(); return false; }
+  const h = store.get(ip);
+  if (!h || now - h.t > 600000) { store.set(ip, { t: now, n: 1 }); if (store.size > 5000) store.clear(); return false; }
   h.n += 1;
   return h.n > max;
 }
 const safe = (s) => String(s || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 64);
 const stamp = () => new Date().toISOString().replace(/[:.]/g, "-");
 
+// Durable writes. A pm2 restart, a crash or a power cut mid-write must leave either the old file or the new one, never
+// a torn or empty one: write a unique temp file, fsync it, rename it over the target (atomic on one filesystem), then
+// fsync the folder so the rename itself survives. Appends (the step log, the journal) are fsynced too.
 let tmpN = 0;
+async function syncDir(dir) {
+  try { const fh = await open(dir, "r"); try { await fh.sync(); } finally { await fh.close(); } } catch { /* not every platform can fsync a folder */ }
+}
 async function atomicWrite(file, data) {
   const tmp = `${file}.${process.pid}.${++tmpN}.${Math.random().toString(36).slice(2, 8)}.tmp`; // unique: parallel writes never share a temp file
-  await writeFile(tmp, data);
+  const fh = await open(tmp, "w");
+  try { await fh.writeFile(data); await fh.sync(); } finally { await fh.close(); }
   await rename(tmp, file);
+  await syncDir(dirname(file));
 }
+/** a new file that must never overwrite an existing one (submits): flag wx, fsynced */
+async function createOnce(file, data) {
+  const fh = await open(file, "wx");
+  try { await fh.writeFile(data); await fh.sync(); } finally { await fh.close(); }
+  await syncDir(dirname(file));
+}
+/** append lines and fsync them before answering (the client takes the reply as "saved") */
+async function durableAppend(file, text) {
+  const fh = await open(file, "a");
+  try { await fh.write(text); await fh.sync(); } finally { await fh.close(); }
+}
+
+
+// ---------- merging: the server copy only ever gets fuller ----------
+// latest.json is the merged view of every device (the workshop, /status and /answers read it). Each write is merged
+// item by item instead of replacing the file, under these rules:
+//   - an item the device changed ("dirty") replaces the merged value, unless it is EMPTIER than what is there and the
+//     merged value came from another device (an empty, older or half-typed copy never wipes someone else's answer);
+//   - an item the device did not change only fills a gap (a full resync from a device never rolls anything back);
+//   - an item missing from a write is never deleted;
+//   - old-format drafts (tabs from before core-save) count every item as changed, under the same "never emptier" rule.
+// Each device keeps its own copy in devices/<id>.json and every applied or refused change is appended to journal.jsonl,
+// so whatever a merge keeps out is still on disk. Order comes from per-tab sequence numbers, never from clocks.
+const isEmptyV = (v) => v == null || (typeof v === "string" ? !v.trim() : Array.isArray(v) ? v.every(isEmptyV) : typeof v === "object" ? Object.values(v).every(isEmptyV) : false);
+const stable = (v) => JSON.stringify(v, (_k, x) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]])) : x));
+const sameV = (a, b) => stable(a ?? null) === stable(b ?? null);
+/** a is contained in b: every bit of content in a is also in b (a shorter text that b contains, fewer picks, fewer slots) */
+function within(a, b) {
+  if (isEmptyV(a)) return true;
+  if (b == null) return false;
+  if (typeof a === "string") return typeof b === "string" && b.includes(a.trim());
+  if (typeof a !== "object") return a === b;
+  if (Array.isArray(a)) return Array.isArray(b) && a.every((x) => isEmptyV(x) || b.some((y) => within(x, y)));
+  return typeof b === "object" && !Array.isArray(b) && Object.entries(a).every(([k, x]) => within(x, b[k]));
+}
+const emptier = (next, old) => !isEmptyV(old) && within(next, old) && !sameV(next, old);
+
+/** merges one write into values (mutated); returns what happened, for the reply and the journal.
+ *
+ *  core-integ (r482b): every item carries a revision (merge.items[k].rev, 0 when the server has never merged it, e.g.
+ *  sessions from before core-save). A device sends, for each item it changed, the revision it last saw (`bases`).
+ *    - base === the item's current revision: the person edited the copy the server has, so the change wins whatever
+ *      it is: shorter, unticked, cleared, a word out of a basket;
+ *    - base older than the current revision: someone else changed it since. A change that is not emptier still wins
+ *      (newest wins, the replaced value is journalled as prev); an emptier one is a stale overwrite and is refused;
+ *    - no base (a tab from before this fix, or a device that never saw the server's copy): the old rule, an emptier
+ *      value from another device is refused.
+ *  An item the device did not change only fills a gap that nobody ever wrote: a gap left by a deliberate clear
+ *  (the item has a revision) stays cleared. A missing item is never deleted. Ack: revs of what is now on the server. */
+function mergeInto(values, merge, inc, now) {
+  const laneKey = inc.lane ? `${inc.dev}:${inc.lane}` : "";
+  if (laneKey && !inc.full && (merge.lanes[laneKey] ?? 0) >= inc.seq) return { stale: true, applied: [], kept: [], journal: [], revs: {} };
+  const applied = [], kept = [], journal = [], revs = {};
+  const bases = inc.bases && typeof inc.bases === "object" ? inc.bases : {};
+  for (const [k, raw] of Object.entries(inc.items ?? {})) {
+    const v = raw ?? null;
+    const old = values[k];
+    const cur = merge.items[k]?.rev ?? 0;
+    const dirty = !inc.dirty || inc.dirty.has(k);
+    if (sameV(v, old)) { if (dirty) revs[k] = cur; continue; }
+    const mine = merge.items[k]?.dev === inc.dev;
+    const base = Number.isInteger(bases[k]) ? bases[k] : null;
+    let ok, why = "emptier";
+    if (!dirty) ok = isEmptyV(old) && !isEmptyV(v) && !merge.items[k];
+    else if (base !== null && base >= cur) ok = true;                 // edited on the current copy: whatever it is
+    else if (base !== null) { ok = !emptier(v, old); why = "stale"; } // someone changed it since: never emptier
+    else ok = mine || !emptier(v, old);                               // no base: the pre-fix rule
+    if (!ok) {
+      if (dirty) { kept.push(k); revs[k] = cur; journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, refused: why, base, rev: cur, v, ...(inc.origin ? { origin: inc.origin } : {}) }); }
+      continue;
+    }
+    const prev = old !== undefined ? { prev: old, prevDev: merge.items[k]?.dev ?? null } : {};
+    if (v == null) delete values[k]; else values[k] = v;
+    merge.items[k] = { dev: inc.dev, seq: inc.seq, at: now, rev: cur + 1, ...(inc.origin ? { origin: inc.origin } : {}) };
+    revs[k] = cur + 1;
+    applied.push(k);
+    journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, v, rev: cur + 1, ...(inc.origin ? { origin: inc.origin } : {}), ...prev });
+  }
+  if (laneKey) {
+    merge.lanes[laneKey] = Math.max(merge.lanes[laneKey] ?? 0, inc.seq);
+    const keys = Object.keys(merge.lanes);
+    if (keys.length > 300) for (const k of keys.slice(0, keys.length - 300)) delete merge.lanes[k];
+  }
+  return { stale: false, applied, kept, journal, revs };
+}
+/** item → revision for everything the server holds or has deliberately cleared (an item cleared on purpose has a
+ *  revision and no value: devices remove it too) */
+const revsOf = (values, merge) => Object.fromEntries([...new Set([...Object.keys(values ?? {}), ...Object.keys(merge?.items ?? {})])].map((k) => [k, merge?.items?.[k]?.rev ?? 0]));
+/** the client's view of a config's modules (src/clients/view.ts clientView, same rules): modules and items marked
+ *  workshopOnly leave, a module's `client` block renames it and pulls items in from other modules, empty modules go.
+ *  Progress for Ops counts these, so a trimmed questionnaire shows x/11 and can complete. A config without marks
+ *  comes back as it is. */
+function clientModules(cfg) {
+  const all = cfg?.modules ?? [];
+  const marked = all.some((m) => m.workshopOnly || m.client || m.items?.some((i) => i.workshopOnly));
+  if (!marked) return all;
+  const byId = new Map(all.flatMap((m) => (m.items ?? []).map((i) => [i.id, i])));
+  const pulled = new Set(all.flatMap((m) => (m.workshopOnly ? [] : m.client?.pull ?? [])));
+  return all.filter((m) => !m.workshopOnly).map((m) => {
+    const own = (m.items ?? []).filter((i) => !i.workshopOnly && !pulled.has(i.id));
+    const extra = (m.client?.pull ?? []).map((id) => byId.get(id)).filter(Boolean);
+    const c = m.client;
+    return { ...m, title: c?.title ?? m.title, short: c?.short ?? m.short, minutes: c?.minutes ?? m.minutes, items: [...own, ...extra] };
+  }).filter((m) => m.items.length > 0);
+}
+const readJSON = async (f) => { try { return JSON.parse(await readFile(f, "utf8")); } catch { return null; } };
+/** the merged copy; if latest.json is unreadable (it should never be: writes are atomic), the newest hourly snapshot */
+async function readLatest(dir) {
+  const l = await readJSON(join(dir, "latest.json"));
+  if (l) return l;
+  try {
+    const h = (await readdir(join(dir, "history"))).filter((f) => f.endsWith(".json")).sort().reverse();
+    for (const f of h) { const x = await readJSON(join(dir, "history", f)); if (x) return x; }
+  } catch { /* no history */ }
+  return null;
+}
+const answersOfRecord = (r) => r?.session?.answers ?? r?.export?.answers ?? {};
 
 // one queue per client: start, drafts, submits and steps read-modify-write meta.json and the log in order
 const queues = new Map();
@@ -92,8 +223,10 @@ function withLock(key, fn) {
  * @param {string} o.mailFrom
  * @param {string} [o.adminKey]  unlocks GET …/latest for the workshop and the /admin routes
  * @param {string} [o.publicBase] the site's origin for the links in onboarding mails
+ * @param {number} [o.maxBytes]  the largest request body (default 25 MB; a bigger one gets a clean 413)
  */
-export function createCore30({ dataDir, distDir, configDir, registry, transport, mailTo, mailFrom, adminKey, publicBase = "https://cromaticstudios.com" }) {
+export function createCore30({ dataDir, distDir, configDir, registry, transport, mailTo, mailFrom, adminKey, publicBase = "https://cromaticstudios.com", maxBytes = MAX }) {
+  const readBodyLimited = (req) => readBodyMax(req, maxBytes); // maxBytes: the tests lower it to prove the 413 path
   const sessionsDir = join(dataDir, "_sessions");
   const isAdmin = (req, url) => {
     const given = String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, "") || url.searchParams.get("key") || "";
@@ -159,27 +292,114 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const v = visitorOf(p);
     return v ? join(dataDir, id, "r", v) : null;
   }
-  const leadLog = (id, entry) => appendFile(join(dataDir, id, "leads.jsonl"), JSON.stringify(entry) + "\n");
+  const leadLog = (id, entry) => durableAppend(join(dataDir, id, "leads.jsonl"), JSON.stringify(entry) + "\n");
+
+  /** checks the client and the token, makes the folders; [code, out] on refusal, else { c, id, dir } */
+  async function writer(p, body, admin = false) {
+    const reg = await clients();
+    const id = safe(p.clientId);
+    const c = reg[id];
+    if (!c) return { err: [404, { ok: false, error: "client" }] };
+    if (c.token && p.token !== c.token && !admin) return { err: [403, { ok: false, error: "token" }] };
+    if (c.public && body.length > PUBLIC_MAX) return { err: [413, { ok: false, error: "size" }] };
+    const dir = dirFor(c, id, p);
+    if (!dir) return { err: [400, { ok: false, error: "visitor" }] };
+    await mkdir(join(dir, "history"), { recursive: true });
+    await mkdir(join(dir, "submits"), { recursive: true });
+    return { c, id, dir };
+  }
+
+  /** merges a write into latest.json: journal first (write-ahead), then the merged copy, atomically */
+  async function commit(dir, inc, now, compose) {
+    const prev = await readLatest(dir);
+    const values = { ...answersOfRecord(prev) };
+    const merge = { lanes: { ...(prev?.merge?.lanes ?? {}) }, items: { ...(prev?.merge?.items ?? {}) } };
+    const r = mergeInto(values, merge, inc, now);
+    if (r.stale) return { ...r, record: null };
+    if (r.journal.length) await durableAppend(join(dir, "journal.jsonl"), r.journal.map((j) => JSON.stringify(j)).join("\n") + "\n");
+    const record = compose(prev, values, merge);
+    const text = JSON.stringify(record, null, 1);
+    await atomicWrite(join(dir, "latest.json"), text);
+    return { ...r, record, text };
+  }
+
+  /** counters for /status (no answer content, ever) and the hourly snapshot */
+  async function bookkeep(dir, now, text) {
+    const meta = await readMeta(dir);
+    meta.firstDraftAt ??= now;
+    meta.lastSaveAt = now;
+    meta.saves = (meta.saves ?? 0) + 1;
+    await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
+    if (text) await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), text); // one per hour, the last write of it
+  }
+
+  /** POST /api/core30/save (core-save, v2): the items this tab changed since the server last confirmed, plus the session's
+   *  other fields. { v: 2, clientId, token, device, lane, seq, full?, dirty: [ids], answers: {id: value|null}, session } */
+  async function save(body, admin = false) {
+    let p;
+    try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
+    const w = await writer(p, body, admin); // the workshop key (Authorization: Bearer) opens a session like its token
+    if (w.err) return w.err;
+    const { c, dir } = w;
+    const dev = visitorOf(p), lane = safe(p.lane), seq = Number(p.seq);
+    if (!dev || !lane || !Number.isSafeInteger(seq) || seq < 1) return [400, { ok: false, error: "seq" }];
+    const items = p.answers && typeof p.answers === "object" && !Array.isArray(p.answers) ? p.answers : {};
+    const sess = p.session && typeof p.session === "object" ? p.session : {};
+    // origin "workshop": answers the studio types live in the workshop (a client who did not fill the questionnaire)
+    const origin = p.origin === "workshop" && !c.public ? "workshop" : undefined;
+    const inc = { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, origin, bases: p.bases };
+    const now = new Date().toISOString();
+    const r = await commit(dir, inc, now, (prev, values, merge) => {
+      if (origin) return { ...(prev ?? { clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, kind: "draft" }), receivedAt: now, session: { ...(prev?.session ?? {}), answers: values }, merge };
+      const { answers: _a, events: _e, save: _s, ...rest } = sess;
+      return { receivedAt: now, kind: "draft", clientId: p.clientId, configVersion: p.configVersion ?? prev?.configVersion, edition: p.edition ?? prev?.edition, token: p.token, device: dev,
+        session: { ...(prev?.session ?? {}), ...rest, respondent: rest.respondent ?? prev?.session?.respondent, answers: values }, merge };
+    });
+    if (r.stale) return [200, { ok: true, at: now, seq, stale: true }];
+    // this device's own copy: its answers as it sees them (a patch lands on top of the last one)
+    if (!c.public) {
+      await mkdir(join(dir, "devices"), { recursive: true });
+      const df = join(dir, "devices", `${dev}.json`);
+      const prevDev = inc.full ? null : await readJSON(df);
+      const devAnswers = { ...(prevDev?.session?.answers ?? {}) };
+      for (const [k, v] of Object.entries(items)) { if (v == null) delete devAnswers[k]; else devAnswers[k] = v; }
+      const { answers: _a, events: _e, save: _s, ...rest } = sess;
+      await atomicWrite(df, JSON.stringify({ receivedAt: now, kind: "draft", clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, device: dev, lane, seq, session: { ...rest, answers: devAnswers } }, null, 1));
+    }
+    await bookkeep(dir, now, r.text);
+    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs }];
+  }
+
+  /** GET /api/core30/<id>/answers?t=: the merged answers, for a device that opens the link without them (a second
+   *  device, the studio's laptop, a cleared browser). The same token already opens these answers; never on a public edition. */
+  async function answersGet(id, t) {
+    const c = (await clients())[safe(id)];
+    if (!c || c.public) return [404, { ok: false }];
+    if (c.token && t !== c.token) return [403, { ok: false }];
+    const l = await readLatest(join(dataDir, safe(id)));
+    // which answers the studio typed in the workshop (item id → "workshop"); the rest came from the client
+    const origins = Object.fromEntries(Object.entries(l?.merge?.items ?? {}).filter(([, x]) => x?.origin).map(([k, x]) => [k, x.origin]));
+    const answers = answersOfRecord(l);
+    return [200, { ok: true, at: l?.receivedAt ?? null, answers, origins, revs: revsOf(answers, l?.merge) }];
+  }
 
   async function store(kind, body) {
     let p;
     try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
-    const reg = await clients();
-    const id = safe(p.clientId);
-    const c = reg[id];
-    if (!c) return [404, { ok: false, error: "client" }];
-    if (c.token && p.token !== c.token) return [403, { ok: false, error: "token" }];
-    if (c.public && body.length > PUBLIC_MAX) return [413, { ok: false, error: "size" }];
-    const dir = dirFor(c, id, p);
-    if (!dir) return [400, { ok: false, error: "visitor" }];
-    await mkdir(join(dir, "history"), { recursive: true });
-    await mkdir(join(dir, "submits"), { recursive: true });
+    const w = await writer(p, body);
+    if (w.err) return w.err;
+    const { c, id, dir } = w;
     const now = new Date().toISOString();
     const record = JSON.stringify({ receivedAt: now, kind, ...p }, null, 1);
-
-    await atomicWrite(join(dir, "latest.json"), record);
-    // one copy per browser too: a second device never overwrites what the first one sent
     const dev = visitorOf(p);
+
+    // the merged copy: an old-format draft or a submit counts every item as changed, under the "never emptier" rule
+    const items = kind === "submit" ? p.export?.answers : p.session?.answers;
+    const merged = await commit(dir, { dev: dev || "legacy", lane: "", seq: 0, full: true, dirty: null, items: items && typeof items === "object" ? items : {} }, now, (prev, values, merge) => {
+      const session = p.session ? { ...p.session, answers: values } : { ...(prev?.session ?? {}), answers: values };
+      return { receivedAt: now, kind, ...p, session, merge };
+    });
+    // one copy per browser too: a second device never overwrites what the first one sent
     if (dev && !c.public) { await mkdir(join(dir, "devices"), { recursive: true }); await atomicWrite(join(dir, "devices", `${dev}.json`), record); }
     // counters for /status: no answer content, ever
     const meta = await readMeta(dir);
@@ -190,14 +410,14 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (preSubmit) { meta.preSubmits = (meta.preSubmits ?? 0) + 1; meta.lastPreSubmitAt = now; }
     else if (kind === "submit") { meta.submits = (meta.submits ?? 0) + 1; meta.lastSubmitAt = now; }
     await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
-    await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), record); // one per hour
+    await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), merged.text ?? record); // one per hour
     if (kind === "submit" && c.public) {
       await appendLog(dir, { at: now, type: "submit" });
-      await writeFile(join(dir, "submits", `submit-${stamp()}.json`), record, { flag: "wx" });
+      await createOnce(join(dir, "submits", `submit-${stamp()}.json`), record);
       await liteMails(c, id, p, now);
     } else if (preSubmit) {
       await appendLog(dir, { at: now, type: "pre-submit", stage: "pre" });
-      await writeFile(join(dir, "submits", `pre-submit-${stamp()}.json`), record, { flag: "wx" }); // never overwrite
+      await createOnce(join(dir, "submits", `pre-submit-${stamp()}.json`), record); // never overwrite
       // the answers as the client sent them: the full Core reads them back, marked "completat de tine acasă"
       const x = p.export ?? {};
       await writePre(id, c, { answers: x.answers, respondent: x.respondent, configVersion: p.configVersion ?? x.config?.version }, { submittedAt: now });
@@ -218,7 +438,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     } else if (kind === "submit") {
       await appendLog(dir, { at: now, type: "submit" });
       const file = `submit-${stamp()}.json`;
-      await writeFile(join(dir, "submits", file), record, { flag: "wx" }); // never overwrite
+      await createOnce(join(dir, "submits", file), record); // never overwrite
       const r = p.export?.readable ?? {};
       const rows = Object.values(r).filter((x) => x.answer).map((x) => `<tr><td style="padding:6px 10px;color:#5d5a52;font:12px monospace;vertical-align:top">${esc(x.module)}</td><td style="padding:6px 10px"><b>${esc(x.question)}</b><br>${esc(x.answer)}</td></tr>`).join("");
       await mail(`[The Core 3.0] ${c.name ?? id} a trimis`, `<p><b>${esc(c.contact ?? "")}</b> a trimis The Core 3.0 pentru <b>${esc(c.name ?? id)}</b>. JSON-ul complet e atașat; se încarcă direct în modul workshop.</p><table style="border-collapse:collapse;font:14px sans-serif">${rows}</table>`,
@@ -325,7 +545,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const now = new Date().toISOString();
     const rec = { id, token, email, name, contact, edition, lang, stage, createdAt: now };
     await mkdir(sessionsDir, { recursive: true });
-    await writeFile(join(sessionsDir, `${id}.json`), JSON.stringify(rec, null, 1), { flag: "wx" });
+    await createOnce(join(sessionsDir, `${id}.json`), JSON.stringify(rec, null, 1));
     const url = `${publicBase.replace(/\/$/, "")}/thecore30/${id}?t=${token}`;
     const mailSent = await onboardingMail(rec, url);
     return [200, { ok: true, id, url, token, edition, stage, lang, mailSent }];
@@ -387,11 +607,11 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       cta: "Începe pregătirea", foot: "Păstrează linkul pentru tine: el îți deschide răspunsurile. Întrebări? Răspunde direct la emailul ăsta.",
     }) : x.lang === "en" ? {
       subject: "The Core: let's start your brand strategy",
-      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy. You answer on your own, at your pace: about 45 to 60 minutes, in two or three sittings if you like. Then we meet at the studio, over a coffee, for a 90-minute workshop and turn your answers into the strategy.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in English; you can switch to Romanian at the start.</p>`,
+      body: `<p>${hi}</p><p>This is the first step of The Core, the way Cromatic Studios writes a brand strategy. You answer on your own, at your pace: about 35 to 45 minutes, in two or three sittings if you like. Then we meet at the studio, over a coffee, for a 90-minute workshop and turn your answers into the strategy.</p><p>Everything saves as you go, on your device and with us. Close it whenever you want and open the same link to pick up where you left off. The questions are in English; you can switch to Romanian at the start.</p>`,
       cta: "Start The Core", foot: "Keep this link to yourself: it opens your answers. Questions? Just reply to this email.",
     } : {
       subject: "The Core: hai să începem strategia brandului tău",
-      body: `<p>${hi}</p><p>Ăsta e primul pas din The Core, felul în care Cromatic Studios scrie strategia unui brand. Răspunzi singur, în ritmul tău: cam 45–60 de minute, în două sau trei reprize dacă vrei. Apoi ne vedem în studio, la o cafea, pentru un workshop de 90 de minute și transformăm răspunsurile în strategie.</p><p>Totul se salvează pe parcurs, pe dispozitivul tău și la noi. Poți închide oricând și reiei de unde ai rămas, de pe același link.</p>`,
+      body: `<p>${hi}</p><p>Ăsta e primul pas din The Core, felul în care Cromatic Studios scrie strategia unui brand. Răspunzi singur, în ritmul tău: cam 35–45 de minute, în două sau trei reprize dacă vrei. Apoi ne vedem în studio, la o cafea, pentru un workshop de 90 de minute și transformăm răspunsurile în strategie.</p><p>Totul se salvează pe parcurs, pe dispozitivul tău și la noi. Poți închide oricând și reiei de unde ai rămas, de pe același link.</p>`,
       cta: "Începe The Core", foot: "Păstrează linkul pentru tine: el îți deschide răspunsurile. Întrebări? Răspunde direct la emailul ăsta.",
     };
     const html = `<div style="font:16px/1.55 Arial,sans-serif;color:#0d0c09;max-width:560px">
@@ -568,7 +788,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
 
   // the step log: one JSON line per event, appended, never rewritten or trimmed
   const logFile = (dir) => join(dir, "log.jsonl");
-  async function appendLog(dir, entry) { await appendFile(logFile(dir), JSON.stringify(entry) + "\n"); }
+  async function appendLog(dir, entry) { await durableAppend(logFile(dir), JSON.stringify(entry) + "\n"); }
   async function readLog(dir) {
     try { return (await readFile(logFile(dir), "utf8")).split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean); }
     catch { return []; }
@@ -582,7 +802,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (!c?.file) return [404, { ok: false, error: "client" }];
     if (c.token && p.token !== c.token) return [403, { ok: false, error: "token" }];
     const cfg = JSON.parse(await readFile(c.file, "utf8"));
-    const mods = cfg.modules ?? [];
+    const mods = clientModules(cfg); // positions as the client sees them (the trimmed view)
     const dir = dirFor(c, safe(p.clientId), p);
     if (!dir) return [400, { ok: false, error: "visitor" }];
     await mkdir(dir, { recursive: true });
@@ -649,8 +869,11 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     }
     const dir = join(dataDir, safe(id));
     const m = existsSync(dir) ? await readMeta(dir) : {};
-    const mods = c.file ? JSON.parse(await readFile(c.file, "utf8")).modules ?? [] : [];
+    // the client's view (workshopOnly modules and items out): new sessions read x/11; steps logged for a module that
+    // is no longer in the view (an old session's m06, m08) still show in the log but do not count past the total
+    const mods = c.file ? clientModules(JSON.parse(await readFile(c.file, "utf8"))) : [];
     const total = mods.length;
+    const inView = new Set(mods.map((x) => x.id));
     // which modules have answers in the latest copy (titles only): a module skipped and then answered is partial,
     // a module with answers but not every required item is partial too; the step log alone only knows "complete"
     let answeredIds = new Set(), skippedIds = [];
@@ -673,7 +896,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     }));
     // two stages share one log: progress counts the steps of the stage the session is in now (untagged = full)
     const stageNow = c.stage === "pre" ? "pre" : "full";
-    const doneIds = new Set(log.filter((e) => e.type === "step" && (e.stage ?? "full") === stageNow).map((e) => e.module));
+    const doneIds = new Set(log.filter((e) => e.type === "step" && (e.stage ?? "full") === stageNow && inView.has(e.module)).map((e) => e.module));
     const titleOf = (mid) => mods.find((x) => x.id === mid)?.short ?? mid;
     const partial = mods.filter((x) => answeredIds.has(x.id) && !doneIds.has(x.id)).map((x) => x.short);
     const skippedOnly = mods.filter((x) => skippedIds.includes(x.id) && !answeredIds.has(x.id)).map((x) => titleOf(x.id));
@@ -683,7 +906,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (c.stage === "pre" || c.dynamic?.upgradedAt || existsSync(preFile(id))) {
       const frozen = await readPre(id);
       let preMods = mods;
-      if (c.stage !== "pre") { const pe = preOf(await clients(), c.dynamic?.edition ?? ""); try { preMods = pe?.file ? JSON.parse(await readFile(pe.file, "utf8")).modules ?? [] : []; } catch { preMods = []; } }
+      if (c.stage !== "pre") { const pe = preOf(await clients(), c.dynamic?.edition ?? ""); try { preMods = pe?.file ? clientModules(JSON.parse(await readFile(pe.file, "utf8"))) : []; } catch { preMods = []; } }
       const preDone = new Set(log.filter((e) => e.type === "step" && e.stage === "pre").map((e) => e.module));
       pre = { done: preDone.size, total: preMods.length, minutes: preMods.reduce((n, x) => n + (x.minutes ?? 0), 0),
         submitted: !!m.lastPreSubmitAt, submittedAt: m.lastPreSubmitAt ?? null, submits: m.preSubmits ?? 0,
@@ -698,6 +921,53 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       report: await (async () => { const r = await readReportMeta(id); return r ? { available: true, version: r.version, uploadedAt: r.uploadedAt, sentAt: r.sentAt ?? null } : { available: false }; })(),
       progress: { done: doneIds.size, answered: new Set([...doneIds, ...answeredIds]).size, total, partial, skipped: skippedOnly }, lastStep, log,
     }];
+  }
+
+  // ---------- the workshop's own state (core-save) ----------
+  // The facilitator's notes, the tension marks, The Core composer (slots, sentence, mix) used to live only in the
+  // workshop laptop's localStorage. Now every edit goes to <data>/<id>/workshop/ the same way answers do: flat keys
+  // ("notes/<block>", "core/<slot>", "sentence", "mix"…), merged per key, journal + per-device copies + hourly snapshots.
+  // POST with the link's token (the workshop page already runs on it) or the admin key; GET only with the admin key,
+  // because these are the studio's notes.
+  async function workshopSave(body, req, url) {
+    let p;
+    try { p = JSON.parse(body); } catch { return [400, { ok: false, error: "json" }]; }
+    const id = safe(p.clientId);
+    const c = (await clients())[id];
+    if (!c || c.public) return [404, { ok: false, error: "client" }];
+    if (c.token && p.token !== c.token && !isAdmin(req, url)) return [403, { ok: false, error: "token" }];
+    const dev = visitorOf(p), lane = safe(p.lane), seq = Number(p.seq);
+    if (!dev || !lane || !Number.isSafeInteger(seq) || seq < 1) return [400, { ok: false, error: "seq" }];
+    const dir = join(dataDir, id, "workshop");
+    await mkdir(join(dir, "devices"), { recursive: true });
+    await mkdir(join(dir, "history"), { recursive: true });
+    const items = p.items && typeof p.items === "object" && !Array.isArray(p.items) ? p.items : {};
+    const now = new Date().toISOString();
+    const prev = await readJSON(join(dir, "latest.json"));
+    const values = { ...(prev?.items ?? {}) };
+    const merge = { lanes: { ...(prev?.merge?.lanes ?? {}) }, items: { ...(prev?.merge?.items ?? {}) } };
+    const r = mergeInto(values, merge, { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, bases: p.bases }, now);
+    if (r.stale) return [200, { ok: true, at: now, seq, stale: true }];
+    if (r.journal.length) await durableAppend(join(dir, "journal.jsonl"), r.journal.map((j) => JSON.stringify(j)).join("\n") + "\n");
+    // the clock: time spent per block only grows (two laptops never roll it back); the block and running state follow the newest write
+    const m = p.meta && typeof p.meta === "object" ? p.meta : {};
+    const spent = { ...(prev?.meta?.spent ?? {}) };
+    for (const [k, v] of Object.entries(m.spent ?? {})) if (Number.isFinite(v)) spent[safe(k)] = Math.max(spent[safe(k)] ?? 0, v);
+    const meta = { ...(prev?.meta ?? {}), spent, ...(Number.isInteger(m.block) ? { block: m.block } : {}), ...(typeof m.running === "boolean" ? { running: m.running } : {}) };
+    const text = JSON.stringify({ receivedAt: now, clientId: id, device: dev, items: values, meta, merge }, null, 1);
+    await atomicWrite(join(dir, "latest.json"), text);
+    const df = join(dir, "devices", `${dev}.json`);
+    const prevDev = p.full ? null : await readJSON(df);
+    const mine = { ...(prevDev?.items ?? {}) };
+    for (const [k, v] of Object.entries(items)) { if (v == null) delete mine[k]; else mine[k] = v; }
+    await atomicWrite(df, JSON.stringify({ receivedAt: now, clientId: id, device: dev, lane, seq, items: mine, meta: m }, null, 1));
+    await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), text);
+    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs }];
+  }
+  async function workshopGet(id, req, url) {
+    if (!isAdmin(req, url)) return [403, { ok: false }];
+    const l = await readJSON(join(dataDir, safe(id), "workshop", "latest.json"));
+    return l ? [200, { ok: true, at: l.receivedAt, items: l.items ?? {}, meta: l.meta ?? {}, revs: revsOf(l.items, l.merge) }] : [404, { ok: false }];
   }
 
   async function latest(id, key) {
@@ -741,9 +1011,21 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     if (p === "/thecore30" || p.startsWith("/thecore30/")) { serveTool(req, res, p); return true; }
     if (!p.startsWith("/api/core30/")) return false;
     try {
-      if (req.method === "POST" && limited(req)) { send(res, 429, { ok: false, error: "slow down" }); return true; }
+      // core-save: saving is now instant (up to ~1 request a second while typing, per tab, plus the workshop), and a
+      // studio shares one IP across laptops; the strict per-IP limit stays for public editions only (limitedPublic),
+      // token sessions get a loose abuse guard instead
+      if (req.method === "POST" && limited(req, 6000)) { send(res, 429, { ok: false, error: "slow down" }); return true; }
+      const readBody = async (r) => {
+        const body = await readBodyLimited(r);
+        if ((await clients())[lockKey(body)]?.public && limitedPublic(r)) throw Object.assign(new Error("slow down"), { code: 429 });
+        return body;
+      };
       if (req.method === "POST" && p === "/api/core30/event") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => events(body)); send(res, code, await withBuild(code, out)); return true; }
       if (req.method === "POST" && p === "/api/core30/start") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => start(body)); send(res, code, out); return true; }
+      if (req.method === "POST" && p === "/api/core30/workshop") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => workshopSave(body, req, url)); send(res, code, await withBuild(code, out)); return true; }
+      const wg = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/workshop$/i);
+      if (req.method === "GET" && wg) { const [code, out] = await workshopGet(wg[1], req, url); send(res, code, out); return true; }
+      if (req.method === "POST" && p === "/api/core30/save") { const body = await readBody(req); const [code, out] = await withLock(lockKey(body), () => save(body, isAdmin(req, url))); send(res, code, await withBuild(code, out)); return true; }
       if (req.method === "POST" && (p === "/api/core30/draft" || p === "/api/core30/submit")) {
         const body = await readBody(req);
         const [code, out] = await withLock(lockKey(body), () => store(p.endsWith("submit") ? "submit" : "draft", body));
@@ -773,6 +1055,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       }
       const c = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/config$/i);
       if (req.method === "GET" && c) { const [code, out] = await config(c[1], url.searchParams.get("t") ?? "", url.searchParams.get("lang") ?? ""); send(res, code, out); return true; }
+      const an = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/answers$/i);
+      if (req.method === "GET" && an) { const [code, out] = await answersGet(an[1], url.searchParams.get("t") ?? ""); send(res, code, out); return true; }
       const pf = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/prefill$/i);
       if (req.method === "GET" && pf) { const [code, out] = await prefill(pf[1], url.searchParams.get("t") ?? ""); send(res, code, out); return true; }
       const st = p.match(/^\/api\/core30\/([a-z0-9_-]+)\/status$/i);
@@ -787,7 +1071,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       send(res, 404, { ok: false });
     } catch (e) {
       console.error("[core30]", e);
-      send(res, e.code === 413 ? 413 : 500, { ok: false });
+      send(res, e.code === 413 ? 413 : e.code === 429 ? 429 : 500, { ok: false, ...(e.code === 429 ? { error: "slow down" } : {}) });
     }
     return true;
   };
