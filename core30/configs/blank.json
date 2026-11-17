@@ -1452,6 +1452,13 @@
      ]
     },
     {
+     "id": "m08.broad",
+     "workshopOnly": true,
+     "kind": "broad",
+     "label": "Toate cuvintele care sună adevărat.",
+     "help": "Pe toată lista: alegerile clientului (bifate deja), valorile și atributele din listă, cuvintele scrise de el. Bifăm larg tot ce rezonează; adăugăm ce lipsește."
+    },
+    {
      "id": "m08.core6",
      "workshopOnly": true,
      "kind": "core6",
@@ -1501,6 +1508,14 @@
        "nimic pe jumătate"
       ]
      }
+    },
+    {
+     "id": "m08.uvp",
+     "workshopOnly": true,
+     "kind": "text",
+     "multiline": true,
+     "label": "UVP-ul, așa cum l-am scris la workshop.",
+     "help": "Se scrie singur din cele 6 atribute alese. Îl putem ajusta de mână; „Reface din atribute” îl scrie din nou."
     }
    ]
   },

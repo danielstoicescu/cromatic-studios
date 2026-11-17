@@ -1453,6 +1453,13 @@
      ]
     },
     {
+     "id": "m08.broad",
+     "workshopOnly": true,
+     "kind": "broad",
+     "label": "Every word that rings true.",
+     "help": "The whole list: the client's picks (already ticked), the values and attributes from the lists, the words they wrote. We tick broadly whatever resonates and add what is missing."
+    },
+    {
      "id": "m08.core6",
      "workshopOnly": true,
      "kind": "core6",
@@ -1502,6 +1509,14 @@
        "nothing halfway"
       ]
      }
+    },
+    {
+     "id": "m08.uvp",
+     "workshopOnly": true,
+     "kind": "text",
+     "multiline": true,
+     "label": "The UVP, as we wrote it at the workshop.",
+     "help": "It writes itself from the 6 chosen attributes. We can adjust it by hand; “Rebuild from the attributes” writes it again."
     }
    ]
   },
