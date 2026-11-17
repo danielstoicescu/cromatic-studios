@@ -122,37 +122,57 @@ function within(a, b) {
 }
 const emptier = (next, old) => !isEmptyV(old) && within(next, old) && !sameV(next, old);
 
-/** merges one write into values (mutated); returns what happened, for the reply and the journal */
+/** merges one write into values (mutated); returns what happened, for the reply and the journal.
+ *
+ *  core-integ (r482b): every item carries a revision (merge.items[k].rev, 0 when the server has never merged it, e.g.
+ *  sessions from before core-save). A device sends, for each item it changed, the revision it last saw (`bases`).
+ *    - base === the item's current revision: the person edited the copy the server has, so the change wins whatever
+ *      it is: shorter, unticked, cleared, a word out of a basket;
+ *    - base older than the current revision: someone else changed it since. A change that is not emptier still wins
+ *      (newest wins, the replaced value is journalled as prev); an emptier one is a stale overwrite and is refused;
+ *    - no base (a tab from before this fix, or a device that never saw the server's copy): the old rule, an emptier
+ *      value from another device is refused.
+ *  An item the device did not change only fills a gap that nobody ever wrote: a gap left by a deliberate clear
+ *  (the item has a revision) stays cleared. A missing item is never deleted. Ack: revs of what is now on the server. */
 function mergeInto(values, merge, inc, now) {
   const laneKey = inc.lane ? `${inc.dev}:${inc.lane}` : "";
-  if (laneKey && !inc.full && (merge.lanes[laneKey] ?? 0) >= inc.seq) return { stale: true, applied: [], kept: [], journal: [] };
-  const applied = [], kept = [], journal = [];
+  if (laneKey && !inc.full && (merge.lanes[laneKey] ?? 0) >= inc.seq) return { stale: true, applied: [], kept: [], journal: [], revs: {} };
+  const applied = [], kept = [], journal = [], revs = {};
+  const bases = inc.bases && typeof inc.bases === "object" ? inc.bases : {};
   for (const [k, raw] of Object.entries(inc.items ?? {})) {
     const v = raw ?? null;
     const old = values[k];
-    if (sameV(v, old)) continue;
+    const cur = merge.items[k]?.rev ?? 0;
     const dirty = !inc.dirty || inc.dirty.has(k);
+    if (sameV(v, old)) { if (dirty) revs[k] = cur; continue; }
     const mine = merge.items[k]?.dev === inc.dev;
-    // the workshop and the client follow the same rule both ways: the newest non-empty change wins, an emptier one from
-    // another device never does, and the value it replaces is written next to it in the journal (prev)
-    const ok = dirty ? mine || !emptier(v, old) : isEmptyV(old) && !isEmptyV(v);
+    const base = Number.isInteger(bases[k]) ? bases[k] : null;
+    let ok, why = "emptier";
+    if (!dirty) ok = isEmptyV(old) && !isEmptyV(v) && !merge.items[k];
+    else if (base !== null && base >= cur) ok = true;                 // edited on the current copy: whatever it is
+    else if (base !== null) { ok = !emptier(v, old); why = "stale"; } // someone changed it since: never emptier
+    else ok = mine || !emptier(v, old);                               // no base: the pre-fix rule
     if (!ok) {
-      if (dirty) { kept.push(k); journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, refused: "emptier", v, ...(inc.origin ? { origin: inc.origin } : {}) }); }
+      if (dirty) { kept.push(k); revs[k] = cur; journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, refused: why, base, rev: cur, v, ...(inc.origin ? { origin: inc.origin } : {}) }); }
       continue;
     }
-    const prev = old !== undefined && !mine ? { prev: old, prevDev: merge.items[k]?.dev ?? null } : {};
+    const prev = old !== undefined ? { prev: old, prevDev: merge.items[k]?.dev ?? null } : {};
     if (v == null) delete values[k]; else values[k] = v;
-    merge.items[k] = { dev: inc.dev, seq: inc.seq, at: now, ...(inc.origin ? { origin: inc.origin } : {}) };
+    merge.items[k] = { dev: inc.dev, seq: inc.seq, at: now, rev: cur + 1, ...(inc.origin ? { origin: inc.origin } : {}) };
+    revs[k] = cur + 1;
     applied.push(k);
-    journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, v, ...(inc.origin ? { origin: inc.origin } : {}), ...prev });
+    journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, v, rev: cur + 1, ...(inc.origin ? { origin: inc.origin } : {}), ...prev });
   }
   if (laneKey) {
     merge.lanes[laneKey] = Math.max(merge.lanes[laneKey] ?? 0, inc.seq);
     const keys = Object.keys(merge.lanes);
     if (keys.length > 300) for (const k of keys.slice(0, keys.length - 300)) delete merge.lanes[k];
   }
-  return { stale: false, applied, kept, journal };
+  return { stale: false, applied, kept, journal, revs };
 }
+/** item → revision for everything the server holds or has deliberately cleared (an item cleared on purpose has a
+ *  revision and no value: devices remove it too) */
+const revsOf = (values, merge) => Object.fromEntries([...new Set([...Object.keys(values ?? {}), ...Object.keys(merge?.items ?? {})])].map((k) => [k, merge?.items?.[k]?.rev ?? 0]));
 /** the client's view of a config's modules (src/clients/view.ts clientView, same rules): modules and items marked
  *  workshopOnly leave, a module's `client` block renames it and pulls items in from other modules, empty modules go.
  *  Progress for Ops counts these, so a trimmed questionnaire shows x/11 and can complete. A config without marks
@@ -327,7 +347,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const sess = p.session && typeof p.session === "object" ? p.session : {};
     // origin "workshop": answers the studio types live in the workshop (a client who did not fill the questionnaire)
     const origin = p.origin === "workshop" && !c.public ? "workshop" : undefined;
-    const inc = { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, origin };
+    const inc = { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, origin, bases: p.bases };
     const now = new Date().toISOString();
     const r = await commit(dir, inc, now, (prev, values, merge) => {
       if (origin) return { ...(prev ?? { clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, kind: "draft" }), receivedAt: now, session: { ...(prev?.session ?? {}), answers: values }, merge };
@@ -347,7 +367,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       await atomicWrite(df, JSON.stringify({ receivedAt: now, kind: "draft", clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, device: dev, lane, seq, session: { ...rest, answers: devAnswers } }, null, 1));
     }
     await bookkeep(dir, now, r.text);
-    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept }];
+    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs }];
   }
 
   /** GET /api/core30/<id>/answers?t=: the merged answers, for a device that opens the link without them (a second
@@ -359,7 +379,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const l = await readLatest(join(dataDir, safe(id)));
     // which answers the studio typed in the workshop (item id → "workshop"); the rest came from the client
     const origins = Object.fromEntries(Object.entries(l?.merge?.items ?? {}).filter(([, x]) => x?.origin).map(([k, x]) => [k, x.origin]));
-    return [200, { ok: true, at: l?.receivedAt ?? null, answers: answersOfRecord(l), origins }];
+    const answers = answersOfRecord(l);
+    return [200, { ok: true, at: l?.receivedAt ?? null, answers, origins, revs: revsOf(answers, l?.merge) }];
   }
 
   async function store(kind, body) {
@@ -925,7 +946,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const prev = await readJSON(join(dir, "latest.json"));
     const values = { ...(prev?.items ?? {}) };
     const merge = { lanes: { ...(prev?.merge?.lanes ?? {}) }, items: { ...(prev?.merge?.items ?? {}) } };
-    const r = mergeInto(values, merge, { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items }, now);
+    const r = mergeInto(values, merge, { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, bases: p.bases }, now);
     if (r.stale) return [200, { ok: true, at: now, seq, stale: true }];
     if (r.journal.length) await durableAppend(join(dir, "journal.jsonl"), r.journal.map((j) => JSON.stringify(j)).join("\n") + "\n");
     // the clock: time spent per block only grows (two laptops never roll it back); the block and running state follow the newest write
@@ -941,12 +962,12 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     for (const [k, v] of Object.entries(items)) { if (v == null) delete mine[k]; else mine[k] = v; }
     await atomicWrite(df, JSON.stringify({ receivedAt: now, clientId: id, device: dev, lane, seq, items: mine, meta: m }, null, 1));
     await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), text);
-    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept }];
+    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs }];
   }
   async function workshopGet(id, req, url) {
     if (!isAdmin(req, url)) return [403, { ok: false }];
     const l = await readJSON(join(dataDir, safe(id), "workshop", "latest.json"));
-    return l ? [200, { ok: true, at: l.receivedAt, items: l.items ?? {}, meta: l.meta ?? {} }] : [404, { ok: false }];
+    return l ? [200, { ok: true, at: l.receivedAt, items: l.items ?? {}, meta: l.meta ?? {}, revs: revsOf(l.items, l.merge) }] : [404, { ok: false }];
   }
 
   async function latest(id, key) {
