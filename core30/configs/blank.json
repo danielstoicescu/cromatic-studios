@@ -1512,8 +1512,7 @@
     {
      "id": "m08.uvp",
      "workshopOnly": true,
-     "kind": "text",
-     "multiline": true,
+     "kind": "uvptext",
      "label": "UVP-ul, așa cum l-am scris la workshop.",
      "help": "Se scrie singur din cele 6 atribute alese. Îl putem ajusta de mână; „Reface din atribute” îl scrie din nou."
     }

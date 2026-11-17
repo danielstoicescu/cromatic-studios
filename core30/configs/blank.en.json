@@ -1513,8 +1513,7 @@
     {
      "id": "m08.uvp",
      "workshopOnly": true,
-     "kind": "text",
-     "multiline": true,
+     "kind": "uvptext",
      "label": "The UVP, as we wrote it at the workshop.",
      "help": "It writes itself from the 6 chosen attributes. We can adjust it by hand; “Rebuild from the attributes” writes it again."
     }

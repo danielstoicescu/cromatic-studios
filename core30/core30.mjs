@@ -206,6 +206,29 @@ function mergeInto(values, merge, inc, now) {
 // revision wins whatever it is (removals included), a stale emptier change is refused, no base = the old rule.
 // Untouched paths are left alone. Whole-item writes (older tabs) still work and reset the item's field revisions.
 const isPlain = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+// the keys each object answer must have (src/state/answers.ts SHAPES, same table): an answer missing an empty set or
+// object ("custom": [], "practice": {}) crashed readers on other devices ("t.custom is not iterable"). Stored answers
+// are repaired when written field by field, and every read (/answers, /latest) is normalised.
+const SHAPES = {
+  choice: { sel: "arr" },
+  archetype: { yes: "arr", no: "arr", top: "arr", quiz: "obj" },
+  values: { s1: "arr", s2: "arr", top: "arr", custom: "arr", practice: "obj" },
+  sort: { b: "obj", custom: "arr" },
+  uvp: { picks: "obj" },
+  broad: { pick: "arr", custom: "arr" },
+  uvptext: { text: "str", edited: "bool" },
+};
+const SHAPE_OK = { arr: Array.isArray, obj: (x) => isPlain(x), str: (x) => typeof x === "string", bool: (x) => typeof x === "boolean" };
+const SHAPE_DEF = { arr: () => [], obj: () => ({}), str: () => "", bool: () => false };
+function normalizeShape(kind, v) {
+  const shape = SHAPES[kind];
+  if (!shape || !isPlain(v)) return v;
+  let out = null;
+  for (const [k, t] of Object.entries(shape)) if (!SHAPE_OK[t](v[k])) { out ??= { ...v }; out[k] = SHAPE_DEF[t](); }
+  if (kind === "sort") { const b = (out ?? v).b; if (Object.values(b).some((x) => !Array.isArray(x))) { out ??= { ...v }; out.b = Object.fromEntries(Object.entries(b).map(([x, y]) => [x, Array.isArray(y) ? y : []])); } }
+  return out ?? v;
+}
+const normalizeAll = (answers, kinds) => (kinds ? Object.fromEntries(Object.entries(answers ?? {}).map(([k, v]) => [k, normalizeShape(kinds.get(k), v)])) : answers);
 const pathKey = (op) => JSON.stringify(op.p) + ("el" in op ? `#${JSON.stringify(op.el)}` : "");
 const getIn = (o, p) => p.reduce((x, k) => (isPlain(x) ? x[k] : undefined), o);
 function setIn(o, p, v) {
@@ -233,6 +256,11 @@ function mergeFields(values, merge, k, ops, inc, now, journal) {
     const cur = paths[key] ?? whole;
     const isEl = "el" in op;
     const arr = getIn(obj, op.p);
+    if (op.init) { // an empty set or object appearing: keeps the shape where the key is missing, never replaces a value
+      if (arr == null && (Array.isArray(op.v) || isPlain(op.v))) { setIn(obj, op.p, Array.isArray(op.v) ? [] : {}); changed = true; }
+      prevs[key] = cur;
+      continue;
+    }
     const old = isEl ? (Array.isArray(arr) && arr.some((x) => sameV(x, op.el))) : getIn(obj, op.p);
     const next = isEl ? !!op.on : op.del ? undefined : op.v;
     if (isEl ? old === next : sameV(old, next)) { prevs[key] = cur; continue; }
@@ -254,7 +282,7 @@ function mergeFields(values, merge, k, ops, inc, now, journal) {
     journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, path: key, v: isEl ? { el: op.el, on: next } : next ?? null, rev: cur + 1, prev: isEl ? { el: op.el, on: old } : old ?? null, ...(inc.origin ? { origin: inc.origin } : {}) });
   }
   if (changed) {
-    values[k] = obj;
+    values[k] = normalizeShape(inc.kinds?.get(k), obj);
     merge.items[k] = { dev: inc.dev, seq: inc.seq, at: now, rev: (it?.rev ?? 0) + 1, whole, paths, ...(inc.origin ? { origin: inc.origin } : {}) };
   }
   return { applied: changed, refused, prevs };
@@ -450,7 +478,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     // origin "workshop": answers the studio types live in the workshop (a client who did not fill the questionnaire)
     const origin = p.origin === "workshop" && !c.public ? "workshop" : undefined;
     const fields = p.fields && typeof p.fields === "object" && !Array.isArray(p.fields) ? p.fields : {};
-    const inc = { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, origin, bases: p.bases, fields };
+    const inc = { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, origin, bases: p.bases, fields, kinds: await kindsFor(c) };
     const now = new Date().toISOString();
     const r = await commit(dir, inc, now, (prev, values, merge) => {
       if (origin) return { ...(prev ?? { clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, kind: "draft" }), receivedAt: now, session: { ...(prev?.session ?? {}), answers: values }, merge };
@@ -476,6 +504,20 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
 
   /** GET /api/core30/<id>/answers?t=: the merged answers, for a device that opens the link without them (a second
    *  device, the studio's laptop, a cleared browser). The same token already opens these answers; never on a public edition. */
+  /** item id → kind for a client's questionnaire (its edition and, for a pre stage, the full one) */
+  const kindsCache = new Map();
+  async function kindsFor(c) {
+    const files = [c?.file, c?.fullFile].filter(Boolean);
+    const key = files.join("|");
+    if (!key) return null;
+    const hit = kindsCache.get(key);
+    if (hit && Date.now() - hit.t < 5000) return hit.m;
+    const m = new Map();
+    for (const f of files) { try { for (const md of JSON.parse(await readFile(f, "utf8")).modules ?? []) for (const it of md.items ?? []) m.set(it.id, it.kind); } catch { /* no config */ } }
+    kindsCache.set(key, { t: Date.now(), m });
+    return m;
+  }
+
   async function answersGet(id, t) {
     const c = (await clients())[safe(id)];
     if (!c || c.public) return [404, { ok: false }];
@@ -483,7 +525,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const l = await readLatest(join(dataDir, safe(id)));
     // which answers the studio typed in the workshop (item id → "workshop"); the rest came from the client
     const origins = Object.fromEntries(Object.entries(l?.merge?.items ?? {}).filter(([, x]) => x?.origin).map(([k, x]) => [k, x.origin]));
-    const answers = answersOfRecord(l);
+    const answers = normalizeAll(answersOfRecord(l), await kindsFor(c));
     return [200, { ok: true, at: l?.receivedAt ?? null, answers, origins, revs: revsOf(answers, l?.merge), fields: fieldRevsOf(answers, l?.merge) }];
   }
 
@@ -1077,13 +1119,20 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
   async function workshopGet(id, req, url) {
     if (!isAdmin(req, url)) return [403, { ok: false }];
     const l = await readJSON(join(dataDir, safe(id), "workshop", "latest.json"));
-    return l ? [200, { ok: true, at: l.receivedAt, items: l.items ?? {}, meta: l.meta ?? {}, revs: revsOf(l.items, l.merge) }] : [404, { ok: false }];
+    // no workshop saved yet is not an error (a 404 showed as a console error on every workshop load): an empty state
+    return l ? [200, { ok: true, at: l.receivedAt, items: l.items ?? {}, meta: l.meta ?? {}, revs: revsOf(l.items, l.merge) }] : [200, { ok: true, at: null, items: {}, meta: {}, revs: {} }];
   }
 
   async function latest(id, key) {
     if (!adminKey || key !== adminKey) return [403, { ok: false }];
-    try { return [200, JSON.parse(await readFile(join(dataDir, safe(id), "latest.json"), "utf8"))]; }
-    catch { return [404, { ok: false }]; }
+    let l;
+    try { l = JSON.parse(await readFile(join(dataDir, safe(id), "latest.json"), "utf8")); } catch { return [404, { ok: false }]; }
+    // answers in the shape readers expect (old or partial copies miss empty sets and objects)
+    const c = (await clients())[safe(id)];
+    const kinds = c ? await kindsFor(c) : null;
+    if (kinds && l.session?.answers) l.session.answers = normalizeAll(l.session.answers, kinds);
+    if (kinds && l.export?.answers) l.export.answers = normalizeAll(l.export.answers, kinds);
+    return [200, l];
   }
 
   function serveTool(req, res, path) {
