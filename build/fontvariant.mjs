@@ -39,6 +39,11 @@ export function applyVariant(css) {
   });
 }
 
+// r481-7 (Tudor round 5, S3): the reading measure. 70ch is 70 of Flex's zeros (0.645 em), 813 px at 18 px, which
+// holds 94 to 110 characters; and before Flex arrives the same 70ch is Arial's 700 px, so the column moved on the
+// swap. Now it is 32 em of the reading size, in px and vw: 576 px at 18 px, 544 px at 17 px. Flex at 400 averages
+// 0.455 em a character with spaces, so that is 65 to 75 characters a line (37 em, 670 px, measured 76 to 88), and the
+// same width in the fallback and in Flex
 // the reading CSS, appended to the website's stylesheet: the reading weight, and for v3 the Google proportions
 export function variantSiteCss() {
   let c = `\n/* r481: the reading weight (${FONT_VARIANT}) */ body, .sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .ftr p:not(.czf-id), .faq p, .qa p, .sv5-card li { font-weight: ${VAR.w}; }`;
@@ -46,8 +51,9 @@ export function variantSiteCss() {
   // r481-4 (Tudor round 5, B1): the same for the hub, industry, service and case titles (.c2-title), 0.015 em tighter,
   // no lone word on the last line; the hub title's measure in em, not ch, so it does not change with the face
   c += `\n/* r481-4: Flex titles keep 4.54's line count */ .c2-title { letter-spacing: -.05em; text-wrap: pretty; } .hub .c2-hero .c2-title { max-width: 12em; }`;
-  if (VAR.google) c += `\n/* r481 v3 ("ca la Google"): reading text in one calm weight, generous lines, a 70-character column */
-.sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .ftr p:not(.czf-id), .faq p, .qa p { font-size: clamp(17px, 1.25vw, 18px) !important; line-height: 1.45 !important; font-weight: 400 !important; letter-spacing: 0 !important; max-width: 70ch; }
+  if (VAR.google) c += `\n/* r481 v3 ("ca la Google"): reading text in one calm weight, generous lines, a 65-75 character column */
+.sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .ftr p:not(.czf-id), .faq p, .qa p, .legal p, .legal li { font-size: clamp(17px, 1.25vw, 18px) !important; line-height: 1.45 !important; font-weight: 400 !important; letter-spacing: 0 !important; max-width: clamp(544px, 40vw, 576px); }
+.legal { max-width: clamp(544px, 40vw, 576px); }
 .sv5-card h3, .c2-ch h2, .hub-card h3, .faq summary, .sh-sub { font-weight: 400 !important; font-size: clamp(24px, 1.8vw, 26px) !important; line-height: 1.3 !important; letter-spacing: -.005em !important; }`;
   return c;
 }
@@ -55,7 +61,7 @@ export function variantSiteCss() {
 // the same for the case pages (their own stylesheets), injected before </head>
 export function variantCaseCss(raw = "") {
   let c = `body,.prose p,.chapter-text,.info li,.solution-intro p,.czs-cat,figcaption{font-weight:${VAR.w}}`;
-  if (VAR.google) c += `.prose p,.chapter-text,.info li,.solution-intro p,.quote blockquote .q-en,.related p,.czs-cat{font-size:clamp(17px,1.25vw,18px)!important;line-height:1.45!important;font-weight:400!important;letter-spacing:0!important}.prose,.chapter-text{max-width:70ch}.sec-head h2,.solution-intro h2,.result-text{font-weight:400!important;font-size:clamp(28px,2.4vw,36px)!important;line-height:1.25!important;letter-spacing:-.005em!important}.client-name{font-weight:400!important}`;
+  if (VAR.google) c += `.prose p,.chapter-text,.info li,.solution-intro p,.quote blockquote .q-en,.related p,.czs-cat{font-size:clamp(17px,1.25vw,18px)!important;line-height:1.45!important;font-weight:400!important;letter-spacing:0!important}.prose,.chapter-text,.solution-intro p{max-width:clamp(544px,40vw,576px)}.sec-head h2,.solution-intro h2,.result-text{font-weight:400!important;font-size:clamp(28px,2.4vw,36px)!important;line-height:1.25!important;letter-spacing:-.005em!important}.client-name{font-weight:400!important}`;
   // r481-4 (Tudor round 5, B1): Flex at 650 sets wider than the old Google Sans bold, so 21 case titles took one more
   // line than on 4.54. The title 0.02 em tighter brings all of them back to 4.54's line count; text-wrap: pretty keeps a
   // lone word off the last line. Steam's own N27 title is left as it is. The Slow Coffee Festival statements (.hp) were
