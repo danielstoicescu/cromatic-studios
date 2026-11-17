@@ -89,5 +89,6 @@ export function makeSiteFooter({ siteCss }) {
 ${lift(siteCss, KEEP_F, DROP_F, "ftr")}
 .ftr{font-family:var(--f,CromaticSans),"CromaticSans Fallback",system-ui,sans-serif;color:var(--ink);line-height:1.5}.ftr *{box-sizing:border-box}.ftr a{color:inherit}.ftr p{margin:0 0 8px}
 .ftr .wrap{width:min(1280px,100% - 2 * clamp(16px,4vw,40px));margin-inline:auto}.ftr .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
-html.embed .ftr-in,html.embed .ftr-motto{display:none}</style>`;
+html.embed .ftr-in,html.embed .ftr-motto{display:none}
+@media (max-width:400px){.ftr :not(.ftr-motto)>p:not([class]){font-size:15px}}</style>`; // r483-5: the studio line at 15 px under 400 px, as on the website (build/fontvariant.mjs)
 }

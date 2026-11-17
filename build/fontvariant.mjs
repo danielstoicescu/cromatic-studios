@@ -52,7 +52,10 @@ export function variantSiteCss() {
   // no lone word on the last line; the hub title's measure in em, not ch, so it does not change with the face
   c += `\n/* r481-4: Flex titles keep 4.54's line count */ .c2-title { letter-spacing: -.05em; text-wrap: pretty; } .hub .c2-hero .c2-title { max-width: 12em; }`;
   if (VAR.google) c += `\n/* r481 v3 ("ca la Google"): reading text in one calm weight, generous lines, a 65-75 character column */
-.sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .ftr p:not(.czf-id), .faq p, .qa p, .legal p, .legal li { font-size: clamp(17px, 1.25vw, 18px) !important; line-height: 1.45 !important; font-weight: 400 !important; letter-spacing: 0 !important; max-width: clamp(544px, 40vw, 576px); }
+/* r483-5 (Tudor round 7, R5): the footer's studio line keeps r480's 16 px / 1.4 / 26em (at 17 px it took a third line at 360);
+   under 400 px it is 15 px, because Flex at 16 still needs three lines there (two on 4.54) */
+@media (max-width: 400px) { .ftr :not(.ftr-motto) > p:not([class]) { font-size: 15px; } }
+.sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .faq p, .qa p, .legal p, .legal li { font-size: clamp(17px, 1.25vw, 18px) !important; line-height: 1.45 !important; font-weight: 400 !important; letter-spacing: 0 !important; max-width: clamp(544px, 40vw, 576px); }
 .legal { max-width: clamp(544px, 40vw, 576px); }
 /* r483-3 (Tudor round 7, R3): the boxes follow the measure instead of leaving it stranded. FAQ: the cards are the
    column plus their 22 px padding (the answer fills the card), the title side takes the rest. Case intro: it sits on the same axis as every section
