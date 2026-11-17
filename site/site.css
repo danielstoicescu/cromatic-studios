@@ -2310,3 +2310,10 @@ html:not(.m-sky) .sb-copy::before { content: ""; position: absolute; z-index: -1
   html:not(.m-sky) .sb-name, html:not(.m-sky) .sb-name.is-long { font-size: clamp(26px, 7.4vw, 32px); }
   html:not(.m-sky) .sb-copy::before { left: -10%; width: 110%; }
 }
+
+/* r481-6 (Tudor round 5, S2): the shade follows the name. The old one was an ellipse fixed to the left of the copy box,
+   so "The Shortest Shortcut" ran past it on phones (worst 5 percent 1.8 to 2.0:1 over the cream roofs). Now it sits on
+   the name's own box and fades out softly around it, whatever the name's length: no band, no edge, no outline */
+html:not(.m-sky) .sb-copy::before { content: none; }
+html:not(.m-sky) .sb-plate { position: relative; display: inline-block; }
+html:not(.m-sky) .sb-plate::before { content: ""; position: absolute; z-index: -1; inset: 6% 3%; border-radius: 999px; background: rgba(13,12,9,.52); box-shadow: 0 0 40px 24px rgba(13,12,9,.52); pointer-events: none; }
