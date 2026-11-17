@@ -574,13 +574,14 @@ for (const k of ["latin", "latin-ext"]) {
 }
 try { copyFileSync(join(root, "site", "fonts", "google-sans-flex-OFL.txt"), join(pub, "assets", "fonts", "google-sans-flex-OFL.txt")); } catch {}
 // r481-9 (Tudor round 5, S5): the arrows Flex lacks (build/arrows-font.py), joined to CromaticSans by unicode-range
+// r483-4: four weight bands, plus a mono drawing joined to JetBrains Mono (site/fonts/gf/fonts.css)
 const CZA = {};
-for (const k of ["text", "display"]) { try { const buf = readFileSync(join(root, "site", "fonts", `cromatic-arrows-${k}.woff2`)); const rel = `assets/fonts/cromatic-arrows-${k}-${hash(buf).slice(0, 8)}.woff2`; writeFileSync(join(pub, rel), buf); CZA[k] = "/" + rel; } catch {} }
+for (const k of ["light", "medium", "semi", "display", "mono"]) { try { const buf = readFileSync(join(root, "site", "fonts", `cromatic-arrows-${k}.woff2`)); const rel = `assets/fonts/cromatic-arrows-${k}-${hash(buf).slice(0, 8)}.woff2`; writeFileSync(join(pub, rel), buf); CZA[k] = "/" + rel; } catch {} }
 const GS_ID = { "t5svIQcYNIWbFgDgAAzZ34auoVyXkJCOvoOmPWNbN5hF8Ju1x5Vwd0N3l9sIcwowNJwGpVd4AZzz0v6lJ4qFXNZhGjLvDSkV4W6GGn9Q3I8i": "latin", "t5svIQcYNIWbFgDgAAzZ34auoVyXkJCOvoOmPWNbN5hF8Ju1x5Vwd0N3l9sIcwowNJwGpVd4AZzz0v6lJ4qFXNZhGjLvDSkV4W6IGn9Q3I8ipFY": "latin-ext" }; // r481: Google Sans Flex v26
 const DG_URLS = {};
 const localDG = (t) => t.replace(/https:\/\/fonts\.gstatic\.com\/s\/darkergrotesque\/v10\/[\w-]+\.woff2/g, (u) => DG_URLS[u] || u)
   .replace(/https:\/\/fonts\.gstatic\.com\/s\/googlesansflex\/v\d+\/([\w-]+)\.woff2/g, (u, id) => GS[GS_ID[id]] || u)
-  .replace(/url\(\/fonts\/cromatic-arrows-(text|display)\.woff2\)/g, (u, k) => CZA[k] ? `url(${CZA[k]})` : u);
+  .replace(/url\(\/fonts\/cromatic-arrows-(light|medium|semi|display|mono)\.woff2\)/g, (u, k) => CZA[k] ? `url(${CZA[k]})` : u);
 const CS_CSS = localDG(applyVariant((readFileSync(siteSrc("site.css"), "utf8").match(/@font-face\{font-family:(?:'CromaticSans'|"CromaticSans Fallback")[^}]*\}/g) || []).join(""))); // r481: Flex and its fallback, the variant's numbers
 writeFileSync(join(pub, "fonts.css"), `/* Cromatic Studios type: CromaticSans, Montserrat, JetBrains Mono, Cinzel */\n${CS_CSS}\n${GF_CSS}\n`);
 const wpLocal = (u) => mediaMap.get("m:wp/" + u.replace(/^.*\/uploads\/(\d{4})\/(\d{2})\/(.+)\.[a-z]+$/i, "$1-$2-$3"))?.src;
