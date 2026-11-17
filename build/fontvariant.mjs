@@ -43,6 +43,9 @@ export function applyVariant(css) {
 export function variantSiteCss() {
   let c = `\n/* r481: the reading weight (${FONT_VARIANT}) */ body, .sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .ftr p, .faq p, .qa p, .sv5-card li { font-weight: ${VAR.w}; }`;
   c += `\n/* r481: Flex at 650 runs about 1 percent wider than the old bold: the hero title 0.01 em tighter keeps its three lines */ html body .pw-h { letter-spacing: -.055em !important; }`;
+  // r481-4 (Tudor round 5, B1): the same for the hub, industry, service and case titles (.c2-title), 0.015 em tighter,
+  // no lone word on the last line; the hub title's measure in em, not ch, so it does not change with the face
+  c += `\n/* r481-4: Flex titles keep 4.54's line count */ .c2-title { letter-spacing: -.05em; text-wrap: pretty; } .hub .c2-hero .c2-title { max-width: 12em; }`;
   if (VAR.google) c += `\n/* r481 v3 ("ca la Google"): reading text in one calm weight, generous lines, a 70-character column */
 .sv5-card p, .c-txt p, .studio p, .hub-intro p, .c2-lead p, .lead, .sh-lead, .pw-offer, .ftr p, .faq p, .qa p { font-size: clamp(17px, 1.25vw, 18px) !important; line-height: 1.45 !important; font-weight: 400 !important; letter-spacing: 0 !important; max-width: 70ch; }
 .sv5-card h3, .c2-ch h2, .hub-card h3, .faq summary, .sh-sub { font-weight: 400 !important; font-size: clamp(24px, 1.8vw, 26px) !important; line-height: 1.3 !important; letter-spacing: -.005em !important; }`;
@@ -50,8 +53,15 @@ export function variantSiteCss() {
 }
 
 // the same for the case pages (their own stylesheets), injected before </head>
-export function variantCaseCss() {
+export function variantCaseCss(raw = "") {
   let c = `body,.prose p,.chapter-text,.info li,.solution-intro p,.czs-cat,figcaption{font-weight:${VAR.w}}`;
   if (VAR.google) c += `.prose p,.chapter-text,.info li,.solution-intro p,.quote blockquote .q-en,.related p,.czs-cat{font-size:clamp(17px,1.25vw,18px)!important;line-height:1.45!important;font-weight:400!important;letter-spacing:0!important}.prose,.chapter-text{max-width:70ch}.sec-head h2,.solution-intro h2,.result-text{font-weight:400!important;font-size:clamp(28px,2.4vw,36px)!important;line-height:1.25!important;letter-spacing:-.005em!important}.client-name{font-weight:400!important}`;
+  // r481-4 (Tudor round 5, B1): Flex at 650 sets wider than the old Google Sans bold, so 21 case titles took one more
+  // line than on 4.54. The title 0.02 em tighter brings all of them back to 4.54's line count; text-wrap: pretty keeps a
+  // lone word off the last line. Steam's own N27 title is left as it is. The Slow Coffee Festival statements (.hp) were
+  // set in Darker Grotesque, a narrow face: Flex at 80 percent of the size has about the same x-height and wraps to the
+  // same lines
+  if (VAR.google && !/N27/.test(raw)) c += `.hero h1{letter-spacing:-.03em;text-wrap:pretty}`;
+  if (VAR.google) c += `.hp{font-size:calc(var(--h1) * .8);letter-spacing:-.01em}`;
   return `<style id="r481-type">${c}</style>`;
 }
