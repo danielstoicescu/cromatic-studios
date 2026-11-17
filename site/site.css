@@ -2298,3 +2298,15 @@ html:not(.m-sky) .sb-copy { opacity: 1; }
 .photos:not(.studio .photos) > figure:last-child:nth-child(3n + 2) img { aspect-ratio: 4 / 5; }
 .photos:not(.studio .photos) > figure:nth-child(6):nth-last-child(3) { order: 1; grid-column: span 2; }
 .photos:not(.studio .photos) > figure:nth-child(6):nth-last-child(3) img { aspect-ratio: 8 / 5; }
+
+/* r481-3 (Daniel, 17 Nov: "nu imi place coffee street pe banda alba. si dimensiunea lui - e prea mare"): the street's
+   name loses its paper band and comes down to the V3 display scale. Legible over any frame of the clip without a
+   band: white solid letters (no outline) on a soft local shade of the render, plus a soft shadow under the letters */
+html:not(.m-sky) .sb-name { color: #fff; font-weight: 650; font-size: clamp(30px, 3.4vw, 48px); line-height: 1.05; letter-spacing: -.02em; text-shadow: 0 1px 2px rgba(13,12,9,.4), 0 4px 22px rgba(13,12,9,.5); }
+html:not(.m-sky) .sb-name.is-long { font-size: clamp(28px, 3vw, 44px); }
+html:not(.m-sky) .sb-plate { background: none; padding: 0; border-radius: 0; box-shadow: none; }
+html:not(.m-sky) .sb-copy::before { content: ""; position: absolute; z-index: -1; left: -8%; top: -70%; bottom: -70%; width: min(760px, 100%); background: radial-gradient(ellipse 62% 55% at 30% 50%, rgba(13,12,9,.7) 0%, rgba(13,12,9,.5) 45%, rgba(13,12,9,0) 78%); pointer-events: none; }
+@media (max-width: 700px) {
+  html:not(.m-sky) .sb-name, html:not(.m-sky) .sb-name.is-long { font-size: clamp(26px, 7.4vw, 32px); }
+  html:not(.m-sky) .sb-copy::before { left: -10%; width: 110%; }
+}
