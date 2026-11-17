@@ -78,12 +78,25 @@ let tmpN = 0;
 async function syncDir(dir) {
   try { const fh = await open(dir, "r"); try { await fh.sync(); } finally { await fh.close(); } } catch { /* not every platform can fsync a folder */ }
 }
-async function atomicWrite(file, data) {
+async function atomicWrite(file, data, { sync = true } = {}) {
   const tmp = `${file}.${process.pid}.${++tmpN}.${Math.random().toString(36).slice(2, 8)}.tmp`; // unique: parallel writes never share a temp file
   const fh = await open(tmp, "w");
-  try { await fh.writeFile(data); await fh.sync(); } finally { await fh.close(); }
+  try { await fh.writeFile(data); if (sync) await fh.sync(); } finally { await fh.close(); }
   await rename(tmp, file);
-  await syncDir(dirname(file));
+  if (sync) await syncDir(dirname(file));
+}
+// core-fixsave: a save used to fsync six files (journal, latest, device copy, meta, hourly snapshot, folder), about
+// 40 ms a save on a laptop SSD and more on a busy server disk; with one queue per client that is what showed as
+// "se salvează" under load. Durability comes from the journal (fsynced, write-ahead) and latest.json (fsynced):
+// everything else can be rebuilt from them, so it is still written atomically (temp + rename, never torn) but
+// without fsync, and the hourly snapshot at most every 30 s per folder (the journal has every change in between).
+const LIGHT = { sync: false };
+const snapAt = new Map();
+async function snapshot(dir, now, text) {
+  const t = Date.now();
+  if (t - (snapAt.get(dir) ?? 0) < 30000) return;
+  snapAt.set(dir, t);
+  await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), text, LIGHT);
 }
 /** a new file that must never overwrite an existing one (submits): flag wx, fsynced */
 async function createOnce(file, data) {
@@ -235,7 +248,18 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     return a.length === b.length && timingSafeEqual(a, b);
   };
   // who may write where: every config on disk, plus the optional registry's overrides
+  // core-fixsave: every request used to re-read every config and session file (twice per save); cached for 1 s, and
+  // dropped at once when a session is created or upgraded here
+  let clientsCache = null;
   const clients = async () => {
+    if (clientsCache && Date.now() - clientsCache.t < 1000) return clientsCache.p;
+    const p = loadClients();
+    clientsCache = { t: Date.now(), p };
+    p.catch(() => { clientsCache = null; });
+    return p;
+  };
+  const dropClients = () => { clientsCache = null; };
+  const loadClients = async () => {
     const out = {};
     const all = existsSync(configDir) ? (await readdir(configDir)).filter((f) => f.endsWith(".json")) : [];
     // <id>.json is the edition (Romanian); <id>.en.json its English version, served on ?lang=en
@@ -329,8 +353,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     meta.firstDraftAt ??= now;
     meta.lastSaveAt = now;
     meta.saves = (meta.saves ?? 0) + 1;
-    await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
-    if (text) await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), text); // one per hour, the last write of it
+    await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta), LIGHT);
+    if (text) await snapshot(dir, now, text); // one per hour (written at most every 30 s; the journal has the rest)
   }
 
   /** POST /api/core30/save (core-save, v2): the items this tab changed since the server last confirmed, plus the session's
@@ -364,7 +388,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       const devAnswers = { ...(prevDev?.session?.answers ?? {}) };
       for (const [k, v] of Object.entries(items)) { if (v == null) delete devAnswers[k]; else devAnswers[k] = v; }
       const { answers: _a, events: _e, save: _s, ...rest } = sess;
-      await atomicWrite(df, JSON.stringify({ receivedAt: now, kind: "draft", clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, device: dev, lane, seq, session: { ...rest, answers: devAnswers } }, null, 1));
+      await atomicWrite(df, JSON.stringify({ receivedAt: now, kind: "draft", clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, device: dev, lane, seq, session: { ...rest, answers: devAnswers } }, null, 1), LIGHT);
     }
     await bookkeep(dir, now, r.text);
     return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs }];
@@ -400,7 +424,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       return { receivedAt: now, kind, ...p, session, merge };
     });
     // one copy per browser too: a second device never overwrites what the first one sent
-    if (dev && !c.public) { await mkdir(join(dir, "devices"), { recursive: true }); await atomicWrite(join(dir, "devices", `${dev}.json`), record); }
+    if (dev && !c.public) { await mkdir(join(dir, "devices"), { recursive: true }); await atomicWrite(join(dir, "devices", `${dev}.json`), record, LIGHT); }
     // counters for /status: no answer content, ever
     const meta = await readMeta(dir);
     meta.firstDraftAt ??= now;
@@ -409,8 +433,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const preSubmit = kind === "submit" && c.stage === "pre" && !c.public;
     if (preSubmit) { meta.preSubmits = (meta.preSubmits ?? 0) + 1; meta.lastPreSubmitAt = now; }
     else if (kind === "submit") { meta.submits = (meta.submits ?? 0) + 1; meta.lastSubmitAt = now; }
-    await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta));
-    await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), merged.text ?? record); // one per hour
+    await atomicWrite(join(dir, "meta.json"), JSON.stringify(meta), LIGHT);
+    await snapshot(dir, now, merged.text ?? record); // one per hour (at most every 30 s)
     if (kind === "submit" && c.public) {
       await appendLog(dir, { at: now, type: "submit" });
       await createOnce(join(dir, "submits", `submit-${stamp()}.json`), record);
@@ -546,6 +570,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const rec = { id, token, email, name, contact, edition, lang, stage, createdAt: now };
     await mkdir(sessionsDir, { recursive: true });
     await createOnce(join(sessionsDir, `${id}.json`), JSON.stringify(rec, null, 1));
+    dropClients();
     const url = `${publicBase.replace(/\/$/, "")}/thecore30/${id}?t=${token}`;
     const mailSent = await onboardingMail(rec, url);
     return [200, { ok: true, id, url, token, edition, stage, lang, mailSent }];
@@ -577,6 +602,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const now = new Date().toISOString();
     const next = { ...rec, edition, stage: "full", upgradedAt: now };
     await atomicWrite(file, JSON.stringify(next, null, 1));
+    dropClients();
     await appendLog(dir, { at: now, type: "upgrade", from: "pre", to: edition, items: pre?.items?.length ?? 0 });
     const url = `${publicBase.replace(/\/$/, "")}/thecore30/${id}?t=${rec.token}`;
     // no mail to the client (Daniel, 27 Oct): the studio says it in person, the link stays the same
@@ -874,6 +900,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const mods = c.file ? clientModules(JSON.parse(await readFile(c.file, "utf8"))) : [];
     const total = mods.length;
     const inView = new Set(mods.map((x) => x.id));
+    const viewIdx = new Map(mods.map((x, i) => [x.id, i]));
     // which modules have answers in the latest copy (titles only): a module skipped and then answered is partial,
     // a module with answers but not every required item is partial too; the step log alone only knows "complete"
     let answeredIds = new Set(), skippedIds = [];
@@ -886,7 +913,9 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     // the card's back: hours and titles only, never answers
     const log = (await readLog(dir)).map((e) => ({
       at: e.at, type: e.type,
-      ...(e.module ? { module: e.module.id, title: e.module.title, n: e.module.n, total: e.module.total } : {}),
+      // numbered as the client sees the questionnaire now (old entries said "9/13"); a module that left the client's
+      // view keeps its title, without a position (Ops then shows the title only)
+      ...(e.module ? (() => { const i = viewIdx.get(e.module.id); return { module: e.module.id, title: i == null ? e.module.title : mods[i].short ?? e.module.title, n: i == null ? null : i + 1, total }; })() : {}),
       ...(e.format ? { format: e.format } : {}),
       ...(e.version ? { version: e.version } : {}),
       ...(e.type === "save-error" ? { code: e.code, bytes: e.bytes, ua: e.ua } : {}),
@@ -900,7 +929,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const titleOf = (mid) => mods.find((x) => x.id === mid)?.short ?? mid;
     const partial = mods.filter((x) => answeredIds.has(x.id) && !doneIds.has(x.id)).map((x) => x.short);
     const skippedOnly = mods.filter((x) => skippedIds.includes(x.id) && !answeredIds.has(x.id)).map((x) => titleOf(x.id));
-    const lastStep = [...log].reverse().find((e) => e.type === "step" || e.type === "skip") ?? null;
+    // the last step in the client's view (a step on a module that is workshop-only now is not "where they are")
+    const lastStep = [...log].reverse().find((e) => (e.type === "step" || e.type === "skip") && e.n != null) ?? [...log].reverse().find((e) => e.type === "step" || e.type === "skip") ?? null;
     // the pre stage at a glance (sessions that started as "pregătire", and the internal pre edition)
     let pre = null;
     if (c.stage === "pre" || c.dynamic?.upgradedAt || existsSync(preFile(id))) {
@@ -960,8 +990,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const prevDev = p.full ? null : await readJSON(df);
     const mine = { ...(prevDev?.items ?? {}) };
     for (const [k, v] of Object.entries(items)) { if (v == null) delete mine[k]; else mine[k] = v; }
-    await atomicWrite(df, JSON.stringify({ receivedAt: now, clientId: id, device: dev, lane, seq, items: mine, meta: m }, null, 1));
-    await atomicWrite(join(dir, "history", `${now.slice(0, 13)}.json`), text);
+    await atomicWrite(df, JSON.stringify({ receivedAt: now, clientId: id, device: dev, lane, seq, items: mine, meta: m }, null, 1), LIGHT);
+    await snapshot(dir, now, text);
     return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs }];
   }
   async function workshopGet(id, req, url) {
