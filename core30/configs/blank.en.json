@@ -25,7 +25,7 @@
    "We save as you go, on this device and on our side. Close it any time and pick up exactly where you left off.",
    "When what you say and what you pick don't match, that's not a mistake. It's the best material for the workshop."
   ],
-  "minutes": "45–60 minutes, in two or three sittings"
+  "minutes": "35–45 minutes, in two sittings"
  },
  "modules": [
   {
@@ -183,7 +183,7 @@
     "said so far"
    ],
    "short": "What you've said",
-   "minutes": 6,
+   "minutes": 4,
    "why": "You've already written good things about the brand. Let's sort through them: what we keep, what we adjust, what we leave behind.",
    "items": [
     {
@@ -195,6 +195,7 @@
     },
     {
      "id": "m01.tagline",
+     "workshopOnly": true,
      "kind": "verdict",
      "label": "Tagline",
      "source": "Tagline",
@@ -209,6 +210,7 @@
     },
     {
      "id": "m01.principle",
+     "workshopOnly": true,
      "kind": "verdict",
      "label": "Product principle",
      "source": "Product principle",
@@ -438,7 +440,7 @@
     "on the map"
    ],
    "short": "Positioning",
-   "minutes": 10,
+   "minutes": 6,
    "why": "Positioning is the place you hold in someone's mind. If you don't pick it, the market picks it for you.",
    "items": [
     {
@@ -500,6 +502,7 @@
     },
     {
      "id": "m04.builder",
+     "workshopOnly": true,
      "kind": "builder",
      "label": "Build your positioning sentence.",
      "help": "Fill in the blanks. The sentence writes itself as you go.",
@@ -539,6 +542,7 @@
     },
     {
      "id": "m04.xfactor",
+     "workshopOnly": true,
      "kind": "text",
      "label": "X factor: what can you promise that nobody else can?",
      "help": "Just one thing. If a competitor can say it too, it's not the one.",
@@ -648,6 +652,7 @@
   },
   {
    "id": "m06",
+   "workshopOnly": true,
    "title": [
     "Your",
     "archetype"
@@ -1268,6 +1273,27 @@
    ],
    "short": "Values",
    "minutes": 6,
+   "client": {
+    "title": [
+     "Values and",
+     "attributes"
+    ],
+    "short": "Values & attributes",
+    "minutes": 7,
+    "pull": [
+     "m08.rational",
+     "m08.emotional"
+    ],
+    "view": "cloud",
+    "why": "One cloud of words. Each basket only gets what is true for the brand: three rational, three emotional, three values.",
+    "cloud": {
+     "label": "Three baskets, one cloud.",
+     "help": "Drag each word into its basket, or tap a word and then a basket. Rational: what people get. Emotional: what they're left with. Values: what you keep even when it costs you. You can add your own words too.",
+     "rational": "Rational",
+     "emotional": "Emotional",
+     "values": "Values"
+    }
+   },
    "why": "Values are promises you keep even when they cost you. We pick them by elimination, so only the true ones are left.",
    "items": [
     {
@@ -1415,6 +1441,7 @@
     },
     {
      "id": "m08.after",
+     "workshopOnly": true,
      "kind": "text",
      "label": "What do you want someone to say about the brand after the first meeting?",
      "placeholder": "“I've never met anyone who…”",
@@ -1427,6 +1454,7 @@
     },
     {
      "id": "m08.core6",
+     "workshopOnly": true,
      "kind": "core6",
      "label": "The brand's 6 attributes.",
      "help": "This is how we work in The Core: for each category, a brainstorm first, then a top 3, then just one. The pills come from your answers so far plus a few starters; add your own words any time. The 6 words you pick write the UVP.",
