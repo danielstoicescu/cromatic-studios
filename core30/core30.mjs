@@ -153,6 +153,7 @@ function mergeInto(values, merge, inc, now) {
   const applied = [], kept = [], journal = [], revs = {};
   const bases = inc.bases && typeof inc.bases === "object" ? inc.bases : {};
   for (const [k, raw] of Object.entries(inc.items ?? {})) {
+    if (inc.fields && Object.prototype.hasOwnProperty.call(inc.fields, k)) continue; // sent field by field below
     const v = raw ?? null;
     const old = values[k];
     const cur = merge.items[k]?.rev ?? 0;
@@ -171,7 +172,8 @@ function mergeInto(values, merge, inc, now) {
     }
     const prev = old !== undefined ? { prev: old, prevDev: merge.items[k]?.dev ?? null } : {};
     if (v == null) delete values[k]; else values[k] = v;
-    merge.items[k] = { dev: inc.dev, seq: inc.seq, at: now, rev: cur + 1, ...(inc.origin ? { origin: inc.origin } : {}) };
+    // a whole-item write replaces every field: field revisions restart from this item revision (whole)
+    merge.items[k] = { dev: inc.dev, seq: inc.seq, at: now, rev: cur + 1, whole: cur + 1, ...(inc.origin ? { origin: inc.origin } : {}) };
     revs[k] = cur + 1;
     applied.push(k);
     journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, v, rev: cur + 1, ...(inc.origin ? { origin: inc.origin } : {}), ...prev });
@@ -181,8 +183,84 @@ function mergeInto(values, merge, inc, now) {
     const keys = Object.keys(merge.lanes);
     if (keys.length > 300) for (const k of keys.slice(0, keys.length - 300)) delete merge.lanes[k];
   }
-  return { stale: false, applied, kept, journal, revs };
+  // structured answers (core-ws2fix): field-level changes, merged path by path
+  const prevs = {};
+  for (const [k, ops] of Object.entries(inc.fields ?? {})) {
+    if (!Array.isArray(ops)) continue;
+    const r = mergeFields(values, merge, k, ops.slice(0, 2000), inc, now, journal);
+    if (r.applied) applied.push(k);
+    if (r.refused) kept.push(k);
+    prevs[k] = r.prevs;
+    revs[k] = merge.items[k]?.rev ?? 0;
+  }
+  return { stale: false, applied, kept, journal, revs, prevs };
 }
+
+// ---------- structured answers below item level (core-ws2fix) ----------
+// m08.core6 is one object for six categories ({culture: {pool, top, one, def}, …}) and m08.broad is {pick, custom}:
+// two laptops editing different categories, or ticking different words, used to send the whole object and the
+// newer one replaced the other's work. Object answers are now changed field by field. An op names a path (array of
+// keys) and either a value (v, or del) or a set element (el + on, for arrays that are sets: broad.pick, pools…).
+// Each path, and each set element, has its own revision (merge.items[k].paths); a path never written field-wise
+// counts the item revision of its last whole write (whole). The rules per path are the item rules: the current
+// revision wins whatever it is (removals included), a stale emptier change is refused, no base = the old rule.
+// Untouched paths are left alone. Whole-item writes (older tabs) still work and reset the item's field revisions.
+const isPlain = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+const pathKey = (op) => JSON.stringify(op.p) + ("el" in op ? `#${JSON.stringify(op.el)}` : "");
+const getIn = (o, p) => p.reduce((x, k) => (isPlain(x) ? x[k] : undefined), o);
+function setIn(o, p, v) {
+  let x = o;
+  for (const k of p.slice(0, -1)) { if (!isPlain(x[k])) x[k] = {}; x = x[k]; }
+  if (v === undefined) delete x[p[p.length - 1]]; else x[p[p.length - 1]] = v;
+}
+const fieldsOf = (it) => ({ whole: it?.whole ?? (it?.paths ? 0 : it?.rev ?? 0), paths: it?.paths ?? {} });
+function mergeFields(values, merge, k, ops, inc, now, journal) {
+  const it = merge.items[k] ?? null;
+  const { whole } = fieldsOf(it);
+  const paths = { ...(it?.paths ?? {}) };
+  const cur0 = values[k];
+  if (cur0 != null && !isPlain(cur0)) { // the answer is not an object (a different shape): nothing field-wise applies
+    for (const op of ops) journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, refused: "shape", op });
+    return { applied: false, refused: true, prevs: {} };
+  }
+  const obj = structuredClone(cur0 ?? {});
+  const mine = it?.dev === inc.dev;
+  const prevs = {};
+  let changed = false, refused = false;
+  for (const op of ops) {
+    if (!op || !Array.isArray(op.p) || !op.p.length || op.p.length > 8 || op.p.some((x) => typeof x !== "string")) continue;
+    const key = pathKey(op);
+    const cur = paths[key] ?? whole;
+    const isEl = "el" in op;
+    const arr = getIn(obj, op.p);
+    const old = isEl ? (Array.isArray(arr) && arr.some((x) => sameV(x, op.el))) : getIn(obj, op.p);
+    const next = isEl ? !!op.on : op.del ? undefined : op.v;
+    if (isEl ? old === next : sameV(old, next)) { prevs[key] = cur; continue; }
+    const emptierOp = isEl ? old && !next : emptier(next ?? null, old ?? null);
+    const base = Number.isInteger(op.b) ? op.b : null;
+    const ok = base !== null && base >= cur ? true : base !== null ? !emptierOp : mine || !emptierOp;
+    if (!ok) {
+      refused = true; prevs[key] = cur;
+      journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, path: key, refused: base !== null ? "stale" : "emptier", base, rev: cur, v: isEl ? { el: op.el, on: next } : next ?? null, ...(inc.origin ? { origin: inc.origin } : {}) });
+      continue;
+    }
+    if (isEl) {
+      const list = Array.isArray(arr) ? arr.slice() : [];
+      setIn(obj, op.p, next ? [...list, op.el] : list.filter((x) => !sameV(x, op.el)));
+    } else setIn(obj, op.p, next);
+    paths[key] = cur + 1;
+    prevs[key] = cur + 1;
+    changed = true;
+    journal.push({ at: now, dev: inc.dev, seq: inc.seq, id: k, path: key, v: isEl ? { el: op.el, on: next } : next ?? null, rev: cur + 1, prev: isEl ? { el: op.el, on: old } : old ?? null, ...(inc.origin ? { origin: inc.origin } : {}) });
+  }
+  if (changed) {
+    values[k] = obj;
+    merge.items[k] = { dev: inc.dev, seq: inc.seq, at: now, rev: (it?.rev ?? 0) + 1, whole, paths, ...(inc.origin ? { origin: inc.origin } : {}) };
+  }
+  return { applied: changed, refused, prevs };
+}
+/** item → { whole, paths } for every object answer (what a device needs to send field changes on the right base) */
+const fieldRevsOf = (values, merge) => Object.fromEntries(Object.keys(values ?? {}).filter((k) => isPlain(values[k]) || merge?.items?.[k]?.paths).map((k) => [k, fieldsOf(merge?.items?.[k])]));
 /** item → revision for everything the server holds or has deliberately cleared (an item cleared on purpose has a
  *  revision and no value: devices remove it too) */
 const revsOf = (values, merge) => Object.fromEntries([...new Set([...Object.keys(values ?? {}), ...Object.keys(merge?.items ?? {})])].map((k) => [k, merge?.items?.[k]?.rev ?? 0]));
@@ -371,7 +449,8 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     const sess = p.session && typeof p.session === "object" ? p.session : {};
     // origin "workshop": answers the studio types live in the workshop (a client who did not fill the questionnaire)
     const origin = p.origin === "workshop" && !c.public ? "workshop" : undefined;
-    const inc = { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, origin, bases: p.bases };
+    const fields = p.fields && typeof p.fields === "object" && !Array.isArray(p.fields) ? p.fields : {};
+    const inc = { dev, lane, seq, full: !!p.full, dirty: new Set((Array.isArray(p.dirty) ? p.dirty : []).map(String)), items, origin, bases: p.bases, fields };
     const now = new Date().toISOString();
     const r = await commit(dir, inc, now, (prev, values, merge) => {
       if (origin) return { ...(prev ?? { clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, kind: "draft" }), receivedAt: now, session: { ...(prev?.session ?? {}), answers: values }, merge };
@@ -386,12 +465,13 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
       const df = join(dir, "devices", `${dev}.json`);
       const prevDev = inc.full ? null : await readJSON(df);
       const devAnswers = { ...(prevDev?.session?.answers ?? {}) };
-      for (const [k, v] of Object.entries(items)) { if (v == null) delete devAnswers[k]; else devAnswers[k] = v; }
+      for (const [k, v] of Object.entries(items)) { if (fields[k]) continue; if (v == null) delete devAnswers[k]; else devAnswers[k] = v; }
+      for (const k of Object.keys(fields)) { const mv = r.record?.session?.answers?.[k]; if (mv !== undefined) devAnswers[k] = mv; }
       const { answers: _a, events: _e, save: _s, ...rest } = sess;
       await atomicWrite(df, JSON.stringify({ receivedAt: now, kind: "draft", clientId: p.clientId, configVersion: p.configVersion, edition: p.edition, device: dev, lane, seq, session: { ...rest, answers: devAnswers } }, null, 1), LIGHT);
     }
     await bookkeep(dir, now, r.text);
-    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs }];
+    return [200, { ok: true, at: now, seq, applied: r.applied.length, kept: r.kept, revs: r.revs, prevs: r.prevs }];
   }
 
   /** GET /api/core30/<id>/answers?t=: the merged answers, for a device that opens the link without them (a second
@@ -404,7 +484,7 @@ export function createCore30({ dataDir, distDir, configDir, registry, transport,
     // which answers the studio typed in the workshop (item id → "workshop"); the rest came from the client
     const origins = Object.fromEntries(Object.entries(l?.merge?.items ?? {}).filter(([, x]) => x?.origin).map(([k, x]) => [k, x.origin]));
     const answers = answersOfRecord(l);
-    return [200, { ok: true, at: l?.receivedAt ?? null, answers, origins, revs: revsOf(answers, l?.merge) }];
+    return [200, { ok: true, at: l?.receivedAt ?? null, answers, origins, revs: revsOf(answers, l?.merge), fields: fieldRevsOf(answers, l?.merge) }];
   }
 
   async function store(kind, body) {
