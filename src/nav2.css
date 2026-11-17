@@ -7,7 +7,7 @@ body.nav2:is(.nav2-street, .nav2-top) .map-zoom { display: none; } /* polite-cit
 body.nav2 .map-zoom { bottom: 206px; }
 @media (min-width: 721px) { body.nav2 .map-card.cr { bottom: 206px !important; right: 92px !important; } body.nav2 .map-card.cl { bottom: 96px !important; } }
 
-.nav2-ui :is(.n2-panel, .n2-views, .n2-pad) { position: fixed; z-index: 22; color: var(--fg); font-family: CromaticSans, "Darker Grotesque", system-ui, sans-serif; }
+.nav2-ui :is(.n2-panel, .n2-views, .n2-pad) { position: fixed; z-index: 22; color: var(--fg); font-family: CromaticSans, "CromaticSans Fallback", system-ui, sans-serif; }
 .nav2-ui button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
 
 /* ---- the pad ---- */

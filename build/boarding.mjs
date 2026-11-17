@@ -85,7 +85,7 @@ export function passForm(lang = "en", hidden = "") {
     <div class="czp-pair"><fieldset class="czp-q"><legend><span class="czp-n">02</span>${esc(t.q2)}</legend>${chips("biz", t.biz)}</fieldset>
     <fieldset class="czp-q"><legend><span class="czp-n">03</span>${esc(t.q3)}</legend>${chips("when", t.when)}</fieldset></div>
     <fieldset class="czp-q czp-pax"><legend><span class="czp-n">04</span>${esc(t.pax)}</legend>
-      <div class="czp-row">${field("name", t.name, "text", "name", " required")}${field("email", t.email, "email", "email", " required")}${field("phone", t.phone, "tel", "tel", ' required minlength="6"')}<div class="czp-f czp-ta"><textarea id="${u}-msg" name="msg" rows="1" placeholder=" "></textarea><label for="${u}-msg">${esc(t.msg)} <i>${esc(t.opt)}</i></label></div></div>
+      <div class="czp-row">${field("name", t.name, "text", "name", " required")}${field("email", t.email, "email", "email", " required")}${field("phone", t.phone, "tel", "tel", ' required minlength="6"')}<div class="czp-f czp-ta"><textarea id="${u}-msg" name="msg" rows="1" placeholder=" "></textarea><label for="${u}-msg">${esc(t.msg)} <i>${esc(t.opt)}</i></label><span class="czp-opt" aria-hidden="true">${esc(t.opt)}</span></div></div>
     </fieldset>
     ${hidden}<input class="czp-hp" name="company_site" tabindex="-1" autocomplete="off" aria-hidden="true">
     <p class="czp-status" role="status" aria-live="polite"></p>
@@ -147,6 +147,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-f textarea{resize:vertical;min-height:76px;max-height:180px;field-sizing:content}
 .czp-f label{position:absolute;left:14px;right:12px;top:14px;font-size:16px;font-weight:600;color:var(--mut);pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform-origin:0 0;transition:transform .16s ease,color .16s ease}
 .czp-f label i{font-style:normal;font-weight:500}
+.czp-opt{display:none} /* r481-9 (Tudor round 5, S5): on phones "optional" moves to the field's corner, so the label fits one line (RO wrapped on all 68 pages) */
 .czp-f :is(input,textarea):focus+label,.czp-f :is(input,textarea):not(:placeholder-shown)+label{transform:translateY(-8px) scale(.72);right:auto;max-width:calc((100% - 26px) / .72);color:var(--ink)}
 .czp-f :is(input,textarea):focus{outline:none;border-color:var(--um);box-shadow:0 0 0 3px rgba(40,64,240,.22)}
 .czp-f :is(input,textarea)[aria-invalid="true"]{border-color:var(--r);box-shadow:0 0 0 3px rgba(200,50,31,.16)}
@@ -201,7 +202,7 @@ export const PASS_CSS = `<style id="czp-css">
 .czp-end b{font-size:30px}.czp-end em{font-size:12px}
 .czp-q{margin-bottom:12px}
 .czp-chip{min-height:44px;padding:11px 13px}
-.czp-ta label{white-space:normal;line-height:1.25}
+.czp-ta label i{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.czp-opt{display:block;position:absolute;right:13px;bottom:10px;font:500 12px/1 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);pointer-events:none}.czp-ta textarea{padding-bottom:28px}
 .czp-intro a{display:inline-flex;align-items:center;min-height:44px}
 .czp-stub{border-radius:0 0 22px 22px;border-left:2px solid var(--ink);border-top:2px dashed rgba(13,12,9,.45);display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px 16px;padding:16px 16px 18px;background:var(--pap);-webkit-mask:radial-gradient(circle 13px at 0 0,#0000 12.5px,#000 13px) left/51% 100% no-repeat,radial-gradient(circle 13px at 100% 0,#0000 12.5px,#000 13px) right/51% 100% no-repeat;mask:radial-gradient(circle 13px at 0 0,#0000 12.5px,#000 13px) left/51% 100% no-repeat,radial-gradient(circle 13px at 100% 0,#0000 12.5px,#000 13px) right/51% 100% no-repeat}
 .czp-leg{display:none}

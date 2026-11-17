@@ -71,7 +71,7 @@ export const BOARD_HTML = `<div class="czb" data-czb>
 </div>`;
 
 export const BOARD_CSS = `<style>
-.czb{--ink:${INK};--y:${Y};--um:${UM};position:relative;margin-top:34px;perspective:1600px;color:var(--ink);font-family:CromaticSans,"Darker Grotesque",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+.czb{--ink:${INK};--y:${Y};--um:${UM};position:relative;margin-top:34px;perspective:1600px;color:var(--ink);font-family:CromaticSans,"CromaticSans Fallback",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
 .czb-tilt{position:relative;display:flex;cursor:pointer;transform-origin:50% 60%;filter:drop-shadow(0 16px 26px rgba(13,12,9,.13)) drop-shadow(0 2px 3px rgba(13,12,9,.08));transition:filter .6s cubic-bezier(.2,.8,.2,1)}
 .czb.hov .czb-tilt{filter:drop-shadow(0 30px 40px rgba(13,12,9,.18)) drop-shadow(0 4px 8px rgba(13,12,9,.1))}
 .czb-main,.czb-stub{position:relative;box-sizing:border-box}

@@ -4,7 +4,7 @@
 :root {
   --y: #FED012; --b: #119BFE; --g: #28C840; --r: #F65342; --p: #B098C8; --pk: #F28BA8; --o: #ff8a6a;
   --ink: #0d0c09; --paper: #fbfaf5; --cream: #f4efe4; --line: color-mix(in srgb, var(--fg) 14%, transparent);
-  --sans: CromaticSans, "Darker Grotesque", system-ui, sans-serif;
+  --sans: CromaticSans, "CromaticSans Fallback", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
   --eoq: cubic-bezier(.22,1,.36,1); --spring: cubic-bezier(.34,1.56,.64,1);
   --pad: clamp(16px, 4vw, 56px);
