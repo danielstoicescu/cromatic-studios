@@ -1085,6 +1085,9 @@ if (PT_SITE) try { const { transformSync } = await import("esbuild"); PT_MIN = {
   // r140: and on /onboarding/ (EN and RO), whose fonts come from /fonts.css: its hero title is set in the bold weight
   const onbPage = /\.html$/.test(f) && /[\\/]onboarding[\\/]index\.html$/.test(p2);
   if (/\.html$/.test(f) && GS.latin && (n2.includes(GS.latin) || onbPage || n2.includes("__CZI_CFG") || n2.includes("/assets/site.") || n2.includes("/fonts.css") || n2.includes("CromaticSans")) && !n2.includes(`rel="preload" href="${GS.latin}"`)) n2 = n2.replace(/<head>|<head [^>]*>/, (h) => `${h}\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`);
+  // r481-8 (Tudor round 5, S4): on every Romanian page the latin-ext file too (ă, â, î, ș, ț live only there: until it
+  // landed they were drawn in Arial inside Flex words), right after the Latin one, at every width (26 KB)
+  if (/\.html$/.test(f) && GS["latin-ext"] && /<html lang="ro"/.test(n2) && n2.includes(`rel="preload" href="${GS.latin}"`) && !n2.includes(`rel="preload" href="${GS["latin-ext"]}"`)) n2 = n2.replace(`<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>`, (m) => `${m}\n<link rel="preload" href="${GS["latin-ext"]}" as="font" type="font/woff2" crossorigin>`);
   // r381 (beta, with r380's signal lock): the Romanian homepage's h1 has a "ț", which only the latin-ext file carries; found
   // through the stylesheet it swapped in ~60 ms after the first paint and nudged the h1's red and blue copies (CLS 0.0004,
   // desktop). Preloaded on desktops only: phones draw no copies. After the viewport meta, or a phone still reads the
@@ -1200,8 +1203,11 @@ ${CONSENT /* r211 (Daniel: GA4 on the mini-game): the site's consent card and GA
 }
 // r356: the website becomes the home page, the map moves to /city/ (build/homemove.mjs), before the precompression
 // r480b: the 404 pages, now that the website's header exists (they wear it too)
-writeFileSync(join(pub, "404.html"), notFound(false));
-mkdirSync(join(pub, "ro"), { recursive: true }); writeFileSync(join(pub, "ro", "404.html"), notFound(true));
+// r481-8 (Tudor round 5, S4): the 404s are written after the font pass above, so they preload Flex here (and latin-ext
+// in Romanian), and link /fonts.css once (the header's copy of the link goes: the head already has it)
+const nf404 = (ro) => { let k = 0; return notFound(ro).replace(/<link rel="stylesheet" href="\/fonts\.css">\n?/g, (m) => (k++ ? "" : m)).replace(/(<meta name="viewport"[^>]*>)/, (m) => `${m}${GS.latin ? `\n<link rel="preload" href="${GS.latin}" as="font" type="font/woff2" crossorigin>` : ""}${ro && GS["latin-ext"] ? `\n<link rel="preload" href="${GS["latin-ext"]}" as="font" type="font/woff2" crossorigin>` : ""}`); };
+writeFileSync(join(pub, "404.html"), nf404(false));
+mkdirSync(join(pub, "ro"), { recursive: true }); writeFileSync(join(pub, "ro", "404.html"), nf404(true));
 { const { moveHome } = await import("./homemove.mjs"); moveHome({ pub, SITE: SITE_URL }); }
 // r382 (Mira's audit: <meta charset> after the first 1024 bytes on 112 pages, the passes above add scripts and styles
 // at the top of the head): on every page of ours, the charset is the first thing in <head>
