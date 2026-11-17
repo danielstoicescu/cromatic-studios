@@ -40,6 +40,7 @@
       }
       listeners.forEach((name, f) => { if (changed.has(name)) try { f(); } catch (e) { console.error(e); } });
       corePend.sync();
+      coreWs.decorate();
     } catch (e) { if (e.code !== "not_granted") console.warn("[ops] snapshot", e.message); }
   }
   function trackEdits(tasks) {
@@ -389,6 +390,62 @@
       mo.observe(sec, { attributes: true, attributeFilter: ["class"] });
     }
     return { sent, sync };
+  })();
+
+  // ---------- 17 Nov · The Core: "Deschide workshop-ul" next to "Arată linkul" (admins, full Core only) ----------
+  // The workshop is the client's own link plus mode=workshop. The link (with its token) comes from the core doc the
+  // card already shows; it is never written into the page: the buttons open it (noopener) or copy it, nothing else.
+  // Not on Lite (the Core app has no workshop there) and not on prep ("pre"): the Core keeps the workshop for the
+  // full Core and only lets a pre link open it as a fallback, so the card's "Trece la The Core complet" comes first.
+  const coreWs = (() => {
+    let mo = null;
+    const s = (v) => String(v == null ? "" : v);
+    const isAdmin = () => !!(user && user.role === "admin");
+    const isLite = (c) => [c.stage, c.kind, c.edition, c.flow, c.basedOn].some((v) => /^lite$/i.test(s(v)));
+    const eligible = (c) => !!(c && s(c.link).trim() && !isLite(c) && c.stage !== "pre" && (c.stage === "full" || !c.stage));
+    function wsUrl(link) {
+      const i = link.indexOf("#"), base = i < 0 ? link : link.slice(0, i), hash = i < 0 ? "" : link.slice(i);
+      if (/[?&]mode=/.test(base)) return base.replace(/([?&])mode=[^&]*/, "$1mode=workshop") + hash;
+      return base + (base.includes("?") ? "&" : "?") + "mode=workshop" + hash;
+    }
+    const ico = (id) => { const ns = "http://www.w3.org/2000/svg", v = document.createElementNS(ns, "svg"), u = document.createElementNS(ns, "use"); v.setAttribute("class", "ic"); v.setAttribute("aria-hidden", "true"); u.setAttribute("href", "#" + id); v.append(u); return v; };
+    const toast = (m, k) => { if (window.__opsToast) window.__opsToast(m, k); };
+    const linkOf = (id) => { const c = coll("core")[id]; return eligible(c) ? wsUrl(s(c.link).trim()) : ""; };
+    async function copy(id) {
+      const u = linkOf(id); if (!u) return;
+      try { await navigator.clipboard.writeText(u); toast("Copiat"); }
+      catch { toast("Nu am putut copia. Deschide workshop-ul din buton.", "err"); } // no prompt(): the token stays off the screen
+    }
+    function group(id, name) {
+      const g = document.createElement("span"); g.className = "cc-rb ops-ws";
+      const b = document.createElement("button"); b.type = "button"; b.className = "btn sm";
+      const t = document.createElement("span"); t.textContent = "Deschide workshop-ul"; b.append(ico("i-ext"), t);
+      b.setAttribute("aria-label", "Deschide workshop-ul pentru " + name + " într-un tab nou");
+      b.onclick = (e) => { e.stopPropagation(); const u = linkOf(id); if (u) window.open(u, "_blank", "noopener"); };
+      const cp = document.createElement("button"); cp.type = "button"; cp.className = "cc-cp";
+      cp.title = "Copiază linkul de workshop"; cp.setAttribute("aria-label", "Copiază linkul de workshop pentru " + name); cp.append(ico("i-clip"));
+      cp.onclick = (e) => { e.stopPropagation(); copy(id); };
+      g.append(b, cp); return g;
+    }
+    function decorate() {
+      const grid = document.getElementById("core-g"); if (!grid) return;
+      if (!mo) { mo = new MutationObserver(decorate); mo.observe(grid, { childList: true }); }
+      const docs = coll("core"), admin = isAdmin();
+      for (const card of grid.querySelectorAll(".cc[data-core]")) {
+        const f = card.querySelector(".cc-f"); if (!f) continue;
+        const c = docs[card.dataset.core], has = f.querySelector(".ops-ws"), want = admin && eligible(c);
+        if (!want) { if (has) has.remove(); continue; }
+        if (has) continue;
+        // "Arată linkul" is the front's lock button; the workshop sits right next to it, in one row
+        const show = [...f.querySelectorAll(":scope > .btn, :scope > .cc-acts > .btn")].find((x) => x.querySelector('use[href="#i-lock"]'));
+        if (!show) continue;
+        let row = show.parentNode.classList.contains("cc-acts") ? show.parentNode : null;
+        if (!row) { row = document.createElement("div"); row.className = "cc-acts"; show.before(row); row.append(show); }
+        row.append(group(card.dataset.core, s(c.name || c.id)));
+      }
+    }
+    document.addEventListener("DOMContentLoaded", decorate);
+    return { decorate };
   })();
 
   // ---------- touch: long-press a board card, drag it to a column, let go -> the same request as a desktop drop ----------

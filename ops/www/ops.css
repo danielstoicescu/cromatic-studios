@@ -158,3 +158,10 @@ body[data-cat="home"] #res { display: none !important; }
   .cpd-bar span { width: 100%; opacity: .55; }
   .cpd-ok { animation: none; }
 }
+
+/* 17 Nov · The Core: "Arată linkul" + "Deschide workshop-ul" (adapter.js coreWs) in one row, 44 px targets */
+.cc-f > .cc-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 2px; min-width: 0; }
+.cc-acts .btn { min-height: 44px; margin-top: 0; }
+.cc-acts .ops-ws .cc-cp { width: 44px; height: 44px; }
+.cc-acts .ops-ws .cc-cp .ic { width: 16px; height: 16px; }
+.cc-acts .ops-ws .cc-cp:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
