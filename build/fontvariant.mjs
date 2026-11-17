@@ -6,8 +6,8 @@
 //       (17 to 18 px, line-height 1.45, a 70-character column, regular-weight subheads)
 // Everything that depends on the choice is here: the text face's size-adjust (site.css, src/styles.css, /fonts.css),
 // its fallback's metrics, and the reading CSS for the website and the cases. The display weights do not change.
-// PLACEHOLDER: Daniel has not picked yet; v2 is the default until he does.
-export const FONT_VARIANT = process.env.FONT_VARIANT || "v2";
+// r481-2 (Daniel, 17 Nov): v3, "ca la Google".
+export const FONT_VARIANT = process.env.FONT_VARIANT || "v3";
 
 const V = {
   v1: { sa: 80, w: 430, google: false },
