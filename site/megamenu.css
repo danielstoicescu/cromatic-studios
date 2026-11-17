@@ -116,7 +116,7 @@ mark.mm-hl { background: var(--y); color: var(--ink); padding: 0 1px; font-style
 .mm-pn { display: block; width: fit-content; max-width: 100%; color: var(--ink); text-decoration: none; font: 800 28px/1.05 var(--f); letter-spacing: -.03em; margin-top: 14px !important; background: linear-gradient(var(--y), var(--y)) 0 100% / 0 3px no-repeat; padding-bottom: 2px; transition: background-size .16s var(--eoq); }
 .mm-pn:hover { background-size: 100% 3px; }
 .mm-pc { color: var(--muted); font-size: 10.5px; margin-top: 8px !important; }
-.mm-pd { color: #47443d; font-size: 15.5px; line-height: 1.4; margin-top: 8px !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mm-pd { color: #47443d; font-size: 15.5px; line-height: 1.4; margin-top: 8px !important; } /* r481-9 (Tudor round 5, S5): no 2-line clamp, the description shows in full (Flex is wider than the old face) */
 /* r371: only the root is locked. overflow: hidden on body too made body the header's scroller, so the sticky header
    (and the panel with it) snapped back to the top of the page as soon as the menu opened anywhere below it */
 html.mm-lock { overflow: hidden; }

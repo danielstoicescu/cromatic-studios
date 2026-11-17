@@ -69,5 +69,9 @@ export function variantCaseCss(raw = "") {
   // same lines
   if (VAR.google && !/N27/.test(raw)) c += `.hero h1{letter-spacing:-.03em;text-wrap:pretty}`;
   if (VAR.google) c += `.hp{font-size:calc(var(--h1) * .8);letter-spacing:-.01em}`;
+  // r481-9 (Tudor round 5, S5): the deliverables under a chapter at the reading weight (they stayed 700 while the chapter
+  // text went to 400, so the list read louder than the text it belongs to); on phones the "Visit … ↗" buttons a size
+  // smaller and tighter, so they stay on one line (craft-coffee, unchain-festival EN and RO wrapped to 62 px)
+  if (VAR.google) c += `html .deliverables li{font-weight:${VAR.w}}@media (max-width:520px){.btn{font-size:15px;padding:11px 16px 12px;gap:6px;letter-spacing:-.01em;min-height:44px;text-wrap:balance}}`;
   return `<style id="r481-type">${c}</style>`;
 }
