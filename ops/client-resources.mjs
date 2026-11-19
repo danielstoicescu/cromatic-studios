@@ -59,25 +59,55 @@ const PAGE_CSP = [
   "connect-src 'self'", "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com", "object-src 'none'",
   "base-uri 'self'", "form-action 'self'", "frame-ancestors 'self'",
 ].join("; ");
-const GATE_CSP = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+// the gate's font: CromaticSans (Google Sans Flex, the same two files site.css loads), and only these two files
+const GATE_FONT = "https://fonts.gstatic.com/s/googlesansflex/v26/t5svIQcYNIWbFgDgAAzZ34auoVyXkJCOvoOmPWNbN5hF8Ju1x5Vwd0N3l9sIcwowNJwGpVd4AZzz0v6lJ4qFXNZhGjLvDSkV4W6";
+const GATE_FONT_LATIN = GATE_FONT + "GGn9Q3I8i.woff2", GATE_FONT_EXT = GATE_FONT + "IGn9Q3I8ipFY.woff2";
+const GATE_CSP = `default-src 'none'; style-src 'unsafe-inline'; font-src ${GATE_FONT_LATIN} ${GATE_FONT_EXT}; form-action 'self'; frame-ancestors 'none'; base-uri 'none'`;
 const PRIVATE = { "X-Robots-Tag": "noindex, nofollow, noarchive", "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" };
 const NOT_FOUND = { ...PRIVATE, "Content-Type": "text/plain; charset=utf-8" };
-const MSG = { wrong: "Parola nu e cea bună.", rate: "Prea multe încercări. Mai încearcă peste un sfert de oră." };
+// [title, help]: our own constants (the help may hold a link), never anything from the request
+const MSG = {
+  wrong: ["Parola nu e cea bună.", "Verifică literele mari și mici, apoi mai încearcă o dată."],
+  rate: ["Prea multe încercări la rând.", `Ușa se redeschide peste un sfert de oră. Dacă te grăbește ceva, scrie-ne la <a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a>.`],
+};
 
-/** the login page: a password field and a button, the client's name, no script. Ilinca finishes the look (tokens on :root) */
+/** the login page: a password field and a button, the client's name, no script. Look by Ilinca, 19 Nov: a quiet door in the studio's tokens */
 function loginPage(name, why) {
   const m = MSG[why];
-  return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive"><title>${esc(name)} · Resurse · Cromatic Studios</title><style>
-:root{--bg:#f4f1ea;--ink:#111;--muted:#5c5a55;--field:#fff;--accent:#ffd400;--err:#b3261a;--r:14px}
-@media (prefers-color-scheme:dark){:root{--bg:#111;--ink:#f4f1ea;--muted:#a8a59e;--field:#1c1c1c;--err:#ff8a7a}}
-*{box-sizing:border-box}html{color-scheme:light dark}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{width:100%;max-width:380px;display:grid;gap:20px}.k{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}h1{margin:0;font-size:32px;line-height:1.1;letter-spacing:-.02em}p{margin:0}
-form{display:grid;gap:12px}label{font-weight:600;font-size:14px}input{font:inherit;font-size:17px;padding:14px 16px;border:2px solid var(--ink);border-radius:var(--r);background:var(--field);color:var(--ink);width:100%}
-button{font:inherit;font-weight:700;font-size:16px;min-height:52px;border:0;border-radius:999px;background:var(--accent);color:#111;cursor:pointer}button:hover{filter:brightness(.95)}
-input:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:3px}.err{font-weight:700;color:var(--err)}.by{font-size:13px;color:var(--muted)}
-</style></head><body><main><div><p class="k">Resurse pentru</p><h1>${esc(name)}</h1></div>
-${m ? `<p class="err" role="alert">${m}</p>` : ""}<form method="post" autocomplete="off"><label for="p">Parola</label><input id="p" type="password" name="p" required maxlength="${PW_MAX}" autofocus autocomplete="current-password" autocapitalize="none" spellcheck="false"><button type="submit">Intră</button></form>
-<p class="by">Parola o primești de la echipa Cromatic Studios.</p></main></body></html>`;
+  return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"><meta name="robots" content="noindex, nofollow, noarchive"><title>${esc(name)} · Resurse · Cromatic Studios</title><style>
+@font-face{font-family:CromaticSans;font-weight:100 1000;font-display:swap;src:url(${GATE_FONT_LATIN}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD,U+0102-0103,U+015E-015F,U+0162-0163,U+0218-021B}
+@font-face{font-family:CromaticSans;font-weight:100 1000;font-display:swap;src:url(${GATE_FONT_EXT}) format("woff2");unicode-range:U+0100-0101,U+0104-015D,U+0160-0161,U+0164-0217,U+021C-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{--bg:#fbfaf5;--ink:#0d0c09;--muted:#5f5b52;--line:#8a857a;--field:#fff;--yellow:#fed012;--blue:#119bfe;--green:#28c840;--red:#f65342;--r:12px;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0d0c09;--ink:#fbfaf5;--muted:#a6a196;--line:#767167;--field:#17160f}}
+*{box-sizing:border-box}html{color-scheme:light dark;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;display:grid;grid-template-rows:auto 1fr auto;background:var(--bg);color:var(--ink);font:16px/1.5 CromaticSans,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+p{margin:0;text-wrap:pretty}a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}a:hover{text-decoration-thickness:2px}a:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:2px}
+.top,.foot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:28px 40px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:-.01em}.mark svg{display:block;flex:none}
+.foot{font:12px/1.4 var(--mono);letter-spacing:.04em;color:var(--muted);flex-wrap:wrap}
+main{align-self:center;justify-self:center;width:100%;max-width:440px;padding:32px 16px 56px}
+.k{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{margin:14px 0 0;font-size:clamp(42px,8vw,64px);font-weight:700;line-height:1;letter-spacing:-.035em;overflow-wrap:anywhere}
+form{display:grid;gap:12px;margin-top:44px}
+label{font-weight:600;font-size:15px;line-height:1.2}
+input{font:inherit;font-size:17px;height:56px;padding:0 16px;margin-top:2px;border:2px solid var(--line);border-radius:var(--r);background:var(--field);color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s}
+input:hover{border-color:var(--muted)}input[aria-invalid=true]{border-color:var(--red)}
+input:focus,input:focus-visible{outline:none;border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+button{font:inherit;font-size:17px;font-weight:650;letter-spacing:-.005em;height:56px;margin-top:4px;border:2px solid var(--ink);border-radius:var(--r);background:var(--yellow);color:#0d0c09;cursor:pointer;transition:background-color .15s,color .15s}
+button:hover{background:var(--ink);color:var(--bg)}button:active{transform:translateY(1px)}button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.err{display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:start;margin-top:32px;padding:14px 16px;border:2px solid var(--red);border-radius:var(--r);background:var(--field)}
+.err i{width:22px;height:22px;border-radius:50%;background:var(--red);color:#0d0c09;font:700 14px/22px CromaticSans,system-ui,sans-serif;text-align:center;font-style:normal;margin-top:1px}
+.err b{display:block;font-weight:650;font-size:16px;line-height:1.4}.err span{display:block;font-size:15px;line-height:1.45;color:var(--muted);margin-top:2px}
+.err+form{margin-top:20px}
+.by{margin-top:20px;font-size:14px;line-height:1.5;color:var(--muted)}
+@media (max-width:560px){.top,.foot{padding:20px 16px}main{padding:24px 16px 40px}form{margin-top:36px}.foot{font-size:11px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}button:active{transform:none}}
+</style></head><body>
+<header class="top"><p class="mark"><svg width="40" height="10" viewBox="0 0 40 10" aria-hidden="true" focusable="false"><circle cx="5" cy="5" r="4" fill="#FED012"/><circle cx="15" cy="5" r="4" fill="#119BFE"/><circle cx="25" cy="5" r="4" fill="#28C840"/><circle cx="35" cy="5" r="4" fill="#F65342"/></svg>Cromatic Studios</p></header>
+<main><p class="k">Resurse pentru</p><h1>${esc(name)}</h1>
+${m ? `<div class="err" id="e" role="alert"><i aria-hidden="true">!</i><p><b>${m[0]}</b><span>${m[1]}</span></p></div>` : ""}<form method="post" autocomplete="off"><label for="p">Parola</label><input id="p" type="password" name="p" required maxlength="${PW_MAX}" autofocus autocomplete="current-password" autocapitalize="none" spellcheck="false"${m ? ` aria-invalid="true" aria-describedby="e"` : ""}><button type="submit">Intră</button></form>
+<p class="by">Parola o primești de la echipa Cromatic Studios.</p></main>
+<footer class="foot"><p>Strada Olari 9, București</p><p><a href="mailto:hi@cromaticstudios.com">hi@cromaticstudios.com</a></p></footer></body></html>`;
 }
 
 export function createClientResources({ dataDir, limiter, ipOf, appendLine, log = console }) {
