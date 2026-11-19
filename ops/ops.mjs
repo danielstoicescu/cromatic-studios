@@ -37,6 +37,11 @@
 //   POST /api/ops/leads/mark                    (admin session) {id, mark: "real"|"nu"|null}, rate limited; state + audit beside the lead file (ops/leads.mjs)
 //   GET  /api/ops/perf/shot/<page>-<device>     (admin session) the latest PSI screenshot + filmstrip, as data URIs
 //   POST /api/ops/perf/run                      (admin session) "Măsoară acum": 202 at once, the run goes on in the background; at most one per 15 min
+//   GET    /api/ops/bridge/client-resource        (Bearer key) the clients of /client-resources/ (files, bytes, password yes/no, last change)
+//   POST   /api/ops/bridge/client-resource        (Bearer key) {client, files:{"rel/path.ext": base64}}   adds or replaces, no deploy
+//   DELETE /api/ops/bridge/client-resource        (Bearer key) {client, path} | {client, all: true}
+//   POST   /api/ops/bridge/client-resource/password (Bearer key) {client, password, name?}   (ops/client-resources.mjs)
+//   GET|DELETE /api/ops/client-resources          (admin session) the same list, and "Retrage" ({client, all: true} or {client, path})
 //   GET|POST /api/ops/files, POST|DELETE /api/ops/files/<id>, POST /api/ops/files/<id>/password   (admin session) TASK-142: Fișiere; the links are /f/<id>/<name> (ops/files.mjs)
 import { readFileSync, writeFileSync, appendFileSync, renameSync, mkdirSync, statSync, readdirSync, createReadStream, rmSync } from "node:fs";
 import { join, extname } from "node:path";
@@ -44,6 +49,8 @@ import { randomBytes, randomInt, createHash, timingSafeEqual } from "node:crypto
 import { createMetrics } from "./metrics.mjs";
 import { LEAD_ID_RE } from "./leads.mjs";
 import { createFiles, FILE_ID_RE } from "./files.mjs";
+import { createClientResources, CR_BODY_MAX } from "./client-resources.mjs";
+import { clientIp } from "../form-safety.js"; // the address as the boarding form counts it: CF-Connecting-IP only when the peer really is Cloudflare
 
 // the allow-list lives in ops/users.json (one place to edit); <dataDir>/users.json overrides it on a server
 const USERS_FILE = new URL("./users.json", import.meta.url);
@@ -200,6 +207,8 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   // TASK-142: Fișiere. The files share the uploads' cap, so OPS_UPLOAD_CAP_MB stays the one number for this disk
   const FILE_MAX = Number(process.env.OPS_FILE_MAX_MB || 50) * 1048576, userFiles = limiter(60, 10 * 60e3);
   const fileStore = createFiles({ dataDir, sniff, fileMax: FILE_MAX, capBytes: UP_CAP, usedElsewhere: () => (upUsed === null ? (upUsed = du(UP_DIR)) : upUsed), appendLine, limiter, ipOf: (req) => ipOf(req), secure: prod, log });
+  // client resources (Daniel, 19 Nov): /client-resources/<client>/, one password per client, uploaded by the bridge (ops/client-resources.mjs)
+  const clientRes = createClientResources({ dataDir, limiter, ipOf: clientIp, appendLine, log });
 
   async function upload(req, res, s, u) {
     if (userUpload(s.email)) return json(res, 429, { ok: false, error: "rate", message: "Prea multe fișiere deodată. Mai încearcă în câteva minute." });
@@ -384,7 +393,7 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
   }
 
   // ---------- the handler: returns true when it answered ----------
-  return Object.assign(ops, { serveFile: (req, res) => fileStore.serve(req, res) }); // TASK-142: GET /f/<id>/<name> for server.js, no session
+  return Object.assign(ops, { serveFile: (req, res) => fileStore.serve(req, res), serveClientResource: (req, res) => clientRes.serve(req, res) }); // TASK-142: GET /f/<id>/<name> for server.js, no session
   async function ops(req, res) {
     const u = new URL(req.url, "http://x"), p = u.pathname, m = req.method;
     try {
@@ -470,6 +479,16 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
           });
           const tmp = P("outbox.jsonl.tmp-" + process.pid); writeFileSync(tmp, list.map((x) => JSON.stringify(x) + "\n").join(""), { mode: 0o600 }); renameSync(tmp, P("outbox.jsonl"));
           json(res, 200, { ok: true, acked: n }); return true;
+        }
+        if (r === "bridge/client-resource" || r === "bridge/client-resource/password") { // client resources: list, upload, delete, password
+          if (r === "bridge/client-resource/password") {
+            if (m !== "POST") { json(res, 405, { ok: false }); return true; }
+            const [code, out] = await clientRes.setPassword(await body(req, 4096)); json(res, code, out); return true; // the password is never logged
+          }
+          if (m === "GET") { json(res, 200, { ok: true, clients: clientRes.list() }); return true; }
+          if (m === "POST") { const [code, out] = clientRes.put(await body(req, CR_BODY_MAX)); json(res, code, out); return true; }
+          if (m === "DELETE") { const [code, out] = clientRes.remove(await body(req, 4096)); json(res, code, out); return true; }
+          json(res, 405, { ok: false }); return true;
         }
         if (r === "bridge/proposal" && m === "POST") { // TASK-135: publish (or preview) an offer without a deploy
           const b = await body(req, PROPOSAL_BODY_MAX);
@@ -592,6 +611,12 @@ export function createOps({ dataDir, wwwDir, transport, mailFrom, smtpConfigured
         if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
         if (r === "perf" && m === "GET") { json(res, 200, { ok: true, ...metrics.perfView() }); return true; }
         if (r === "perf/run" && m === "POST") { const out = metrics.startManual(s.email); json(res, out.status, { ok: out.ok, ...(out.error ? { error: out.error } : {}), ...(out.nextAt ? { nextAt: out.nextAt } : {}) }); return true; }
+        json(res, 405, { ok: false }); return true;
+      }
+      if (r === "client-resources") { // client resources in /ops (stage 2 UI): the list and "Retrage", admins only; the Origin check for writes is above
+        if (s.user.role !== "admin") { json(res, 403, { ok: false }); return true; }
+        if (m === "GET") { json(res, 200, { ok: true, clients: clientRes.list() }); return true; }
+        if (m === "DELETE") { const b = await body(req, 2048); const [code, out] = clientRes.remove({ client: b && b.client, ...(b && b.all === true ? { all: true } : { path: b && b.path }) }); if (code === 200) appendLine("client-resources.jsonl", { at: new Date().toISOString(), event: "by-ops", client: out.client, by: s.email }); json(res, code, out); return true; }
         json(res, 405, { ok: false }); return true;
       }
       if (r === "upload" && m === "POST") { await upload(req, res, s, u); return true; }
